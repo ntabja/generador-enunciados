@@ -47,7 +47,7 @@
     input{
       width:100%;background:#0f182a;color:var(--text);
       border:1px solid rgba(255,255,255,.14);border-radius:12px;padding:10px 12px;
-      font-size:15px; /* evita zoom en iPhone sin verse grande */
+      font-size:15px;
     }
     .out{
       font-size:22px;line-height:1.45;background:#0b1426;border-radius:14px;
@@ -102,10 +102,7 @@
   <header>
     <div class="container inline" style="justify-content:space-between">
       <div class="title">🎨 ARTE MODERNO - Generador de Enunciados <span class="muted">by © 2025 Tabja Games</span></div>
-      <div class="inline">
-        <label class="muted" for="seed">Semilla</label>
-        <input id="seed" placeholder="opcional" style="max-width:140px" />
-      </div>
+      <!-- Semilla eliminada -->
     </div>
   </header>
 
@@ -228,7 +225,7 @@
     const recent=[]; let lastCopyText='';
 
     function generarUno(mode){
-      const R=rng((byId('seed').value||'').trim());
+      const R=rng(); // sin semilla
       switch(mode){
         case'PV':return genPV(R);
         case'PA':return genPA(R);
@@ -245,7 +242,7 @@
     }
 
     function generarN(mode,n){
-      const R=rng((byId('seed').value||'').trim());
+      const R=rng(); // sin semilla
       const gens={PVAL:genPVAL,PV:genPV,PA:genPA,PL:genPL,PAL:genPAL,PVA:genPVA,PVL:genPVL,FUSION:genFusion,P:genP,EVENTO:genEvento,ESCENA:genEscena};
       const fn=gens[mode]||genPVAL;
       const out=Array.from({length:n},()=>fn(R));
@@ -292,7 +289,7 @@
     byId('btnP').onclick=()=>generarN('P',1);
     byId('btnEvento').onclick=()=>generarN('EVENTO',1);
     byId('btnEscena').onclick=()=>generarN('ESCENA',1);
-    /* IMPORTANTE: no damos handler aquí a Generar 5 ni Grupos; lo controla Firebase abajo */
+    /* Generar 5 y Grupos los maneja Firebase abajo */
 
     // Reproducir sonido en TODOS los botones (captura temprana)
     (function(){
@@ -333,12 +330,12 @@
     generarN('PVAL',1);
   </script>
 
-  <!-- 🔥 Firebase Realtime + LOBBY con presencia y grupos -->
+  <!-- 🔥 Firebase Realtime + LOBBY con presencia y grupos (sin semilla) -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
     import { getDatabase, ref, onValue, set, update, onDisconnect, push, get } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
-    /* ⛳ Reemplaza por TU config real si aún no lo hiciste */
+    /* ⛳ Tu config Firebase */
     const firebaseConfig = {
       apiKey: "AIzaSyAHEBnKMHJt9npV6NeHzSjWdJtBE9EUmwQ",
       authDomain: "arte-moderno-5ff8a.firebaseapp.com",
@@ -354,7 +351,7 @@
 
     let lobbyCode = null;
     let isHost = false;
-    let currentConnRef = null; // referencia a ESTA pestaña en el lobby
+    let currentConnRef = null;
 
     function getClientId(){
       const k="am_client_id";
@@ -372,22 +369,19 @@
       return Array.from({length:5},()=> chars[Math.floor(Math.random()*chars.length)]).join("");
     }
 
-    /* 🔗 Presencia por pestaña (se borra sola al cerrar) */
+    /* Presencia por pestaña */
     function setupPresence(code){
       if (!code) return;
 
-      // Si cambias de sala, cancela onDisconnect anterior
       if (currentConnRef) { try { onDisconnect(currentConnRef).cancel(); } catch(e){} currentConnRef = null; }
 
       const infoRef = ref(db, ".info/connected");
       onValue(infoRef, (snap)=>{
         if (snap.val() === true) {
-          // crea una conexión (una por pestaña)
           const connRef = push(ref(db, `lobbies/${code}/players/${clientId}/connections`));
           currentConnRef = connRef;
           set(connRef, true);
-          onDisconnect(connRef).remove(); // el server la borra al desconectar
-          // asegura el flag conectado del jugador
+          onDisconnect(connRef).remove();
           update(ref(db, `lobbies/${code}/players/${clientId}`), { connected: true });
         }
       });
@@ -422,7 +416,6 @@
         lobbyCode = code;
         isHost = state.hostId === clientId;
 
-        // Cuenta SOLO jugadores con >=1 conexión
         if (statusEl) {
           let players = 0;
           if (state.players) {
@@ -432,13 +425,11 @@
           statusEl.textContent = `Sala: ${code} • ${isHost ? "Eres ADMIN" : "Jugador"} • Conectados: ${players}`;
         }
 
-        if (state.seed != null && $("seed")) $("seed").value = state.seed;
         if (state.currentOutputHtml && $("salida")) $("salida").innerHTML = state.currentOutputHtml;
 
-        // 💡 Grupos visibles en tiempo real
         renderGroups(state.groupsHtml);
 
-        updateHostUI(); // bloquear/permitir según rol
+        updateHostUI();
       });
     }
 
@@ -446,7 +437,6 @@
       const code = makeCode();
       const state = {
         hostId: clientId,
-        seed: ($("seed")?.value||""),
         currentOutputHtml: "",
         currentOutputText: "",
         groupsHtml: "",
@@ -455,7 +445,7 @@
       };
       await set(ref(db, `lobbies/${code}`), state);
       watchLobby(code);
-      setupPresence(code); // presencia
+      setupPresence(code);
     }
 
     async function joinLobby(code, name){
@@ -464,13 +454,12 @@
       const player = { name: name||"Jugador", score: 0, connected: true };
       await update(ref(db, `lobbies/${code}/players/${clientId}`), player);
       watchLobby(code);
-      setupPresence(code); // presencia
+      setupPresence(code);
     }
 
     async function publishOutput(html, text){
       if(!lobbyCode || !isHost) return;
       await update(ref(db, `lobbies/${lobbyCode}`), {
-        seed: ($("seed")?.value||""),
         currentOutputHtml: html,
         currentOutputText: text
       });
@@ -486,7 +475,7 @@
       joinLobby(code, name);
     });
 
-    // --- Enrutamos TODOS los generadores por una sola función con control de rol ---
+    // Enrutamos generadores con control de rol
     const MAP = {
       btnPVAL:'PVAL', btnPV:'PV', btnPA:'PA', btnPL:'PL',
       btnPVA:'PVA', btnPAL:'PAL', btnPVL:'PVL',
@@ -494,7 +483,7 @@
     };
 
     function genOne(mode){
-      const R = window.rng?.(($("seed")?.value||"").trim()) || Math.random;
+      const R = (window.rng ? window.rng() : Math.random); // sin semilla
       const gens = {
         PVAL: window.genPVAL, PV: window.genPV, PA: window.genPA, PL: window.genPL,
         PAL: window.genPAL, PVA: window.genPVA, PVL: window.genPVL,
@@ -506,7 +495,7 @@
 
     function handleGenerate(mode){
       if(lobbyCode){
-        if(!isHost) return; // solo admin
+        if(!isHost) return;
         const { html, text } = genOne(mode);
         publishOutput(html, text);
       }else{
@@ -515,7 +504,6 @@
       }
     }
 
-    // Sobrescribimos handlers .onclick (no addEventListener) para evitar duplicados
     Object.entries(MAP).forEach(([id,mode])=>{
       const btn = $(id);
       if(btn){
@@ -526,8 +514,8 @@
     // Generar 5 controlado por rol
     if ($("btnGenerar5")) {
       $("btnGenerar5").onclick = ()=>{
-        if (lobbyCode && !isHost) return; // bloqueado para no-host
-        const R = window.rng?.(($("seed")?.value||"").trim()) || Math.random;
+        if (lobbyCode && !isHost) return;
+        const R = (window.rng ? window.rng() : Math.random);
         const out = Array.from({length:5}, ()=> window.genPVAL(R));
         const html = out.map(o=>o.html).join("<br>");
         const text = out.map(o=>o.text).join("\n");
@@ -536,15 +524,13 @@
       };
     }
 
-    // ➕ Generar Grupos (solo host) — visible para todos
+    // Generar Grupos (solo host)
     async function generarGrupos(){
       if (!lobbyCode || !isHost) return;
 
-      // Leer jugadores actuales del lobby
       const snap = await get(ref(db, `lobbies/${lobbyCode}/players`));
       const playersObj = snap.val() || {};
 
-      // Filtrar SOLO conectados (>=1 conexión)
       const activos = Object.values(playersObj)
         .filter(p => p && p.name)
         .filter(p => p.connections && Object.keys(p.connections).length > 0)
@@ -555,13 +541,11 @@
         return;
       }
 
-      // Mezclar (Fisher–Yates)
       for (let i = activos.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
         [activos[i], activos[j]] = [activos[j], activos[i]];
       }
 
-      // Partir en pares y rotular Grupo A, B, C...
       const letras = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
       const grupos = [];
       for (let i = 0; i < activos.length; i += 2) {
@@ -570,19 +554,17 @@
         grupos.push({ nombre: nombreGrupo, miembros: [activos[i], activos[i+1]] });
       }
 
-      // Construir HTML bonito
       const gruposHtml = grupos.map(g => {
         const [a,b] = g.miembros;
         return `<div style="margin-bottom:8px"><strong>${g.nombre}:</strong> ${esc(a)} y ${esc(b)}</div>`;
       }).join("");
 
       await update(ref(db, `lobbies/${lobbyCode}`), { groupsHtml: gruposHtml });
-      // Todos lo verán por watchLobby -> renderGroups(...)
     }
 
     if ($("btnGrupos")) {
       $("btnGrupos").onclick = ()=> {
-        if (lobbyCode && !isHost) return; // solo admin
+        if (lobbyCode && !isHost) return;
         generarGrupos();
       };
     }
