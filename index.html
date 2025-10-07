@@ -29,7 +29,7 @@
     .muted{color:var(--muted)}
     .btn{
       appearance:none;border:0;border-radius:12px;padding:12px 14px;font-weight:700;color:var(--text);
-      background:transparent;border:1px solid rgba(255,255,255,.12);cursor:pointer;transition:background .15s,color .15s;font-size:14px;
+      background:transparent;border:1px solid rgba(255,255,255,.12);cursor:pointer;transition:background .15s,color .15s,font-weight .05s;font-size:14px;
     }
     .btn:hover{background:rgba(255,255,255,.08)}
     .btn:active{transform:translateY(1px)}
@@ -63,17 +63,17 @@
     }
     #toast.show{opacity:1; transform:translateX(-50%) translateY(0)}
 
-    /* Chips de jugadores (VERTICAL) */
+    /* Jugadores (lista vertical + score) */
     .players-wrap{
       display:flex;
-      flex-direction:column;  /* ← ahora es vertical */
+      flex-direction:column;
       gap:8px
     }
     .playerChip{
-      display:flex;align-items:center;gap:8px;
-      padding:8px 12px;border:1px solid rgba(255,255,255,.14);
+      display:flex;align-items:center;gap:10px;
+      padding:10px 12px;border:1px solid rgba(255,255,255,.14);
       border-radius:12px;background:rgba(255,255,255,.04);
-      width:100%; /* opcional: ocupar todo el ancho */
+      width:100%;
     }
     .playerChip .avatar{
       width:28px;height:28px;border-radius:50%;
@@ -81,12 +81,24 @@
       font-weight:800;background:#0e1628;border:1px solid rgba(255,255,255,.18);
       font-size:12px;color:var(--text)
     }
-    .playerChip .dot{
-      width:8px;height:8px;border-radius:50%;background:var(--accent2)
+    .playerChip .dot{ width:8px;height:8px;border-radius:50%;background:var(--accent2) }
+    .playerChip .name{ font-weight:700 }
+    .scoreBox{
+      margin-left:auto; display:flex; align-items:center; gap:6px;
+      font-variant-numeric: tabular-nums; user-select:none;
     }
-    .playerChip .name{font-weight:700}
+    .score{
+      min-width:36px; text-align:right; font-weight:800; padding:2px 6px;
+      border:1px solid rgba(255,255,255,.18); border-radius:8px; background:#0e1628;
+    }
+    .scoreBtn{
+      width:28px;height:28px;display:flex;align-items:center;justify-content:center;
+      border:1px solid rgba(255,255,255,.2); background:rgba(255,255,255,.06);
+      border-radius:8px; cursor:pointer; font-weight:900; font-size:14px;
+    }
+    .scoreBtn[disabled]{opacity:.35; cursor:not-allowed}
     .playerChip .role{
-      margin-left:auto; /* empuja la insignia al extremo derecho */
+      margin-left:8px;
       font-size:10px;border:1px solid rgba(255,255,255,.2);
       padding:2px 6px;border-radius:999px;opacity:.9
     }
@@ -197,7 +209,7 @@
     function rng(seed){if(!seed)return Math.random;let n=0;for(let i=0;i<seed.length;i++)n=(n*31+seed.charCodeAt(i))>>>0;return mulberry32(n)}
     const pick=(arr,R)=>arr[Math.floor(R()*arr.length)];
     const esc=s=>s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-    window.esc = esc; /* para usar desde el module */
+    window.esc = esc;
 
     const wrapChar=name=>`<span class="char">${esc(name)}</span>`;
     const wrapVerb=v=>`<span class="verb">${esc(v)}</span>`;
@@ -332,7 +344,7 @@
     generarN('PVAL',1);
   </script>
 
-  <!-- 🔥 Firebase Realtime + LOBBY con overlay, presencia, grupos, salir, transferencia de host y jugadores -->
+  <!-- 🔥 Firebase Realtime + LOBBY con overlay, presencia, grupos, host transfer y jugadores con score -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
     import { getDatabase, ref, onValue, set, update, onDisconnect, push, get, off, remove } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
@@ -429,6 +441,13 @@
         el.style.opacity = disabled ? 0.5 : '';
         el.style.pointerEvents = disabled ? 'none' : '';
       });
+
+      // Deshabilitar/activar botones de score visualmente (delegación más abajo)
+      if (playersList){
+        playersList.querySelectorAll('.scoreBtn').forEach(b=>{
+          b.disabled = !isHost;
+        });
+      }
     }
 
     function renderGroups(groupsHtml){
@@ -437,13 +456,17 @@
       g.innerHTML = groupsHtml || "";
     }
 
-    /* Jugadores conectados (vertical) */
+    /* Utilidades score */
+    const clampScore = (n)=> Math.max(0, Math.min(999, n|0));
+
+    /* Jugadores conectados con score y controles host-only */
     function initials(name){
       if(!name) return "?";
       const parts = String(name).trim().split(/\s+/);
       if(parts.length === 1) return parts[0][0]?.toUpperCase() || "?";
       return (parts[0][0] + parts[parts.length-1][0]).toUpperCase();
     }
+
     function renderPlayers(state){
       if(!playersCard || !playersList) return;
 
@@ -453,6 +476,7 @@
         return {
           id: pid,
           name: (p && p.name) || "Jugador",
+          score: clampScore((p && p.score)!=null ? p.score : 0),
           connected,
           isAdmin: state.hostId === pid
         };
@@ -463,10 +487,17 @@
       }else{
         const escSafe = window.esc || ((s)=>String(s));
         playersList.innerHTML = items.map(x=>`
-          <div class="playerChip" title="${escSafe(x.name)}${x.isAdmin?' • ADMIN':''}">
+          <div class="playerChip" data-id="${x.id}" title="${escSafe(x.name)}${x.isAdmin?' • ADMIN':''}">
             <span class="dot" aria-label="online"></span>
             <span class="avatar">${initials(x.name)}</span>
             <span class="name">${escSafe(x.name)}</span>
+
+            <div class="scoreBox">
+              <button class="scoreBtn" data-action="dec" data-id="${x.id}" ${!isHost?'disabled':''}>−</button>
+              <span class="score" data-id="${x.id}">${String(x.score).padStart(2,'0')}</span>
+              <button class="scoreBtn" data-action="inc" data-id="${x.id}" ${!isHost?'disabled':''}>+</button>
+            </div>
+
             ${x.isAdmin ? `<span class="role">ADMIN</span>` : ``}
           </div>
         `).join("");
@@ -474,6 +505,42 @@
 
       playersCard.style.display = lobbyCode ? 'block' : 'none';
     }
+
+    /* Delegación de eventos para + / − (solo host) */
+    playersList?.addEventListener('click', async (e)=>{
+      const btn = e.target.closest('.scoreBtn');
+      if(!btn) return;
+      if(!isHost) return; // seguridad básica en el cliente
+
+      const pid = btn.getAttribute('data-id');
+      const action = btn.getAttribute('data-action');
+      if(!pid || !action || !lobbyCode) return;
+
+      try{
+        // lee score actual del DOM (rápido) y calcula nuevo
+        const scoreEl = playersList.querySelector(`.score[data-id="${pid}"]`);
+        let current = 0;
+        if(scoreEl){
+          current = parseInt(scoreEl.textContent,10);
+          if(Number.isNaN(current)) current = 0;
+        }else{
+          // fallback: leer de RTDB (menos óptimo pero seguro)
+          const snap = await get(ref(db, `lobbies/${lobbyCode}/players/${pid}/score`));
+          current = clampScore(snap.val() ?? 0);
+        }
+
+        const delta = action === 'inc' ? 1 : -1;
+        const next = clampScore(current + delta);
+
+        // no hagas writes innecesarios
+        if(next === current) return;
+
+        await update(ref(db, `lobbies/${lobbyCode}/players/${pid}`), { score: next });
+      }catch(err){
+        console.warn('No se pudo actualizar el score:', err);
+        if(window.showToast) window.showToast('No se pudo actualizar el puntaje');
+      }
+    });
 
     function watchLobby(code){
       if (lobbyRef && lobbyCallback){
@@ -505,7 +572,6 @@
         if (state.currentOutputHtml && $("salida")) $("salida").innerHTML = state.currentOutputHtml;
         renderGroups(state.groupsHtml);
         renderPlayers(state);
-
         updateHostUI();
       };
       onValue(lobbyRef, lobbyCallback);
