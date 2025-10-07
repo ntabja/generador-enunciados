@@ -159,7 +159,7 @@
       <div id="grupos" class="out" style="margin-top:10px;white-space:pre-wrap"></div>
     </section>
 
-    <!-- NUEVO: Jugadores conectados -->
+    <!-- Jugadores conectados -->
     <section class="card" id="playersCard" style="margin-top:14px; display:none">
       <div class="title">Jugadores conectados</div>
       <div id="playersList" class="players-wrap" style="margin-top:10px"></div>
@@ -190,7 +190,10 @@
     function mulberry32(a){return function(){let t=a+=0x6D2B79F5;t=Math.imul(t^t>>>15,t|1);t^=t+Math.imul(t^t>>>7,t|61);return((t^t>>>14)>>>0)/4294967296}}
     function rng(seed){if(!seed)return Math.random;let n=0;for(let i=0;i<seed.length;i++)n=(n*31+seed.charCodeAt(i))>>>0;return mulberry32(n)}
     const pick=(arr,R)=>arr[Math.floor(R()*arr.length)];
-    const esc=s=>s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    const esc=s=>s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');  // ← sanitizador
+    // Exponer a window para que el script "module" pueda usarlo sin ReferenceError
+    window.esc = esc;
+
     const wrapChar=name=>`<span class="char">${esc(name)}</span>`;
     const wrapVerb=v=>`<span class="verb">${esc(v)}</span>`;
     const wrapAdj=a=>`<span class="adj">${esc(a)}</span>`;
@@ -276,7 +279,7 @@
     byId('btnPVAL').onclick=()=>generarN('PVAL',1);
     byId('btnPV').onclick=()=>generarN('PV',1);
     byId('btnPA').onclick=()=>generarN('PA',1);
-    byId('btnPL').onclick==>generarN('PL',1);
+    byId('btnPL').onclick=()=>generarN('PL',1);   /* ← FIX: antes tenía '==>' */
     byId('btnPAL').onclick=()=>generarN('PAL',1);
     byId('btnPVA').onclick=()=>generarN('PVA',1);
     byId('btnPVL').onclick=()=>generarN('PVL',1);
@@ -324,13 +327,13 @@
     generarN('PVAL',1);
   </script>
 
-  <!-- 🔥 Firebase Realtime + LOBBY con overlay, presencia, grupos, salir y transferencia de host + TOAST admin + JUGADORES -->
+  <!-- 🔥 Firebase Realtime + LOBBY con overlay, presencia, grupos, salir, transferencia de host y jugadores -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
     import { getDatabase, ref, onValue, set, update, onDisconnect, push, get, off, remove } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
     const firebaseConfig = {
-      apiKey: "AIzaSyAHEBnKMHJt9npV6NeHzSjWdJtJBE9EUmwQ",
+      apiKey: "AIzaSyAHEBnKMHJt9npV6NeHzSjWdJtBE9EUmwQ", /* ← RESTAURADO */
       authDomain: "arte-moderno-5ff8a.firebaseapp.com",
       projectId: "arte-moderno-5ff8a",
       storageBucket: "arte-moderno-5ff8a.firebasestorage.app",
@@ -429,7 +432,7 @@
       g.innerHTML = groupsHtml || "";
     }
 
-    /* NUEVO: render de jugadores conectados */
+    /* Jugadores conectados */
     function initials(name){
       if(!name) return "?";
       const parts = String(name).trim().split(/\s+/);
@@ -453,11 +456,12 @@
       if(items.length === 0){
         playersList.innerHTML = `<span class="muted">Nadie conectado aún…</span>`;
       }else{
+        const escSafe = window.esc || ((s)=>String(s));
         playersList.innerHTML = items.map(x=>`
-          <div class="playerChip" title="${x.name}${x.isAdmin?' • ADMIN':''}">
+          <div class="playerChip" title="${escSafe(x.name)}${x.isAdmin?' • ADMIN':''}">
             <span class="dot" aria-label="online"></span>
             <span class="avatar">${initials(x.name)}</span>
-            <span class="name">${esc(x.name)}</span>
+            <span class="name">${escSafe(x.name)}</span>
             ${x.isAdmin ? `<span class="role">ADMIN</span>` : ``}
           </div>
         `).join("");
@@ -467,7 +471,6 @@
     }
 
     function watchLobby(code){
-      // limpiar listener anterior
       if (lobbyRef && lobbyCallback){
         off(lobbyRef, 'value', lobbyCallback);
         lobbyRef = null; lobbyCallback = null;
@@ -496,7 +499,7 @@
 
         if (state.currentOutputHtml && $("salida")) $("salida").innerHTML = state.currentOutputHtml;
         renderGroups(state.groupsHtml);
-        renderPlayers(state);               /* ← NUEVO */
+        renderPlayers(state);  // ← ahora sí, sin ReferenceError
 
         updateHostUI();
       };
@@ -577,12 +580,12 @@
       const g = $("grupos"); if (g) g.innerHTML = "";
       const s = $("salida"); if (s) s.innerHTML = "";
       if (statusEl) statusEl.textContent = "";
-      if (playersList) playersList.innerHTML = "";   /* ← NUEVO: limpia lista */
+      if (playersList) playersList.innerHTML = "";
       isHost = false; prevIsHost = false;
       updateHostUI();
     }
 
-    // Exponer toast global para el otro script
+    // Exponer toast global
     window.showToast = (msg)=>{ const el=document.getElementById('toast'); if(!el) return; el.textContent=msg; el.classList.add('show'); clearTimeout(window.__tT); window.__tT=setTimeout(()=>el.classList.remove('show'),2200); };
 
     // Botones overlay
@@ -674,9 +677,10 @@
         grupos.push({ nombre: nombreGrupo, miembros: [activos[i], activos[i+1]] });
       }
 
+      const escSafe = window.esc || ((s)=>String(s));
       const gruposHtml = grupos.map(g => {
         const [a,b] = g.miembros;
-        return `<div style="margin-bottom:8px"><strong>${g.nombre}:</strong> ${esc(a)} y ${esc(b)}</div>`;
+        return `<div style="margin-bottom:8px"><strong>${g.nombre}:</strong> ${escSafe(a)} y ${escSafe(b)}</div>`;
       }).join("");
 
       await update(ref(db, `lobbies/${lobbyCode}`), { groupsHtml: gruposHtml });
