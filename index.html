@@ -39,7 +39,7 @@
       font-weight:700;color:var(--text);background:transparent;
       border:1px solid rgba(255,255,255,.12);cursor:pointer;
       transition:background .15s,color .15s;
-      font-size:14px; /* tamaño más compacto */
+      font-size:14px;
     }
     .btn:hover{background:rgba(255,255,255,.08)}
     .btn:active{transform:translateY(1px)}
@@ -96,36 +96,49 @@
     .letter-v { color: #ff4d4d; }   /* rojo verbos */
     .letter-a { color: #7CFC00; }   /* verde adjetivos */
     .letter-l { color: #ffe066; }   /* amarillo lugares */
+
+    /* Overlay inicial para crear/unirse a sala */
+    #lobbyOverlay{
+      position:fixed; inset:0; background:rgba(11,16,32,.92);
+      backdrop-filter: blur(8px); display:none; align-items:center; justify-content:center; z-index:1000;
+    }
   </style>
 </head>
 <body>
   <header>
-    <div class="container inline" style="justify-content:space-between">
-      <div class="title">🎨 ARTE MODERNO - Generador de Enunciados <span class="muted">by © 2025 Tabja Games</span></div>
-      <!-- Semilla eliminada -->
+    <div class="container inline" style="justify-content:space-between; gap:12px">
+      <div class="title" style="flex:1; min-width:0">
+        🎨 ARTE MODERNO - Generador de Enunciados
+        <span class="muted">by © 2025 Tabja Games</span>
+      </div>
+      <!-- Badge de sala (se muestra al entrar) -->
+      <span id="roomBadge" class="muted" style="display:none;font-weight:700;padding:4px 10px;border:1px solid rgba(255,255,255,.15);border-radius:999px;">
+        Sala: -----
+      </span>
     </div>
   </header>
 
-  <main class="container" style="padding-top:18px">
-
-    <!-- 🔹 BLOQUE DE LOBBY -->
-    <section class="card" style="margin-bottom:14px">
+  <!-- Overlay de inicio: Crear/Unirse a sala (aparece solo si no hay sala guardada) -->
+  <div id="lobbyOverlay">
+    <section class="card" style="max-width:520px; width:92%; padding:20px">
+      <div class="title" style="margin-bottom:10px">Crear o unirse a una sala</div>
       <div class="inline" style="align-items:flex-end; gap:10px; flex-wrap:wrap">
         <div>
           <label class="muted" for="playerName">Tu nombre</label><br>
-          <input id="playerName" placeholder="Ej: Tabja" style="max-width:160px">
+          <input id="playerName" placeholder="Ej: Tabja" style="max-width:180px">
         </div>
         <div>
           <label class="muted" for="lobbyCodeInput">Código de sala</label><br>
-          <input id="lobbyCodeInput" placeholder="ABCD" style="max-width:120px;text-transform:uppercase">
+          <input id="lobbyCodeInput" placeholder="ABCD2" style="max-width:140px;text-transform:uppercase">
         </div>
         <button class="btn" id="btnCreateLobby">Crear sala</button>
         <button class="btn" id="btnJoinLobby">Unirse</button>
-        <div class="muted" id="lobbyStatus" style="min-width:200px"></div>
       </div>
+      <div class="muted" id="lobbyStatus" style="margin-top:10px; min-height:20px"></div>
     </section>
-    <!-- 🔹 FIN BLOQUE DE LOBBY -->
+  </div>
 
+  <main class="container" style="padding-top:18px">
     <section class="card">
       <div style="display:grid;gap:10px">
         <!-- Fila 1: P, FUSIÓN, EVENTOS, ESCENAS -->
@@ -268,14 +281,14 @@
         const osc = ctx.createOscillator();
         const gain = ctx.createGain();
         osc.type = 'triangle';
-        osc.frequency.value = 320; // tono corto, moderno
+        osc.frequency.value = 320;
         gain.gain.setValueAtTime(0.0001, ctx.currentTime);
         gain.gain.exponentialRampToValueAtTime(0.15, ctx.currentTime + 0.005);
         gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.08);
         osc.connect(gain).connect(ctx.destination);
         osc.start();
         osc.stop(ctx.currentTime + 0.09);
-      }catch(e){ /* silencio si el navegador no soporta */ }
+      }catch(e){ }
     }
 
     byId('btnPVAL').onclick=()=>generarN('PVAL',1);
@@ -291,7 +304,6 @@
     byId('btnEscena').onclick=()=>generarN('ESCENA',1);
     /* Generar 5 y Grupos los maneja Firebase abajo */
 
-    // Reproducir sonido en TODOS los botones (captura temprana)
     (function(){
       const btns = document.querySelectorAll('button');
       btns.forEach(b=> b.addEventListener('click', playClick, {capture:true}));
@@ -330,7 +342,7 @@
     generarN('PVAL',1);
   </script>
 
-  <!-- 🔥 Firebase Realtime + LOBBY con presencia y grupos (sin semilla) -->
+  <!-- 🔥 Firebase Realtime + LOBBY con overlay, presencia y grupos -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
     import { getDatabase, ref, onValue, set, update, onDisconnect, push, get } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
@@ -363,10 +375,27 @@
 
     const $ = (id)=> document.getElementById(id);
     const statusEl = $("lobbyStatus");
+    const badgeEl  = $("roomBadge");
+    const overlayEl = $("lobbyOverlay");
+
+    const LS_CODE_KEY = "am_lobby_code";
 
     function makeCode(){
       const chars="ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
       return Array.from({length:5},()=> chars[Math.floor(Math.random()*chars.length)]).join("");
+    }
+
+    function setLobbyCode(code){
+      lobbyCode = code;
+      localStorage.setItem(LS_CODE_KEY, code);
+      if (badgeEl){ badgeEl.style.display='inline-block'; badgeEl.textContent = `Sala: ${code}`; }
+      if (overlayEl){ overlayEl.style.display='none'; }
+    }
+    function clearLobbyCode(){
+      lobbyCode = null;
+      localStorage.removeItem(LS_CODE_KEY);
+      if (badgeEl){ badgeEl.style.display='none'; badgeEl.textContent = 'Sala: -----'; }
+      if (overlayEl){ overlayEl.style.display='flex'; }
     }
 
     /* Presencia por pestaña */
@@ -413,20 +442,21 @@
       onValue(ref(db, `lobbies/${code}`), (snap)=>{
         const state = snap.val();
         if(!state) return;
-        lobbyCode = code;
+
         isHost = state.hostId === clientId;
 
-        if (statusEl) {
-          let players = 0;
-          if (state.players) {
-            players = Object.values(state.players)
-              .filter(p => p && p.connections && Object.keys(p.connections).length > 0).length;
-          }
-          statusEl.textContent = `Sala: ${code} • ${isHost ? "Eres ADMIN" : "Jugador"} • Conectados: ${players}`;
+        // Mostrar badge siempre
+        if (badgeEl){ badgeEl.style.display='inline-block'; badgeEl.textContent = `Sala: ${code}`; }
+
+        // Conectados = jugadores con al menos 1 conexión activa
+        let players = 0;
+        if (state.players) {
+          players = Object.values(state.players)
+            .filter(p => p && p.connections && Object.keys(p.connections).length > 0).length;
         }
+        if (statusEl) statusEl.textContent = `Sala: ${code} • ${isHost ? "Eres ADMIN" : "Jugador"} • Conectados: ${players}`;
 
         if (state.currentOutputHtml && $("salida")) $("salida").innerHTML = state.currentOutputHtml;
-
         renderGroups(state.groupsHtml);
 
         updateHostUI();
@@ -444,6 +474,7 @@
         createdAt: Date.now()
       };
       await set(ref(db, `lobbies/${code}`), state);
+      setLobbyCode(code);
       watchLobby(code);
       setupPresence(code);
     }
@@ -453,6 +484,7 @@
       if(!code) return alert("Escribe un código de sala");
       const player = { name: name||"Jugador", score: 0, connected: true };
       await update(ref(db, `lobbies/${code}/players/${clientId}`), player);
+      setLobbyCode(code);
       watchLobby(code);
       setupPresence(code);
     }
@@ -465,6 +497,7 @@
       });
     }
 
+    // Botones overlay
     $("btnCreateLobby")?.addEventListener("click", ()=>{
       const name = $("playerName")?.value || "Host";
       createLobby(name);
@@ -578,6 +611,20 @@
         }
       }
     }, true);
+
+    // Al cargar: si ya hay sala guardada, entrar directo; si no, mostrar overlay
+    (function initLobbyOnce(){
+      const saved = localStorage.getItem(LS_CODE_KEY);
+      if(saved){
+        if (overlayEl) overlayEl.style.display = 'none';
+        if (badgeEl){ badgeEl.style.display='inline-block'; badgeEl.textContent = `Sala: ${saved}`; }
+        lobbyCode = saved;
+        watchLobby(saved);
+        setupPresence(saved);
+      }else{
+        if (overlayEl) overlayEl.style.display = 'flex';
+      }
+    })();
   </script>
 
 </body>
