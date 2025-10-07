@@ -103,26 +103,33 @@
   </header>
 
   <main class="container" style="padding-top:18px">
-    <section class="card">
-      <div style="display:grid;gap:10px">
-        <div class="inline">
-          <button class="btn" id="btnP">PERSONAJE</button>
-          <button class="btn" id="btnFusion">FUSIÓN</button>
-          <button class="btn" id="btnPV">P + V</button>
-          <button class="btn" id="btnPA">P + A</button>
-          <button class="btn" id="btnPL">P + L</button>
-          <button class="btn" id="btnPVA">P + V + A</button>
-          <button class="btn" id="btnPAL">P + A + L</button>
-          <button class="btn" id="btnPVL">P + V + L</button>
-          <button class="btn" id="btnPVAL">P + V + A + L</button>
-          <button class="btn" id="btnEvento">EVENTOS</button>
-          <button class="btn" id="btnEscena">ESCENAS</button>
-        </div>
-        <div class="inline">
-          <button class="btn" id="btnGenerar5">Generar 5</button>
-        </div>
-      </div>
-    </section>
+   <section class="card">
+  <div style="display:grid;gap:10px">
+    <!-- Fila 1: P, FUSIÓN, EVENTOS, ESCENAS -->
+    <div class="inline">
+      <button class="btn" id="btnP">PERSONAJE</button>
+      <button class="btn" id="btnFusion">FUSIÓN</button>
+      <button class="btn" id="btnEvento">EVENTOS</button>
+      <button class="btn" id="btnEscena">ESCENAS</button>
+    </div>
+
+    <!-- Fila 2: todos los P+V y parecidos -->
+    <div class="inline">
+      <button class="btn" id="btnPV">P + V</button>
+      <button class="btn" id="btnPA">P + A</button>
+      <button class="btn" id="btnPL">P + L</button>
+      <button class="btn" id="btnPVA">P + V + A</button>
+      <button class="btn" id="btnPAL">P + A + L</button>
+      <button class="btn" id="btnPVL">P + V + L</button>
+      <button class="btn" id="btnPVAL">P + V + A + L</button>
+    </div>
+
+    <!-- Fila 3: Generar 5 (la dejas como estaba) -->
+    <div class="inline">
+      <button class="btn" id="btnGenerar5">Generar 5</button>
+    </div>
+  </div>
+</section>
 
     <section class="card" style="margin-top:14px">
       <div class="title">Salida</div>
