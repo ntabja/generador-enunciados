@@ -71,8 +71,7 @@
       font-size:13px;
       color:var(--muted);
     }
-    /* Colores por tipo de palabra (solo en Salida) */
-    .char{ color:#4cc9f0; }   /* azul claro */
+    .char{ color:#4cc9f0; }
     .verb{ color:var(--verb); }
     .adj{ color:var(--adj); }
     .place{ color:var(--place); }
@@ -90,14 +89,13 @@
       background:rgba(255,255,255,.05);
     }
 
-    /* Letras coloreadas en los botones combinados */
     .btn span { font-weight: bold; }
-    .letter-p { color: #4cc9f0; }   /* azul personajes */
-    .letter-v { color: #ff4d4d; }   /* rojo verbos */
-    .letter-a { color: #7CFC00; }   /* verde adjetivos */
-    .letter-l { color: #ffe066; }   /* amarillo lugares */
+    .letter-p { color: #4cc9f0; }
+    .letter-v { color: #ff4d4d; }
+    .letter-a { color: #7CFC00; }
+    .letter-l { color: #ffe066; }
 
-    /* Overlay inicial para crear/unirse a sala */
+    /* Overlay inicial */
     #lobbyOverlay{
       position:fixed; inset:0; background:rgba(11,16,32,.92);
       backdrop-filter: blur(8px); display:none; align-items:center; justify-content:center; z-index:1000;
@@ -106,19 +104,25 @@
 </head>
 <body>
   <header>
-    <div class="container inline" style="justify-content:space-between; gap:12px">
-      <div class="title" style="flex:1; min-width:0">
-        🎨 ARTE MODERNO - Generador de Enunciados
-        <span class="muted">by © 2025 Tabja Games</span>
+    <div class="container" style="display:flex;flex-direction:column;gap:6px">
+      <div class="inline" style="justify-content:space-between; gap:12px">
+        <div class="title" style="flex:1; min-width:0">
+          🎨 ARTE MODERNO - Generador de Enunciados
+          <span class="muted">by © 2025 Tabja Games</span>
+        </div>
+        <!-- Badge de sala -->
+        <span id="roomBadge" class="muted" style="display:none;font-weight:700;padding:4px 10px;border:1px solid rgba(255,255,255,.15);border-radius:999px;">
+          Sala: -----
+        </span>
       </div>
-      <!-- Badge de sala (se muestra al entrar) -->
-      <span id="roomBadge" class="muted" style="display:none;font-weight:700;padding:4px 10px;border:1px solid rgba(255,255,255,.15);border-radius:999px;">
-        Sala: -----
-      </span>
+      <!-- 🔘 Botón Salir (debajo del código de sala) -->
+      <div id="leaveRow" class="inline" style="display:none;justify-content:flex-end;">
+        <button class="btn" id="btnLeave">Salir de la sala</button>
+      </div>
     </div>
   </header>
 
-  <!-- Overlay de inicio: Crear/Unirse a sala (aparece solo si no hay sala guardada) -->
+  <!-- Overlay de inicio -->
   <div id="lobbyOverlay">
     <section class="card" style="max-width:520px; width:92%; padding:20px">
       <div class="title" style="margin-bottom:10px">Crear o unirse a una sala</div>
@@ -141,38 +145,21 @@
   <main class="container" style="padding-top:18px">
     <section class="card">
       <div style="display:grid;gap:10px">
-        <!-- Fila 1: P, FUSIÓN, EVENTOS, ESCENAS -->
         <div class="inline">
           <button class="btn" id="btnP">PERSONAJE</button>
           <button class="btn" id="btnFusion">FUSIÓN</button>
           <button class="btn" id="btnEvento">EVENTOS</button>
           <button class="btn" id="btnEscena">ESCENAS</button>
         </div>
-        <!-- Fila 2: combinaciones P+ -->
         <div class="inline">
-          <button class="btn" id="btnPV">
-            <span class="letter-p">P</span> + <span class="letter-v">V</span>
-          </button>
-          <button class="btn" id="btnPA">
-            <span class="letter-p">P</span> + <span class="letter-a">A</span>
-          </button>
-          <button class="btn" id="btnPL">
-            <span class="letter-p">P</span> + <span class="letter-l">L</span>
-          </button>
-          <button class="btn" id="btnPVA">
-            <span class="letter-p">P</span> + <span class="letter-v">V</span> + <span class="letter-a">A</span>
-          </button>
-          <button class="btn" id="btnPAL">
-            <span class="letter-p">P</span> + <span class="letter-a">A</span> + <span class="letter-l">L</span>
-          </button>
-          <button class="btn" id="btnPVL">
-            <span class="letter-p">P</span> + <span class="letter-v">V</span> + <span class="letter-l">L</span>
-          </button>
-          <button class="btn" id="btnPVAL">
-            <span class="letter-p">P</span> + <span class="letter-v">V</span> + <span class="letter-a">A</span> + <span class="letter-l">L</span>
-          </button>
+          <button class="btn" id="btnPV"><span class="letter-p">P</span> + <span class="letter-v">V</span></button>
+          <button class="btn" id="btnPA"><span class="letter-p">P</span> + <span class="letter-a">A</span></button>
+          <button class="btn" id="btnPL"><span class="letter-p">P</span> + <span class="letter-l">L</span></button>
+          <button class="btn" id="btnPVA"><span class="letter-p">P</span> + <span class="letter-v">V</span> + <span class="letter-a">A</span></button>
+          <button class="btn" id="btnPAL"><span class="letter-p">P</span> + <span class="letter-a">A</span> + <span class="letter-l">L</span></button>
+          <button class="btn" id="btnPVL"><span class="letter-p">P</span> + <span class="letter-v">V</span> + <span class="letter-l">L</span></button>
+          <button class="btn" id="btnPVAL"><span class="letter-p">P</span> + <span class="letter-v">V</span> + <span class="letter-a">A</span> + <span class="letter-l">L</span></button>
         </div>
-        <!-- Fila 3 -->
         <div class="inline">
           <button class="btn" id="btnGenerar5">Generar 5</button>
           <button class="btn" id="btnGrupos">Generar Grupos</button>
@@ -187,7 +174,6 @@
       <div id="testlog" class="muted" style="margin-top:10px"></div>
     </section>
 
-    <!-- Nueva tarjeta para grupos -->
     <section class="card" style="margin-top:14px">
       <div class="title">Grupos</div>
       <div id="grupos" class="out" style="margin-top:10px;white-space:pre-wrap"></div>
@@ -238,7 +224,7 @@
     const recent=[]; let lastCopyText='';
 
     function generarUno(mode){
-      const R=rng(); // sin semilla
+      const R=rng();
       switch(mode){
         case'PV':return genPV(R);
         case'PA':return genPA(R);
@@ -255,7 +241,7 @@
     }
 
     function generarN(mode,n){
-      const R=rng(); // sin semilla
+      const R=rng();
       const gens={PVAL:genPVAL,PV:genPV,PA:genPA,PL:genPL,PAL:genPAL,PVA:genPVA,PVL:genPVL,FUSION:genFusion,P:genP,EVENTO:genEvento,ESCENA:genEscena};
       const fn=gens[mode]||genPVAL;
       const out=Array.from({length:n},()=>fn(R));
@@ -272,7 +258,6 @@
         : '';
     }
 
-    // --- Sonido UI moderno (WebAudio, sin archivos externos)
     let __uiAudioCtx;
     function playClick(){
       try{
@@ -288,7 +273,7 @@
         osc.connect(gain).connect(ctx.destination);
         osc.start();
         osc.stop(ctx.currentTime + 0.09);
-      }catch(e){ }
+      }catch(e){}
     }
 
     byId('btnPVAL').onclick=()=>generarN('PVAL',1);
@@ -342,12 +327,11 @@
     generarN('PVAL',1);
   </script>
 
-  <!-- 🔥 Firebase Realtime + LOBBY con overlay, presencia y grupos -->
+  <!-- 🔥 Firebase Realtime + LOBBY con overlay, presencia, grupos, salir y transferencia de host -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import { getDatabase, ref, onValue, set, update, onDisconnect, push, get } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+    import { getDatabase, ref, onValue, set, update, onDisconnect, push, get, off, remove } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
-    /* ⛳ Tu config Firebase */
     const firebaseConfig = {
       apiKey: "AIzaSyAHEBnKMHJt9npV6NeHzSjWdJtBE9EUmwQ",
       authDomain: "arte-moderno-5ff8a.firebaseapp.com",
@@ -364,6 +348,8 @@
     let lobbyCode = null;
     let isHost = false;
     let currentConnRef = null;
+    let lobbyRef = null;
+    let lobbyCallback = null;
 
     function getClientId(){
       const k="am_client_id";
@@ -377,6 +363,8 @@
     const statusEl = $("lobbyStatus");
     const badgeEl  = $("roomBadge");
     const overlayEl = $("lobbyOverlay");
+    const leaveRow = $("leaveRow");
+    const btnLeave = $("btnLeave");
 
     const LS_CODE_KEY = "am_lobby_code";
 
@@ -389,12 +377,14 @@
       lobbyCode = code;
       localStorage.setItem(LS_CODE_KEY, code);
       if (badgeEl){ badgeEl.style.display='inline-block'; badgeEl.textContent = `Sala: ${code}`; }
+      if (leaveRow){ leaveRow.style.display='flex'; }
       if (overlayEl){ overlayEl.style.display='none'; }
     }
     function clearLobbyCode(){
       lobbyCode = null;
       localStorage.removeItem(LS_CODE_KEY);
       if (badgeEl){ badgeEl.style.display='none'; badgeEl.textContent = 'Sala: -----'; }
+      if (leaveRow){ leaveRow.style.display='none'; }
       if (overlayEl){ overlayEl.style.display='flex'; }
     }
 
@@ -439,16 +429,21 @@
     }
 
     function watchLobby(code){
-      onValue(ref(db, `lobbies/${code}`), (snap)=>{
+      // Limpia listener previo si existe
+      if (lobbyRef && lobbyCallback){
+        off(lobbyRef, 'value', lobbyCallback);
+        lobbyRef = null; lobbyCallback = null;
+      }
+      lobbyRef = ref(db, `lobbies/${code}`);
+      lobbyCallback = (snap)=>{
         const state = snap.val();
         if(!state) return;
 
         isHost = state.hostId === clientId;
 
-        // Mostrar badge siempre
         if (badgeEl){ badgeEl.style.display='inline-block'; badgeEl.textContent = `Sala: ${code}`; }
+        if (leaveRow){ leaveRow.style.display='flex'; }
 
-        // Conectados = jugadores con al menos 1 conexión activa
         let players = 0;
         if (state.players) {
           players = Object.values(state.players)
@@ -460,7 +455,8 @@
         renderGroups(state.groupsHtml);
 
         updateHostUI();
-      });
+      };
+      onValue(lobbyRef, lobbyCallback);
     }
 
     async function createLobby(name){
@@ -497,6 +493,58 @@
       });
     }
 
+    // 👉 Salir de la sala con transferencia automática de host
+    async function leaveLobby(){
+      if (!lobbyCode) return;
+      const code = lobbyCode;
+
+      try{
+        // 1) Si soy host, buscar sucesor activo
+        if (isHost) {
+          const playersSnap = await get(ref(db, `lobbies/${code}/players`));
+          const playersObj = playersSnap.val() || {};
+          const candidatos = Object.entries(playersObj)
+            .filter(([pid, p]) => pid !== clientId && p && p.connections && Object.keys(p.connections).length > 0)
+            .map(([pid]) => pid);
+
+          if (candidatos.length > 0) {
+            const nuevoHostId = candidatos[0]; // primer activo
+            await update(ref(db, `lobbies/${code}`), { hostId: nuevoHostId });
+          } else {
+            // nadie queda: borro la sala completa y salgo
+            try { await remove(ref(db, `lobbies/${code}`)); } catch(e){}
+          }
+        }
+
+        // 2) Detener listener del lobby
+        if (lobbyRef && lobbyCallback){
+          off(lobbyRef, 'value', lobbyCallback);
+          lobbyRef = null; lobbyCallback = null;
+        }
+
+        // 3) Cancelar onDisconnect y borrar conexión activa
+        if (currentConnRef){
+          try{ onDisconnect(currentConnRef).cancel(); }catch(e){}
+          try{ await remove(currentConnRef); }catch(e){}
+          currentConnRef = null;
+        }
+
+        // 4) Quitar mi nodo de jugador (si aún existe la sala)
+        try{ await remove(ref(db, `lobbies/${code}/players/${clientId}`)); }catch(e){}
+
+      }catch(e){
+        console.warn('Error al salir de la sala:', e);
+      }
+
+      // 5) Reset UI/localStorage y mostrar overlay
+      clearLobbyCode();
+      const g = $("grupos"); if (g) g.innerHTML = "";
+      const s = $("salida"); if (s) s.innerHTML = "";
+      if (statusEl) statusEl.textContent = "";
+      isHost = false;
+      updateHostUI();
+    }
+
     // Botones overlay
     $("btnCreateLobby")?.addEventListener("click", ()=>{
       const name = $("playerName")?.value || "Host";
@@ -508,7 +556,10 @@
       joinLobby(code, name);
     });
 
-    // Enrutamos generadores con control de rol
+    // Botón salir
+    $("btnLeave")?.addEventListener("click", leaveLobby);
+
+    // Generadores con control de rol
     const MAP = {
       btnPVAL:'PVAL', btnPV:'PV', btnPA:'PA', btnPL:'PL',
       btnPVA:'PVA', btnPAL:'PAL', btnPVL:'PVL',
@@ -516,7 +567,7 @@
     };
 
     function genOne(mode){
-      const R = (window.rng ? window.rng() : Math.random); // sin semilla
+      const R = (window.rng ? window.rng() : Math.random);
       const gens = {
         PVAL: window.genPVAL, PV: window.genPV, PA: window.genPA, PL: window.genPL,
         PAL: window.genPAL, PVA: window.genPVA, PVL: window.genPVL,
@@ -544,7 +595,6 @@
       }
     });
 
-    // Generar 5 controlado por rol
     if ($("btnGenerar5")) {
       $("btnGenerar5").onclick = ()=>{
         if (lobbyCode && !isHost) return;
@@ -557,7 +607,6 @@
       };
     }
 
-    // Generar Grupos (solo host)
     async function generarGrupos(){
       if (!lobbyCode || !isHost) return;
 
@@ -602,7 +651,6 @@
       };
     }
 
-    // Bloqueo de atajos de teclado para no-host (Ctrl/⌘ + 1..6)
     document.addEventListener('keydown', (e)=>{
       if ((e.metaKey || e.ctrlKey) && ['1','2','3','4','5','6'].includes(e.key)) {
         if (lobbyCode && !isHost) {
@@ -612,12 +660,13 @@
       }
     }, true);
 
-    // Al cargar: si ya hay sala guardada, entrar directo; si no, mostrar overlay
+    // Init: entrar si hay sala guardada; si no, mostrar overlay
     (function initLobbyOnce(){
       const saved = localStorage.getItem(LS_CODE_KEY);
       if(saved){
         if (overlayEl) overlayEl.style.display = 'none';
         if (badgeEl){ badgeEl.style.display='inline-block'; badgeEl.textContent = `Sala: ${saved}`; }
+        if (leaveRow){ leaveRow.style.display='flex'; }
         lobbyCode = saved;
         watchLobby(saved);
         setupPresence(saved);
