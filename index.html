@@ -165,6 +165,7 @@
         <!-- Fila 3 -->
         <div class="inline">
           <button class="btn" id="btnGenerar5">Generar 5</button>
+          <button class="btn" id="btnGrupos">Generar Grupos</button>
         </div>
       </div>
     </section>
@@ -174,6 +175,12 @@
       <div id="salida" class="out" style="margin-top:10px;white-space:pre-wrap"></div>
       <div id="historial" style="margin-top:10px"></div>
       <div id="testlog" class="muted" style="margin-top:10px"></div>
+    </section>
+
+    <!-- Nueva tarjeta para grupos -->
+    <section class="card" style="margin-top:14px">
+      <div class="title">Grupos</div>
+      <div id="grupos" class="out" style="margin-top:10px;white-space:pre-wrap"></div>
     </section>
   </main>
 
@@ -285,7 +292,7 @@
     byId('btnP').onclick=()=>generarN('P',1);
     byId('btnEvento').onclick=()=>generarN('EVENTO',1);
     byId('btnEscena').onclick=()=>generarN('ESCENA',1);
-    /* IMPORTANTE: no damos handler aquí a Generar 5; lo controlará Firebase abajo */
+    /* IMPORTANTE: no damos handler aquí a Generar 5 ni Grupos; lo controla Firebase abajo */
 
     // Reproducir sonido en TODOS los botones (captura temprana)
     (function(){
@@ -326,10 +333,10 @@
     generarN('PVAL',1);
   </script>
 
-  <!-- 🔥 Firebase Realtime + LOBBY con presencia real -->
+  <!-- 🔥 Firebase Realtime + LOBBY con presencia y grupos -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import { getDatabase, ref, onValue, set, update, onDisconnect, push } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+    import { getDatabase, ref, onValue, set, update, onDisconnect, push, get } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
     /* ⛳ Reemplaza por TU config real si aún no lo hiciste */
     const firebaseConfig = {
@@ -369,7 +376,7 @@
     function setupPresence(code){
       if (!code) return;
 
-      // Si cambiaste de sala, cancela onDisconnect anterior
+      // Si cambias de sala, cancela onDisconnect anterior
       if (currentConnRef) { try { onDisconnect(currentConnRef).cancel(); } catch(e){} currentConnRef = null; }
 
       const infoRef = ref(db, ".info/connected");
@@ -390,7 +397,7 @@
       const ids = [
         'btnP','btnFusion','btnEvento','btnEscena',
         'btnPV','btnPA','btnPL','btnPVA','btnPAL','btnPVL','btnPVAL',
-        'btnGenerar5'
+        'btnGenerar5','btnGrupos'
       ];
       const disabled = (lobbyCode && !isHost);
       ids.forEach(id=>{
@@ -400,6 +407,12 @@
         el.style.opacity = disabled ? 0.5 : '';
         el.style.pointerEvents = disabled ? 'none' : '';
       });
+    }
+
+    function renderGroups(groupsHtml){
+      const g = $("grupos");
+      if (!g) return;
+      g.innerHTML = groupsHtml || "";
     }
 
     function watchLobby(code){
@@ -422,6 +435,9 @@
         if (state.seed != null && $("seed")) $("seed").value = state.seed;
         if (state.currentOutputHtml && $("salida")) $("salida").innerHTML = state.currentOutputHtml;
 
+        // 💡 Grupos visibles en tiempo real
+        renderGroups(state.groupsHtml);
+
         updateHostUI(); // bloquear/permitir según rol
       });
     }
@@ -433,12 +449,13 @@
         seed: ($("seed")?.value||""),
         currentOutputHtml: "",
         currentOutputText: "",
+        groupsHtml: "",
         players: { [clientId]: { name: name||"Host", score: 0, connected: true } },
         createdAt: Date.now()
       };
       await set(ref(db, `lobbies/${code}`), state);
       watchLobby(code);
-      setupPresence(code); // 👈 presencia
+      setupPresence(code); // presencia
     }
 
     async function joinLobby(code, name){
@@ -447,7 +464,7 @@
       const player = { name: name||"Jugador", score: 0, connected: true };
       await update(ref(db, `lobbies/${code}/players/${clientId}`), player);
       watchLobby(code);
-      setupPresence(code); // 👈 presencia
+      setupPresence(code); // presencia
     }
 
     async function publishOutput(html, text){
@@ -506,7 +523,7 @@
       }
     });
 
-    // Generar 5 controlado por rol (sobrescribe cualquier handler previo)
+    // Generar 5 controlado por rol
     if ($("btnGenerar5")) {
       $("btnGenerar5").onclick = ()=>{
         if (lobbyCode && !isHost) return; // bloqueado para no-host
@@ -516,6 +533,57 @@
         const text = out.map(o=>o.text).join("\n");
         if (lobbyCode && isHost) publishOutput(html, text);
         else $("salida").innerHTML = html;
+      };
+    }
+
+    // ➕ Generar Grupos (solo host) — visible para todos
+    async function generarGrupos(){
+      if (!lobbyCode || !isHost) return;
+
+      // Leer jugadores actuales del lobby
+      const snap = await get(ref(db, `lobbies/${lobbyCode}/players`));
+      const playersObj = snap.val() || {};
+
+      // Filtrar SOLO conectados (>=1 conexión)
+      const activos = Object.values(playersObj)
+        .filter(p => p && p.name)
+        .filter(p => p.connections && Object.keys(p.connections).length > 0)
+        .map(p => p.name);
+
+      if (activos.length < 2 || activos.length % 2 !== 0) {
+        alert("Agrega o quita un jugador para formar grupos parejos");
+        return;
+      }
+
+      // Mezclar (Fisher–Yates)
+      for (let i = activos.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [activos[i], activos[j]] = [activos[j], activos[i]];
+      }
+
+      // Partir en pares y rotular Grupo A, B, C...
+      const letras = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+      const grupos = [];
+      for (let i = 0; i < activos.length; i += 2) {
+        const idx = i / 2;
+        const nombreGrupo = `Grupo ${letras[idx] || (idx+1)}`;
+        grupos.push({ nombre: nombreGrupo, miembros: [activos[i], activos[i+1]] });
+      }
+
+      // Construir HTML bonito
+      const gruposHtml = grupos.map(g => {
+        const [a,b] = g.miembros;
+        return `<div style="margin-bottom:8px"><strong>${g.nombre}:</strong> ${esc(a)} y ${esc(b)}</div>`;
+      }).join("");
+
+      await update(ref(db, `lobbies/${lobbyCode}`), { groupsHtml: gruposHtml });
+      // Todos lo verán por watchLobby -> renderGroups(...)
+    }
+
+    if ($("btnGrupos")) {
+      $("btnGrupos").onclick = ()=> {
+        if (lobbyCode && !isHost) return; // solo admin
+        generarGrupos();
       };
     }
 
