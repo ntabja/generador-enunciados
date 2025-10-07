@@ -62,6 +62,28 @@
       opacity:0; transition:opacity .25s, transform .25s; z-index:1200; pointer-events:none; font-weight:700;
     }
     #toast.show{opacity:1; transform:translateX(-50%) translateY(0)}
+
+    /* Chips de jugadores */
+    .players-wrap{display:flex;flex-wrap:wrap;gap:8px}
+    .playerChip{
+      display:flex;align-items:center;gap:8px;
+      padding:6px 10px;border:1px solid rgba(255,255,255,.14);
+      border-radius:999px;background:rgba(255,255,255,.04)
+    }
+    .playerChip .avatar{
+      width:26px;height:26px;border-radius:50%;
+      display:flex;align-items:center;justify-content:center;
+      font-weight:800;background:#0e1628;border:1px solid rgba(255,255,255,.18);
+      font-size:12px;color:var(--text)
+    }
+    .playerChip .dot{
+      width:8px;height:8px;border-radius:50%;background:var(--accent2)
+    }
+    .playerChip .name{font-weight:700}
+    .playerChip .role{
+      font-size:10px;border:1px solid rgba(255,255,255,.2);
+      padding:2px 6px;border-radius:999px;opacity:.9
+    }
   </style>
 </head>
 <body>
@@ -135,6 +157,12 @@
     <section class="card" style="margin-top:14px">
       <div class="title">Grupos</div>
       <div id="grupos" class="out" style="margin-top:10px;white-space:pre-wrap"></div>
+    </section>
+
+    <!-- NUEVO: Jugadores conectados -->
+    <section class="card" id="playersCard" style="margin-top:14px; display:none">
+      <div class="title">Jugadores conectados</div>
+      <div id="playersList" class="players-wrap" style="margin-top:10px"></div>
     </section>
   </main>
 
@@ -248,7 +276,7 @@
     byId('btnPVAL').onclick=()=>generarN('PVAL',1);
     byId('btnPV').onclick=()=>generarN('PV',1);
     byId('btnPA').onclick=()=>generarN('PA',1);
-    byId('btnPL').onclick=()=>generarN('PL',1);
+    byId('btnPL').onclick==>generarN('PL',1);
     byId('btnPAL').onclick=()=>generarN('PAL',1);
     byId('btnPVA').onclick=()=>generarN('PVA',1);
     byId('btnPVL').onclick=()=>generarN('PVL',1);
@@ -296,13 +324,13 @@
     generarN('PVAL',1);
   </script>
 
-  <!-- 🔥 Firebase Realtime + LOBBY con overlay, presencia, grupos, salir y transferencia de host + TOAST admin -->
+  <!-- 🔥 Firebase Realtime + LOBBY con overlay, presencia, grupos, salir y transferencia de host + TOAST admin + JUGADORES -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
     import { getDatabase, ref, onValue, set, update, onDisconnect, push, get, off, remove } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
     const firebaseConfig = {
-      apiKey: "AIzaSyAHEBnKMHJt9npV6NeHzSjWdJtBE9EUmwQ",
+      apiKey: "AIzaSyAHEBnKMHJt9npV6NeHzSjWdJtJBE9EUmwQ",
       authDomain: "arte-moderno-5ff8a.firebaseapp.com",
       projectId: "arte-moderno-5ff8a",
       storageBucket: "arte-moderno-5ff8a.firebasestorage.app",
@@ -316,7 +344,7 @@
 
     let lobbyCode = null;
     let isHost = false;
-    let prevIsHost = false; // ← para detectar cambio
+    let prevIsHost = false;
     let currentConnRef = null;
     let lobbyRef = null;
     let lobbyCallback = null;
@@ -334,6 +362,8 @@
     const badgeEl  = $("roomBadge");
     const overlayEl = $("lobbyOverlay");
     const leaveRow = $("leaveRow");
+    const playersCard = $("playersCard");
+    const playersList = $("playersList");
 
     const LS_CODE_KEY = "am_lobby_code";
 
@@ -348,6 +378,7 @@
       if (badgeEl){ badgeEl.style.display='inline-block'; badgeEl.textContent = `Sala: ${code}`; }
       if (leaveRow){ leaveRow.style.display='flex'; }
       if (overlayEl){ overlayEl.style.display='none'; }
+      if (playersCard){ playersCard.style.display='block'; }
     }
     function clearLobbyCode(){
       lobbyCode = null;
@@ -355,6 +386,7 @@
       if (badgeEl){ badgeEl.style.display='none'; badgeEl.textContent = 'Sala: -----'; }
       if (leaveRow){ leaveRow.style.display='none'; }
       if (overlayEl){ overlayEl.style.display='flex'; }
+      if (playersCard){ playersCard.style.display='none'; }
     }
 
     /* Presencia por pestaña */
@@ -397,6 +429,43 @@
       g.innerHTML = groupsHtml || "";
     }
 
+    /* NUEVO: render de jugadores conectados */
+    function initials(name){
+      if(!name) return "?";
+      const parts = String(name).trim().split(/\s+/);
+      if(parts.length === 1) return parts[0][0]?.toUpperCase() || "?";
+      return (parts[0][0] + parts[parts.length-1][0]).toUpperCase();
+    }
+    function renderPlayers(state){
+      if(!playersCard || !playersList) return;
+
+      const playersObj = state.players || {};
+      const items = Object.entries(playersObj).map(([pid,p])=>{
+        const connected = !!(p && p.connections && Object.keys(p.connections).length > 0);
+        return {
+          id: pid,
+          name: (p && p.name) || "Jugador",
+          connected,
+          isAdmin: state.hostId === pid
+        };
+      }).filter(x=>x.connected);
+
+      if(items.length === 0){
+        playersList.innerHTML = `<span class="muted">Nadie conectado aún…</span>`;
+      }else{
+        playersList.innerHTML = items.map(x=>`
+          <div class="playerChip" title="${x.name}${x.isAdmin?' • ADMIN':''}">
+            <span class="dot" aria-label="online"></span>
+            <span class="avatar">${initials(x.name)}</span>
+            <span class="name">${esc(x.name)}</span>
+            ${x.isAdmin ? `<span class="role">ADMIN</span>` : ``}
+          </div>
+        `).join("");
+      }
+
+      playersCard.style.display = lobbyCode ? 'block' : 'none';
+    }
+
     function watchLobby(code){
       // limpiar listener anterior
       if (lobbyRef && lobbyCallback){
@@ -408,10 +477,9 @@
         const state = snap.val();
         if(!state) return;
 
-        prevIsHost = isHost;                 // ← estado previo
-        isHost = state.hostId === clientId;  // ← estado nuevo
+        prevIsHost = isHost;
+        isHost = state.hostId === clientId;
 
-        // si antes no era host y ahora sí → toast
         if (!prevIsHost && isHost && window.showToast) {
           window.showToast("Ahora eres ADMIN");
         }
@@ -428,6 +496,7 @@
 
         if (state.currentOutputHtml && $("salida")) $("salida").innerHTML = state.currentOutputHtml;
         renderGroups(state.groupsHtml);
+        renderPlayers(state);               /* ← NUEVO */
 
         updateHostUI();
       };
@@ -508,6 +577,7 @@
       const g = $("grupos"); if (g) g.innerHTML = "";
       const s = $("salida"); if (s) s.innerHTML = "";
       if (statusEl) statusEl.textContent = "";
+      if (playersList) playersList.innerHTML = "";   /* ← NUEVO: limpia lista */
       isHost = false; prevIsHost = false;
       updateHostUI();
     }
@@ -636,10 +706,12 @@
         if (badgeEl){ badgeEl.style.display='inline-block'; badgeEl.textContent = `Sala: ${saved}`; }
         if (leaveRow){ leaveRow.style.display='flex'; }
         lobbyCode = saved;
+        if (playersCard){ playersCard.style.display='block'; }
         watchLobby(saved);
         setupPresence(saved);
       }else{
         if (overlayEl) overlayEl.style.display = 'flex';
+        if (playersCard){ playersCard.style.display='none'; }
       }
     })();
   </script>
