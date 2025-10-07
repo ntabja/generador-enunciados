@@ -285,7 +285,7 @@
     byId('btnP').onclick=()=>generarN('P',1);
     byId('btnEvento').onclick=()=>generarN('EVENTO',1);
     byId('btnEscena').onclick=()=>generarN('ESCENA',1);
-    byId('btnGenerar5').onclick=()=>generarN('PVAL',5);
+    /* IMPORTANTE: no damos handler aquí a Generar 5; lo controlará Firebase abajo */
 
     // Reproducir sonido en TODOS los botones (captura temprana)
     (function(){
@@ -326,168 +326,180 @@
     generarN('PVAL',1);
   </script>
 
-  <!-- 🔜 En el siguiente paso pegamos aquí el script de Firebase (el que te preparé), justo ANTES de cerrar el body -->
-  <!-- 🔥 Firebase Realtime + LOBBY (pégalo al final, antes de </body>) -->
-<script type="module">
-  /***** 1) SDKs de Firebase *****/
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-  import { getDatabase, ref, onValue, set, update } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+  <!-- 🔥 Firebase Realtime + LOBBY (control de roles y bloqueo robusto) -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getDatabase, ref, onValue, set, update } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
-  /***** 2) TU CONFIG DE FIREBASE (reemplaza esto con tu snippet real) *****/
-  const firebaseConfig = {
-    apiKey: "AIzaSyAHEBnKMHJt9npV6NeHzSjWdJtBE9EUmwQ",
-    authDomain: "arte-moderno-5ff8a.firebaseapp.com",
-    projectId: "arte-moderno-5ff8a",
-    storageBucket: "arte-moderno-5ff8a.firebasestorage.app",
-    messagingSenderId: "478321511301",
-    appId: "1:478321511301:web:6b46294944397c0ce952ec",
-    measurementId: "G-BP2SKW1881"
-  };
+    /* ⛳ Reemplaza por TU config real si aún no lo hiciste */
+    const firebaseConfig = {
+      apiKey: "AIzaSyAHEBnKMHJt9npV6NeHzSjWdJtBE9EUmwQ",
+      authDomain: "arte-moderno-5ff8a.firebaseapp.com",
+      projectId: "arte-moderno-5ff8a",
+      storageBucket: "arte-moderno-5ff8a.firebasestorage.app",
+      messagingSenderId: "478321511301",
+      appId: "1:478321511301:web:6b46294944397c0ce952ec",
+      measurementId: "G-BP2SKW1881"
+    };
 
-  /***** 3) Inicializar Firebase *****/
-  const appFB = initializeApp(firebaseConfig);
-  const db = getDatabase(appFB);
+    const appFB = initializeApp(firebaseConfig);
+    const db = getDatabase(appFB);
 
-  /***** 4) Estado local del lobby *****/
-  let lobbyCode = null;
-  let isHost = false;
+    let lobbyCode = null;
+    let isHost = false;
 
-  // ID único por navegador (persistente)
-  function getClientId(){
-    const k="am_client_id";
-    let id=localStorage.getItem(k);
-    if(!id){ id = Math.random().toString(36).slice(2); localStorage.setItem(k,id); }
-    return id;
-  }
-  const clientId = getClientId();
+    function getClientId(){
+      const k="am_client_id";
+      let id=localStorage.getItem(k);
+      if(!id){ id = Math.random().toString(36).slice(2); localStorage.setItem(k,id); }
+      return id;
+    }
+    const clientId = getClientId();
 
-  // Helpers DOM
-  const $ = (id)=> document.getElementById(id);
-  const statusEl = $("lobbyStatus");
+    const $ = (id)=> document.getElementById(id);
+    const statusEl = $("lobbyStatus");
 
-  // Código tipo ABCD2 (sin confusos)
-  function makeCode(){
-    const chars="ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-    return Array.from({length:5},()=> chars[Math.floor(Math.random()*chars.length)]).join("");
-  }
+    function makeCode(){
+      const chars="ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+      return Array.from({length:5},()=> chars[Math.floor(Math.random()*chars.length)]).join("");
+    }
 
-  /***** 5) Escuchar estado del lobby y sincronizar UI *****/
-  function watchLobby(code){
-    onValue(ref(db, `lobbies/${code}`), (snap)=>{
-      const state = snap.val();
-      if(!state) return;
-      lobbyCode = code;
-      isHost = state.hostId === clientId;
+    function updateHostUI(){
+      const ids = [
+        'btnP','btnFusion','btnEvento','btnEscena',
+        'btnPV','btnPA','btnPL','btnPVA','btnPAL','btnPVL','btnPVAL',
+        'btnGenerar5'
+      ];
+      const disabled = (lobbyCode && !isHost);
+      ids.forEach(id=>{
+        const el = $(id);
+        if(!el) return;
+        el.disabled = disabled;
+        el.style.opacity = disabled ? 0.5 : '';
+        el.style.pointerEvents = disabled ? 'none' : '';
+      });
+    }
 
-      // Estado arriba
-      if (statusEl) {
-        const players = state.players ? Object.keys(state.players).length : 0;
-        statusEl.textContent = `Sala: ${code} • ${isHost ? "Eres ADMIN" : "Jugador"} • Conectados: ${players}`;
+    function watchLobby(code){
+      onValue(ref(db, `lobbies/${code}`), (snap)=>{
+        const state = snap.val();
+        if(!state) return;
+        lobbyCode = code;
+        isHost = state.hostId === clientId;
+
+        if (statusEl) {
+          const players = state.players ? Object.keys(state.players).length : 0;
+          statusEl.textContent = `Sala: ${code} • ${isHost ? "Eres ADMIN" : "Jugador"} • Conectados: ${players}`;
+        }
+
+        if (state.seed != null && $("seed")) $("seed").value = state.seed;
+        if (state.currentOutputHtml && $("salida")) $("salida").innerHTML = state.currentOutputHtml;
+
+        updateHostUI(); // <- bloquear/permitir según rol
+      });
+    }
+
+    async function createLobby(name){
+      const code = makeCode();
+      const state = {
+        hostId: clientId,
+        seed: ($("seed")?.value||""),
+        currentOutputHtml: "",
+        currentOutputText: "",
+        players: { [clientId]: { name: name||"Host", score: 0, connected: true } },
+        createdAt: Date.now()
+      };
+      await set(ref(db, `lobbies/${code}`), state);
+      watchLobby(code);
+    }
+
+    async function joinLobby(code, name){
+      code = (code||"").toUpperCase().trim();
+      if(!code) return alert("Escribe un código de sala");
+      const player = { name: name||"Jugador", score: 0, connected: true };
+      await update(ref(db, `lobbies/${code}/players/${clientId}`), player);
+      watchLobby(code);
+    }
+
+    async function publishOutput(html, text){
+      if(!lobbyCode || !isHost) return;
+      await update(ref(db, `lobbies/${lobbyCode}`), {
+        seed: ($("seed")?.value||""),
+        currentOutputHtml: html,
+        currentOutputText: text
+      });
+    }
+
+    $("btnCreateLobby")?.addEventListener("click", ()=>{
+      const name = $("playerName")?.value || "Host";
+      createLobby(name);
+    });
+    $("btnJoinLobby")?.addEventListener("click", ()=>{
+      const name = $("playerName")?.value || "Jugador";
+      const code = $("lobbyCodeInput")?.value;
+      joinLobby(code, name);
+    });
+
+    // --- Enrutamos TODOS los generadores por una sola función con control de rol ---
+    const MAP = {
+      btnPVAL:'PVAL', btnPV:'PV', btnPA:'PA', btnPL:'PL',
+      btnPVA:'PVA', btnPAL:'PAL', btnPVL:'PVL',
+      btnFusion:'FUSION', btnP:'P', btnEvento:'EVENTO', btnEscena:'ESCENA'
+    };
+
+    function genOne(mode){
+      const R = window.rng?.(($("seed")?.value||"").trim()) || Math.random;
+      const gens = {
+        PVAL: window.genPVAL, PV: window.genPV, PA: window.genPA, PL: window.genPL,
+        PAL: window.genPAL, PVA: window.genPVA, PVL: window.genPVL,
+        FUSION: window.genFusion, P: window.genP, EVENTO: window.genEvento, ESCENA: window.genEscena
+      };
+      const fn = gens[mode] || gens["PVAL"];
+      return fn(R);
+    }
+
+    function handleGenerate(mode){
+      if(lobbyCode){
+        if(!isHost) return; // solo admin
+        const { html, text } = genOne(mode);
+        publishOutput(html, text);
+      }else{
+        const { html } = genOne(mode);
+        $("salida").innerHTML = html;
       }
+    }
 
-      // Semilla compartida
-      if (state.seed != null && $("seed")) $("seed").value = state.seed;
-
-      // Salida sincronizada
-      if (state.currentOutputHtml && $("salida")) {
-        $("salida").innerHTML = state.currentOutputHtml;
+    // Sobrescribimos handlers .onclick (no addEventListener) para evitar duplicados
+    Object.entries(MAP).forEach(([id,mode])=>{
+      const btn = $(id);
+      if(btn){
+        btn.onclick = ()=> handleGenerate(mode);
       }
     });
-  }
 
-  /***** 6) Crear/Unirse *****/
-  async function createLobby(name){
-    const code = makeCode();
-    const state = {
-      hostId: clientId,
-      seed: ($("seed")?.value||""),
-      currentOutputHtml: "",
-      currentOutputText: "",
-      players: { [clientId]: { name: name||"Host", score: 0, connected: true } },
-      createdAt: Date.now()
-    };
-    await set(ref(db, `lobbies/${code}`), state);
-    watchLobby(code);
-  }
-
-  async function joinLobby(code, name){
-    code = (code||"").toUpperCase().trim();
-    if(!code) return alert("Escribe un código de sala");
-    const player = { name: name||"Jugador", score: 0, connected: true };
-    await update(ref(db, `lobbies/${code}/players/${clientId}`), player);
-    watchLobby(code);
-  }
-
-  /***** 7) Publicar salida (solo ADMIN) *****/
-  async function publishOutput(html, text){
-    if(!lobbyCode || !isHost) return;
-    await update(ref(db, `lobbies/${lobbyCode}`), {
-      seed: ($("seed")?.value||""),
-      currentOutputHtml: html,
-      currentOutputText: text
-    });
-  }
-
-  /***** 8) Botones de Lobby *****/
-  $("btnCreateLobby")?.addEventListener("click", ()=>{
-    const name = $("playerName")?.value || "Host";
-    createLobby(name);
-  });
-  $("btnJoinLobby")?.addEventListener("click", ()=>{
-    const name = $("playerName")?.value || "Jugador";
-    const code = $("lobbyCodeInput")?.value;
-    joinLobby(code, name);
-  });
-
-  /***** 9) Integrar con tus generadores existentes *****/
-  // Usa las funciones ya definidas en TU script (genPVAL, genPV, etc.)
-  const MAP = {
-    btnPVAL:'PVAL', btnPV:'PV', btnPA:'PA', btnPL:'PL',
-    btnPVA:'PVA', btnPAL:'PAL', btnPVL:'PVL',
-    btnFusion:'FUSION', btnP:'P', btnEvento:'EVENTO', btnEscena:'ESCENA'
-  };
-
-  function genOne(mode){
-    const R = window.rng?.(($("seed")?.value||"").trim()) || Math.random;
-    const gens = {
-      PVAL: window.genPVAL, PV: window.genPV, PA: window.genPA, PL: window.genPL,
-      PAL: window.genPAL, PVA: window.genPVA, PVL: window.genPVL,
-      FUSION: window.genFusion, P: window.genP, EVENTO: window.genEvento, ESCENA: window.genEscena
-    };
-    const fn = gens[mode] || gens["PVAL"];
-    return fn(R);
-  }
-
-  function handleGenerate(mode){
-    if(lobbyCode){
-      if(!isHost) return; // en lobby, solo ADMIN genera
-      const { html, text } = genOne(mode);
-      publishOutput(html, text);
-    }else{
-      // Sin lobby → comportamiento local normal
-      const { html } = genOne(mode);
-      $("salida").innerHTML = html;
+    // Generar 5 controlado por rol (sobrescribe cualquier handler previo)
+    if ($("btnGenerar5")) {
+      $("btnGenerar5").onclick = ()=>{
+        if (lobbyCode && !isHost) return; // bloqueado para no-host
+        const R = window.rng?.(($("seed")?.value||"").trim()) || Math.random;
+        const out = Array.from({length:5}, ()=> window.genPVAL(R));
+        const html = out.map(o=>o.html).join("<br>");
+        const text = out.map(o=>o.text).join("\n");
+        if (lobbyCode && isHost) publishOutput(html, text);
+        else $("salida").innerHTML = html;
+      };
     }
-  }
 
-  // Reasigna los clicks a esta lógica (sin romper tu código)
-  Object.entries(MAP).forEach(([id,mode])=>{
-    const btn = $(id);
-    if(btn){
-      btn.onclick = ()=> handleGenerate(mode);
-    }
-  });
+    // Bloqueo de atajos de teclado para no-host (Ctrl/⌘ + 1..6)
+    document.addEventListener('keydown', (e)=>{
+      if ((e.metaKey || e.ctrlKey) && ['1','2','3','4','5','6'].includes(e.key)) {
+        if (lobbyCode && !isHost) {
+          e.preventDefault();
+          e.stopPropagation();
+        }
+      }
+    }, true);
+  </script>
 
-  // “Generar 5”: mantenemos local (o lo sincronizas si eres ADMIN)
-  $("btnGenerar5")?.addEventListener("click", ()=>{
-    const R = window.rng?.(($("seed")?.value||"").trim()) || Math.random;
-    const out = Array.from({length:5}, ()=> window.genPVAL(R));
-    const html = out.map(o=>o.html).join("<br>");
-    const text = out.map(o=>o.text).join("\n");
-    if(lobbyCode && isHost) publishOutput(html, text);
-    else $("salida").innerHTML = html;
-  });
-</script>
-  
 </body>
 </html>
