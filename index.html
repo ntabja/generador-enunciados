@@ -111,7 +111,7 @@
 
   <main class="container" style="padding-top:18px">
 
-    <!-- 🔹 BLOQUE DE LOBBY (nuevo, antes de tus botones) -->
+    <!-- 🔹 BLOQUE DE LOBBY -->
     <section class="card" style="margin-bottom:14px">
       <div class="inline" style="align-items:flex-end; gap:10px; flex-wrap:wrap">
         <div>
@@ -326,10 +326,10 @@
     generarN('PVAL',1);
   </script>
 
-  <!-- 🔥 Firebase Realtime + LOBBY (control de roles y bloqueo robusto) -->
+  <!-- 🔥 Firebase Realtime + LOBBY con presencia real -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import { getDatabase, ref, onValue, set, update } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+    import { getDatabase, ref, onValue, set, update, onDisconnect, push } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
     /* ⛳ Reemplaza por TU config real si aún no lo hiciste */
     const firebaseConfig = {
@@ -347,6 +347,7 @@
 
     let lobbyCode = null;
     let isHost = false;
+    let currentConnRef = null; // referencia a ESTA pestaña en el lobby
 
     function getClientId(){
       const k="am_client_id";
@@ -362,6 +363,27 @@
     function makeCode(){
       const chars="ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
       return Array.from({length:5},()=> chars[Math.floor(Math.random()*chars.length)]).join("");
+    }
+
+    /* 🔗 Presencia por pestaña (se borra sola al cerrar) */
+    function setupPresence(code){
+      if (!code) return;
+
+      // Si cambiaste de sala, cancela onDisconnect anterior
+      if (currentConnRef) { try { onDisconnect(currentConnRef).cancel(); } catch(e){} currentConnRef = null; }
+
+      const infoRef = ref(db, ".info/connected");
+      onValue(infoRef, (snap)=>{
+        if (snap.val() === true) {
+          // crea una conexión (una por pestaña)
+          const connRef = push(ref(db, `lobbies/${code}/players/${clientId}/connections`));
+          currentConnRef = connRef;
+          set(connRef, true);
+          onDisconnect(connRef).remove(); // el server la borra al desconectar
+          // asegura el flag conectado del jugador
+          update(ref(db, `lobbies/${code}/players/${clientId}`), { connected: true });
+        }
+      });
     }
 
     function updateHostUI(){
@@ -387,15 +409,20 @@
         lobbyCode = code;
         isHost = state.hostId === clientId;
 
+        // Cuenta SOLO jugadores con >=1 conexión
         if (statusEl) {
-          const players = state.players ? Object.keys(state.players).length : 0;
+          let players = 0;
+          if (state.players) {
+            players = Object.values(state.players)
+              .filter(p => p && p.connections && Object.keys(p.connections).length > 0).length;
+          }
           statusEl.textContent = `Sala: ${code} • ${isHost ? "Eres ADMIN" : "Jugador"} • Conectados: ${players}`;
         }
 
         if (state.seed != null && $("seed")) $("seed").value = state.seed;
         if (state.currentOutputHtml && $("salida")) $("salida").innerHTML = state.currentOutputHtml;
 
-        updateHostUI(); // <- bloquear/permitir según rol
+        updateHostUI(); // bloquear/permitir según rol
       });
     }
 
@@ -411,6 +438,7 @@
       };
       await set(ref(db, `lobbies/${code}`), state);
       watchLobby(code);
+      setupPresence(code); // 👈 presencia
     }
 
     async function joinLobby(code, name){
@@ -419,6 +447,7 @@
       const player = { name: name||"Jugador", score: 0, connected: true };
       await update(ref(db, `lobbies/${code}/players/${clientId}`), player);
       watchLobby(code);
+      setupPresence(code); // 👈 presencia
     }
 
     async function publishOutput(html, text){
