@@ -70,7 +70,7 @@
       display:flex;align-items:center;gap:10px;
       padding:10px 12px;border:1px solid rgba(255,255,255,.14);
       border-radius:12px;background:rgba(255,255,255,.04); width:100%;
-      --gc:#64748b;  /* group color fallback */
+      --gc:#64748b;
     }
     .playerChip::before{
       content:"";
@@ -93,8 +93,7 @@
       margin-left:auto; display:flex; align-items:center; gap:6px;
       font-variant-numeric: tabular-nums; user-select:none;
     }
-    .score{
-      min-width:36px; text-align:right; font-weight:800; padding:2px 6px;
+    .score{ min-width:36px; text-align:right; font-weight:800; padding:2px 6px;
       border:1px solid rgba(255,255,255,.18); border-radius:8px; background:#0e1628;
     }
     .scoreBtn{
@@ -201,6 +200,7 @@
   <div id="toast"></div>
 
   <script>
+    /* === Generadores locales === */
     const PERSONAJES=['Goku','Vegeta','Piccolo','Freezer','Monkey D. Luffy','Roronoa Zoro','Sanji','Nami','Naruto Uzumaki','Sasuke Uchiha','Kakashi Hatake','Ichigo Kurusaki','Satoru Gojo','Eren Yeager','Levi Ackerman','Shigeo Kageyama','Saitama','Edward Elric','Tanjiro Kamado','Nezuko Kamado','Kenshin Himura','Joseph Joestar','Guts','Ash Ketchum','Yugi Muto','Bob Esponja','Patricio Estrella','Calamardo','Arnold Shortman','Aang','Timmy Turner','Jimmy Neutron','Johnny Bravo','Mojo Jojo','Perry El Ornitorrinco','Optimus Prime','Mickey Mouse','Bugs Bunny','El Pato Donald','Felix El Gato','Winnie-the-Pooh','Charlie Brown','Snoopy','Hello Kitty','Dora La Exploradora','Peppa Pig','Homero Simpson','Rick Sanchez','Morty Smith','Eric Cartman','Buzz Lightyear','Mike Wazowski','Shrek','Wall-E','Stitch','Nemo','Elsa','Simba','Luke Skywalker','Darth Vader','Yoda','E.T.','John Wick','Neo','Indiana Jones','El Terminator','Jack Sparrow','Borat','Charlie Chaplin','Jason Voorhees','Chucky','Freddy Krueger','Jigsaw','Pennywise','Edward Scissorhands','Jack Skellington','Godzilla','El Xenomorfo','Superman','Spider-Man','Batman','Wolverine','Hulk','Venom','Thor','El Joker','Albert Einstein','Leo Messi','Napoleón Bonaparte','Atahualpa','Hitler','Michael Jackson','Freddie Mercury','Beethoven','Pedro Castillo','Donald Trump','Gandalf','Frodo Baggins','Gollum','Harry Potter','Voldemort','Willy Wonka','Cenicienta','Rapunzel','Aladino','Dracula','Frankenstein','Wednesday Addams','El Jorobado de Notre Dame','James Bond','Don Quijote de la Mancha','El Gato con Botas','Robin Hood','Pinnochio','Tarzán','Tralalero Tralalá','Brr Brr Patapím','Chimpanzini Bananini','Tung Tung Tung Sahur','Bombardino Crocodilo','La Vaca Saturno Saturnita','Clippy','El Chavo del Ocho','Jon Snow','Walter White','La Rana René','Pikachu','Mario','Bowser','Yoshi','Donkey Kong','Kirby','Link','Zelda','Samus Aran','Sonic','Crash Bandicoot','Mega Man','Pac-Man','Leon S. Kennedy','Lara Croft','El Amongus','Santa Claus','Dios','Atlas','Zeus','Poseidón','Hércules','Pegaso','El Kraken','El Cíclope','El Minotauro','El Cerbero','El Fénix','El Leviatán','El Fenrir','La Medusa','La Muerte','El Yeti','El Chupacabras','Un Ángel','Un Demonio','Un Centauro','Un Gólem','Un Basilisco','Un Grifo','Un Ogro','Una Sirena','Una Arpía','Una Hidra','Una Quimera','Un Licántropo','Un Unicornio','Una Bruja','Un Dragón','Una Valquiria','Un Elfo','Un Gnomo','Un Duende','Un Hada','Un Fantasma','Un Vampiro','Un Zombie','Una Momia','Un Esqueleto','Un Mago'];
     const VERBOS=['leyendo','patinando','esquiando','surfeando','navegando','cabalgando','pedaleando','nadando','bailando','pescando','regando','componiendo','escribiendo','cocinando','conduciendo','cenando','trabajando','jugando','barriendo','corriendo','caminando','saltando','trepando','luchando','descansando','durmiendo','marchando','volando','bebiendo','fumando','vomitando','masturbando','orinando','cagando','copulando','muriendo','naciendo','pariendo','gritando','llorando','cantando','pensando','rezando','vendiendo','saludando','boxeando'];
     const ADJETIVOS=['content@','enojad@','asustad@','preocupad@','desnud@','cansad@','confundid@','excitad@','aburrid@','sorprendid@','doblad@','sentad@','parad@','arrodillad@','echad@','suspendid@','tembland@','derretid@','herid@','atad@','enamorad@','relajad@','borrach@','nervios@','enferm@','descalz@','tens@'];
@@ -271,9 +271,9 @@
         : '';
     }
 
-    // Toast helper
+    // Toast + sonidos
     const toastEl = document.getElementById('toast');
-    let toastTimer=null;
+    let toastTimer=null, __uiAudioCtx;
     function showToast(msg){
       if(!toastEl) return;
       toastEl.textContent = msg;
@@ -281,8 +281,6 @@
       clearTimeout(toastTimer);
       toastTimer = setTimeout(()=> toastEl.classList.remove('show'), 2200);
     }
-
-    let __uiAudioCtx;
     function playClick(){
       try{
         if(!__uiAudioCtx){ __uiAudioCtx = new (window.AudioContext||window.webkitAudioContext)(); }
@@ -296,43 +294,17 @@
         osc.connect(gain).connect(ctx.destination); osc.start(); osc.stop(ctx.currentTime + 0.09);
       }catch(e){}
     }
+    (function(){ document.querySelectorAll('button').forEach(b=> b.addEventListener('click', playClick, {capture:true})); })();
 
-    byId('btnPVAL').onclick=()=>generarN('PVAL',1);
-    byId('btnPV').onclick=()=>generarN('PV',1);
-    byId('btnPA').onclick=()=>generarN('PA',1);
-    byId('btnPL').onclick=()=>generarN('PL',1);
-    byId('btnPAL').onclick=()=>generarN('PAL',1);
-    byId('btnPVA').onclick=()=>generarN('PVA',1);
-    byId('btnPVL').onclick=()=>generarN('PVL',1);
-    byId('btnFusion').onclick=()=>generarN('FUSION',1);
-    byId('btnP').onclick=()=>generarN('P',1);
-    byId('btnEvento').onclick=()=>generarN('EVENTO',1);
-    byId('btnEscena').onclick=()=>generarN('ESCENA',1);
-
-    (function(){
-      const btns = document.querySelectorAll('button');
-      btns.forEach(b=> b.addEventListener('click', playClick, {capture:true}));
-    })();
-
-    byId('btnCopiar').onclick=async()=>{
-      if(!lastCopyText) return;
-      await navigator.clipboard.writeText(lastCopyText);
-    }
-
+    byId('btnCopiar').onclick=async()=>{ if(!lastCopyText) return; await navigator.clipboard.writeText(lastCopyText); }
     byId('btnTest').onclick=()=>{
       const modes=['PVAL','PV','PA','PL','PAL','PVA','PVL','FUSION','P','EVENTO','ESCENA'];
-      let report='Pruebas:';
-      for(const m of modes){
-        let ok=0,total=100;
-        for(let i=0;i<total;i++){
-          const {text,html}=generarUno(m);
-          if(typeof text==='string'&&text.length>0&&typeof html==='string'&&html.length>0) ok++;
-        }
+      let report='Pruebas:'; for(const m of modes){
+        let ok=0,total=100; for(let i=0;i<total;i++){ const {text,html}=generarUno(m); if(typeof text==='string'&&text.length>0&&typeof html==='string'&&html.length>0) ok++; }
         report+=`\n• ${m}: ${ok}/${total} generados correctamente`;
       }
       byId('testlog').textContent=report;
-    }
-
+    };
     document.addEventListener('keydown',e=>{
       if((e.metaKey||e.ctrlKey)){
         if(e.key==='1'){e.preventDefault();generarN('PVAL',1);} 
@@ -365,14 +337,26 @@
     const appFB = initializeApp(firebaseConfig);
     const db = getDatabase(appFB);
 
+    // ==== ID cliente (una sola vez, arriba para uso en todo el módulo) ====
+    function getClientId(){
+      const k="am_client_id";
+      let id=localStorage.getItem(k);
+      if(!id){ id = Math.random().toString(36).slice(2); localStorage.setItem(k,id); }
+      return id;
+    }
+    const clientId = getClientId();
+
+    // ==== Estado ====
     let lobbyCode = null;
     let isHost = false;
     let prevIsHost = false;
     let playersConnected = 0;
-    let activeGroups = []; // ← grupos conectados únicos
     let currentConnRef = null;
     let lobbyRef = null;
     let lobbyCallback = null;
+
+    // ¡Clave! guardamos el último estado para generación por grupo y colores en host y jugadores
+    let lastLobbyState = null;
 
     const $ = (id)=> document.getElementById(id);
     const statusEl = $("lobbyStatus");
@@ -391,10 +375,7 @@
 
     // ====== Colores por grupo ======
     const GROUP_PALETTE = ['#60a5fa','#f472b6','#34d399','#fbbf24','#a78bfa','#fb7185','#22d3ee','#f59e0b','#4ade80','#e879f9'];
-    const hexToRgb = (hex)=>{
-      const m = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-      return m ? { r: parseInt(m[1],16), g: parseInt(m[2],16), b: parseInt(m[3],16) } : {r:100,g:100,b:100};
-    };
+    const hexToRgb = (hex)=>{ const m=/^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex); return m?{r:parseInt(m[1],16),g:parseInt(m[2],16),b:parseInt(m[3],16)}:{r:100,g:100,b:100}; };
     const rgba = (hex, a)=>{ const {r,g,b}=hexToRgb(hex); return `rgba(${r}, ${g}, ${b}, ${a})`; };
     const groupColor = (letter)=>{
       if(!letter) return '#64748b';
@@ -417,12 +398,13 @@
       if (leaveRow){ leaveRow.style.display='none'; }
       if (overlayEl){ overlayEl.style.display='flex'; }
       if (playersCard){ playersCard.style.display='none'; }
-      activeGroups = [];
+      lastLobbyState = null;
     }
 
     /* Presencia por pestaña */
     function setupPresence(code){
       if (!code) return;
+
       if (currentConnRef) { try { onDisconnect(currentConnRef).cancel(); } catch(e){} currentConnRef = null; }
 
       const infoRef = ref(db, ".info/connected");
@@ -454,14 +436,21 @@
       });
 
       if (playersList){
-        playersList.querySelectorAll('.scoreBtn').forEach(b=>{
-          b.disabled = !hostOrSolo;
-        });
+        playersList.querySelectorAll('.scoreBtn').forEach(b=> b.disabled = !hostOrSolo);
       }
     }
 
-    /* Utils */
     const clampScore = (n)=> Math.max(0, Math.min(999, n|0));
+
+    function getActiveGroupsFromState(state){
+      const playersObj = state?.players || {};
+      return [...new Set(
+        Object.values(playersObj)
+          .filter(p=>p && p.connections && Object.keys(p.connections).length>0)
+          .map(p=> p.group ? String(p.group).toUpperCase() : null)
+          .filter(Boolean)
+      )].sort();
+    }
 
     function renderPlayers(state){
       if(!playersCard || !playersList) return;
@@ -478,9 +467,6 @@
           isAdmin: state.hostId === pid
         };
       }).filter(x=>x.connected);
-
-      // recalcular grupos activos
-      activeGroups = [...new Set(items.map(x=>x.group).filter(Boolean))].sort();
 
       if(items.length === 0){
         playersList.innerHTML = `<span class="muted">Nadie conectado aún…</span>`;
@@ -514,10 +500,11 @@
       playersCard.style.display = lobbyCode ? 'block' : 'none';
     }
 
-    // ======== Generación por grupo ========
+    // ======== Generación por grupo usando el ÚLTIMO estado del lobby ========
     function buildGroupedOutput(mode){
-      // Si no hay grupos activos, devolvemos null para fallback
-      if(!activeGroups || activeGroups.length === 0) return null;
+      const state = lastLobbyState;
+      const groups = getActiveGroupsFromState(state);
+      if(!groups || groups.length===0) return null;
 
       const gens = {
         PVAL: window.genPVAL, PV: window.genPV, PA: window.genPA, PL: window.genPL,
@@ -526,30 +513,32 @@
       };
       const fn = gens[mode] || gens["PVAL"];
 
-      // Para variedad pero determinismo ligero por grupo en cada clic:
-      const RforGroup = (g)=> rng(`${lobbyCode || ''}-${g}-${Date.now()}`); // nueva semilla por click
+      // semilla cambia por click pero fija por grupo para evitar repeticiones dentro del mismo click
+      const now = Date.now();
 
-      const lines = activeGroups.map(g=>{
-        const { html } = fn(RforGroup(g));
+      const linesHtml = [];
+      const linesText = [];
+
+      for(const g of groups){
+        const R = rng(`${lobbyCode}-${g}-${now}`);
+        const { html, text } = fn(R);
+
         const col = groupColor(g);
         const bg = rgba(col, 0.22);
         const bd = rgba(col, 0.55);
-        return `<div class="lineGroup">
+
+        linesHtml.push(`<div class="lineGroup">
           <span class="gBadge" style="background:${bg};border-color:${bd}">Grupo ${g}</span>
           <span>${html}</span>
-        </div>`;
-      });
+        </div>`);
 
-      return {
-        html: lines.join(""),
-        text: activeGroups.map(g=>{
-          const { text } = (gens["P"] && mode==="P") ? window.genP(rng(`${lobbyCode}-${g}-${Date.now()}`)) : (fn(Math.random()));
-          return `Grupo ${g}: ${text}`;
-        }).join("\n")
-      };
+        linesText.push(`Grupo ${g}: ${text}`);
+      }
+
+      return { html: linesHtml.join(""), text: linesText.join("\n") };
     }
 
-    /* + / − puntaje (host o solo) */
+    /* + / − puntaje */
     playersList?.addEventListener('click', async (e)=>{
       const btn = e.target.closest('.scoreBtn');
       if(!btn) return;
@@ -583,14 +572,6 @@
       }
     });
 
-    // ====== Estado lobby / presencia ======
-    const clientId = (()=>{
-      const k="am_client_id";
-      let id=localStorage.getItem(k);
-      if(!id){ id = Math.random().toString(36).slice(2); localStorage.setItem(k,id); }
-      return id;
-    })();
-
     function watchLobby(code){
       if (lobbyRef && lobbyCallback){
         off(lobbyRef, 'value', lobbyCallback);
@@ -601,19 +582,19 @@
         const state = snap.val();
         if(!state) return;
 
+        // guardamos último estado para generación/colores
+        lastLobbyState = state;
+
         prevIsHost = isHost;
         isHost = state.hostId === clientId;
 
-        // contar conectados
         playersConnected = 0;
         if (state.players) {
           playersConnected = Object.values(state.players)
             .filter(p => p && p.connections && Object.keys(p.connections).length > 0).length;
         }
 
-        if (!prevIsHost && isHost && window.showToast) {
-          window.showToast("Ahora eres ADMIN");
-        }
+        if (!prevIsHost && isHost && window.showToast) window.showToast("Ahora eres ADMIN");
 
         if (badgeEl){ badgeEl.style.display='inline-block'; badgeEl.textContent = `Sala: ${code}`; }
         if (leaveRow){ leaveRow.style.display='flex'; }
@@ -622,7 +603,6 @@
 
         if (state.currentOutputHtml && $("salida")) $("salida").innerHTML = state.currentOutputHtml;
 
-        // render y recálculo de grupos
         renderPlayers(state);
         updateHostUI();
       };
@@ -699,7 +679,7 @@
       await update(ref(db), updates);
     }
 
-    // ====== Manejo de botones de generación con salida por grupo ======
+    // ====== Manejo de botones de generación (usa grouped output si hay grupos) ======
     const MAP = {
       btnPVAL:'PVAL', btnPV:'PV', btnPA:'PA', btnPL:'PL',
       btnPVA:'PVA', btnPAL:'PAL', btnPVL:'PVL',
@@ -724,10 +704,8 @@
 
         const grouped = buildGroupedOutput(mode);
         if (grouped){
-          // publicar enunciado por grupo
           publishOutput(grouped.html, grouped.text);
         }else{
-          // fallback: sin grupos
           const { html, text } = genOne(mode);
           publishOutput(html, text || '');
         }
@@ -747,7 +725,6 @@
       if(btn){ btn.onclick = ()=> handleGenerate(mode); }
     });
 
-    // “Generar 5” lo dejamos igual (no por grupo)
     if ($("btnGenerar5")) {
       $("btnGenerar5").onclick = ()=>{
         if (lobbyCode){
@@ -763,19 +740,14 @@
       };
     }
 
-    // Botón grupos
     const btnGrupos = $("btnGrupos");
     if (btnGrupos) btnGrupos.onclick = generarGrupos;
 
-    // Bloquear atajos si no es host (salvo modo solo)
     document.addEventListener('keydown', (e)=>{
       if ((e.metaKey || e.ctrlKey) && ['1','2','3','4','5','6'].includes(e.key)) {
         if (lobbyCode){
           const hostOrSolo = isHost || playersConnected <= 1;
-          if (!hostOrSolo) {
-            e.preventDefault();
-            e.stopPropagation();
-          }
+          if (!hostOrSolo) { e.preventDefault(); e.stopPropagation(); }
         }
       }
     }, true);
@@ -835,7 +807,7 @@
 
       // limpiar UI
       lobbyCode = null;
-      activeGroups = [];
+      lastLobbyState = null;
       if (badgeEl){ badgeEl.style.display='none'; badgeEl.textContent = 'Sala: -----'; }
       if (leaveRow){ leaveRow.style.display='none'; }
       if (overlayEl){ overlayEl.style.display='flex'; }
@@ -848,6 +820,7 @@
     }
 
     $("btnLeave")?.addEventListener("click", leaveLobby);
+    window.showToast = (msg)=>{ const el=document.getElementById('toast'); if(!el) return; el.textContent=msg; el.classList.add('show'); clearTimeout(window.__tT); window.__tT=setTimeout(()=>el.classList.remove('show'),2200); };
 
     // Overlay actions
     $("btnCreateLobby")?.addEventListener("click", ()=>{
@@ -859,7 +832,6 @@
       const code = (document.getElementById("lobbyCodeInput")?.value)||"";
       joinLobby(code, name);
     });
-
   </script>
 
 </body>
