@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
-  <title>ARTE MODERNO — © 2025 Tabja Games</title>
+  <title>ARTE MODERNO</title>
   <meta name="theme-color" content="#0ea5e9" />
   <style>
     :root{
@@ -31,10 +31,7 @@
     }
     .brand{
       display:flex;align-items:center;gap:8px;min-width:0;white-space:nowrap;
-      font-weight:800;font-size:16px; /* más pequeño */
-    }
-    .brand small{
-      color:var(--muted);font-weight:600;font-size:11px;opacity:.8; /* Tabja Games reducido */
+      font-weight:800;font-size:16px; /* pequeño */
     }
     .spacer{flex:1}
     #roomBadge{
@@ -65,7 +62,7 @@
     .out{
       font-size:22px;line-height:1.45;background:#0b1426;border-radius:14px;padding:14px;border:1px dashed rgba(255,255,255,.15)
     }
-    footer{opacity:.7;padding:16px 12px;text-align:center;font-size:12px;position:relative}
+    footer{opacity:.8;padding:16px 12px;text-align:center;font-size:12px;position:relative}
     .kbd{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;font-size:12px;border:1px solid rgba(255,255,255,.2);padding:2px 6px;border-radius:6px;background:#0e1628}
     .char{ color:#4cc9f0; } .verb{ color:var(--verb); } .adj{ color:var(--adj); } .place{ color:#ffe066; } .event{ color:#b266ff; } .scene{ color:#ffb347; }
 
@@ -142,7 +139,7 @@
   <!-- Appbar compacto -->
   <header>
     <div class="appbar">
-      <div class="brand">🎨 ARTE MODERNO <small>© 2025 Tabja Games</small></div>
+      <div class="brand">🎨 ARTE MODERNO</div>
       <div class="spacer"></div>
       <span id="roomBadge">Sala: -----</span>
       <div id="leaveRow" class="inline" style="margin-left:8px;">
@@ -217,6 +214,7 @@
       <button class="btn" id="btnCopiar">Copiar</button>
       <button class="btn" id="btnTest">Test</button>
     </div>
+    <div class="muted" style="margin-top:8px">© 2025 Tabja Games</div>
   </footer>
 
   <!-- Toast element -->
