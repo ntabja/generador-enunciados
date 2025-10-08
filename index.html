@@ -25,7 +25,7 @@
       background:linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.02));
       border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:16px;box-shadow:0 6px 30px rgba(0,0,0,.25)
     }
-    .title{font-size:20px;font-weight:700;display:flex;gap:10px;align-items:center}
+    .title{font-size:20px;font-weight:700;display:flex;gap:10px;align-items:center;justify-content:space-between}
     .muted{color:var(--muted)}
     .btn{
       appearance:none;border:0;border-radius:12px;padding:12px 14px;font-weight:700;color:var(--text);
@@ -65,6 +65,7 @@
 
     /* Jugadores (vertical + group-colored + score) */
     .players-wrap{ display:flex; flex-direction:column; gap:8px; }
+    .players-title-actions{ display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
     .playerChip{
       position:relative;
       display:flex;align-items:center;gap:10px;
@@ -166,10 +167,7 @@
           <button class="btn" id="btnPVL"><span class="letter-p">P</span> + <span class="letter-v">V</span> + <span class="letter-l">L</span></button>
           <button class="btn" id="btnPVAL"><span class="letter-p">P</span> + <span class="letter-v">V</span> + <span class="letter-a">A</span> + <span class="letter-l">L</span></button>
         </div>
-        <div class="inline">
-          <button class="btn" id="btnGenerar5">Generar 5</button>
-          <button class="btn" id="btnGrupos">Generar Grupos</button>
-        </div>
+        <!-- Botón Generar 5 eliminado -->
       </div>
     </section>
 
@@ -182,7 +180,12 @@
 
     <!-- Jugadores conectados -->
     <section class="card" id="playersCard" style="margin-top:14px; display:none">
-      <div class="title">Jugadores conectados</div>
+      <div class="title">
+        <span>Jugadores conectados</span>
+        <div class="players-title-actions">
+          <button class="btn" id="btnGrupos" title="Formar parejas asignando Grupo A, B, C…">Generar grupos</button>
+        </div>
+      </div>
       <div id="playersList" class="players-wrap" style="margin-top:10px"></div>
     </section>
   </main>
@@ -337,7 +340,6 @@
     const appFB = initializeApp(firebaseConfig);
     const db = getDatabase(appFB);
 
-    // ==== ID cliente (una sola vez, arriba para uso en todo el módulo) ====
     function getClientId(){
       const k="am_client_id";
       let id=localStorage.getItem(k);
@@ -346,7 +348,6 @@
     }
     const clientId = getClientId();
 
-    // ==== Estado ====
     let lobbyCode = null;
     let isHost = false;
     let prevIsHost = false;
@@ -354,8 +355,6 @@
     let currentConnRef = null;
     let lobbyRef = null;
     let lobbyCallback = null;
-
-    // ¡Clave! guardamos el último estado para generación por grupo y colores en host y jugadores
     let lastLobbyState = null;
 
     const $ = (id)=> document.getElementById(id);
@@ -365,6 +364,7 @@
     const leaveRow = $("leaveRow");
     const playersCard = $("playersCard");
     const playersList = $("playersList");
+    const btnGrupos = $("btnGrupos");
 
     const LS_CODE_KEY = "am_lobby_code";
 
@@ -424,7 +424,7 @@
       const ids = [
         'btnP','btnFusion','btnEvento','btnEscena',
         'btnPV','btnPA','btnPL','btnPVA','btnPAL','btnPVL','btnPVAL',
-        'btnGenerar5','btnGrupos'
+        'btnGrupos' // solo este queda
       ];
       const disabled = (lobbyCode && !hostOrSolo);
       ids.forEach(id=>{
@@ -500,7 +500,7 @@
       playersCard.style.display = lobbyCode ? 'block' : 'none';
     }
 
-    // ======== Generación por grupo usando el ÚLTIMO estado del lobby ========
+    // ======== Generación por grupo (usa el último estado del lobby) ========
     function buildGroupedOutput(mode){
       const state = lastLobbyState;
       const groups = getActiveGroupsFromState(state);
@@ -513,9 +513,7 @@
       };
       const fn = gens[mode] || gens["PVAL"];
 
-      // semilla cambia por click pero fija por grupo para evitar repeticiones dentro del mismo click
       const now = Date.now();
-
       const linesHtml = [];
       const linesText = [];
 
@@ -531,7 +529,6 @@
           <span class="gBadge" style="background:${bg};border-color:${bd}">Grupo ${g}</span>
           <span>${html}</span>
         </div>`);
-
         linesText.push(`Grupo ${g}: ${text}`);
       }
 
@@ -582,7 +579,6 @@
         const state = snap.val();
         if(!state) return;
 
-        // guardamos último estado para generación/colores
         lastLobbyState = state;
 
         prevIsHost = isHost;
@@ -643,7 +639,7 @@
       });
     }
 
-    // Generar grupos: asigna letras y guarda en cada jugador (players/{pid}/group)
+    // Generar grupos (en la tarjeta de jugadores)
     async function generarGrupos(){
       if (!lobbyCode) return;
       const hostOrSolo = isHost || playersConnected <= 1;
@@ -661,7 +657,6 @@
         return;
       }
 
-      // Shuffle
       for (let i = activos.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
         [activos[i], activos[j]] = [activos[j], activos[i]];
@@ -679,7 +674,7 @@
       await update(ref(db), updates);
     }
 
-    // ====== Manejo de botones de generación (usa grouped output si hay grupos) ======
+    // ====== Botones de generación ======
     const MAP = {
       btnPVAL:'PVAL', btnPV:'PV', btnPA:'PA', btnPL:'PL',
       btnPVA:'PVA', btnPAL:'PAL', btnPVL:'PVL',
@@ -695,6 +690,40 @@
       };
       const fn = gens[mode] || gens["PVAL"];
       return fn(R);
+    }
+
+    function buildGroupedOutput(mode){
+      const state = lastLobbyState;
+      const groups = getActiveGroupsFromState(state);
+      if(!groups || groups.length===0) return null;
+
+      const gens = {
+        PVAL: window.genPVAL, PV: window.genPV, PA: window.genPA, PL: window.genPL,
+        PAL: window.genPAL, PVA: window.genPVA, PVL: window.genPVL,
+        FUSION: window.genFusion, P: window.genP, EVENTO: window.genEvento, ESCENA: window.genEscena
+      };
+      const fn = gens[mode] || gens["PVAL"];
+
+      const now = Date.now();
+      const linesHtml = [];
+      const linesText = [];
+
+      for(const g of groups){
+        const R = rng(`${lobbyCode}-${g}-${now}`);
+        const { html, text } = fn(R);
+
+        const col = groupColor(g);
+        const bg = rgba(col, 0.22);
+        const bd = rgba(col, 0.55);
+
+        linesHtml.push(`<div class="lineGroup">
+          <span class="gBadge" style="background:${bg};border-color:${bd}">Grupo ${g}</span>
+          <span>${html}</span>
+        </div>`);
+        linesText.push(`Grupo ${g}: ${text}`);
+      }
+
+      return { html: linesHtml.join(""), text: linesText.join("\n") };
     }
 
     function handleGenerate(mode){
@@ -725,24 +754,10 @@
       if(btn){ btn.onclick = ()=> handleGenerate(mode); }
     });
 
-    if ($("btnGenerar5")) {
-      $("btnGenerar5").onclick = ()=>{
-        if (lobbyCode){
-          const hostOrSolo = isHost || playersConnected <= 1;
-          if(!hostOrSolo) return;
-        }
-        const R = (window.rng ? window.rng() : Math.random);
-        const out = Array.from({length:5}, ()=> window.genPVAL(R));
-        const html = out.map(o=>o.html).join("<br>");
-        const text = out.map(o=>o.text).join("\n");
-        if (lobbyCode) publishOutput(html, text);
-        else $("salida").innerHTML = html;
-      };
-    }
+    // Botón de grupos (ahora en la tarjeta de jugadores)
+    btnGrupos?.addEventListener('click', generarGrupos);
 
-    const btnGrupos = $("btnGrupos");
-    if (btnGrupos) btnGrupos.onclick = generarGrupos;
-
+    // Atajos de teclado (bloquea si no eres host en lobby)
     document.addEventListener('keydown', (e)=>{
       if ((e.metaKey || e.ctrlKey) && ['1','2','3','4','5','6'].includes(e.key)) {
         if (lobbyCode){
@@ -805,7 +820,6 @@
         console.warn('Error al salir de la sala:', e);
       }
 
-      // limpiar UI
       lobbyCode = null;
       lastLobbyState = null;
       if (badgeEl){ badgeEl.style.display='none'; badgeEl.textContent = 'Sala: -----'; }
