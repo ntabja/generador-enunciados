@@ -63,26 +63,25 @@
     }
     #toast.show{opacity:1; transform:translateX(-50%) translateY(0)}
 
-    /* Jugadores (vertical + score) */
+    /* Jugadores (vertical + group + score) */
     .players-wrap{
-      display:flex;
-      flex-direction:column;
-      gap:8px
+      display:flex; flex-direction:column; gap:8px;
     }
     .playerChip{
       display:flex;align-items:center;gap:10px;
       padding:10px 12px;border:1px solid rgba(255,255,255,.14);
-      border-radius:12px;background:rgba(255,255,255,.04);
-      width:100%;
-    }
-    .playerChip .avatar{
-      width:28px;height:28px;border-radius:50%;
-      display:flex;align-items:center;justify-content:center;
-      font-weight:800;background:#0e1628;border:1px solid rgba(255,255,255,.18);
-      font-size:12px;color:var(--text)
+      border-radius:12px;background:rgba(255,255,255,.04); width:100%;
     }
     .playerChip .dot{ width:8px;height:8px;border-radius:50%;background:var(--accent2) }
+    .groupBadge{
+      padding:2px 8px; border:1px solid rgba(255,255,255,.18); border-radius:8px;
+      background:#0e1628; font-weight:800; font-size:12px; white-space:nowrap;
+    }
     .playerChip .name{ font-weight:700; display:flex; align-items:center; gap:8px; }
+    .playerChip .role{
+      font-size:10px;border:1px solid rgba(255,255,255,.2);
+      padding:2px 6px;border-radius:999px;opacity:.9
+    }
     .scoreBox{
       margin-left:auto; display:flex; align-items:center; gap:6px;
       font-variant-numeric: tabular-nums; user-select:none;
@@ -97,10 +96,6 @@
       border-radius:8px; cursor:pointer; font-weight:900; font-size:14px;
     }
     .scoreBtn[disabled]{opacity:.35; cursor:not-allowed}
-    .playerChip .role{
-      font-size:10px;border:1px solid rgba(255,255,255,.2);
-      padding:2px 6px;border-radius:999px;opacity:.9
-    }
   </style>
 </head>
 <body>
@@ -171,10 +166,7 @@
       <div id="testlog" class="muted" style="margin-top:10px"></div>
     </section>
 
-    <section class="card" style="margin-top:14px">
-      <div class="title">Grupos</div>
-      <div id="grupos" class="out" style="margin-top:10px;white-space:pre-wrap"></div>
-    </section>
+    <!-- (Se eliminó la tarjeta “Grupos”) -->
 
     <!-- Jugadores conectados -->
     <section class="card" id="playersCard" style="margin-top:14px; display:none">
@@ -342,7 +334,7 @@
     generarN('PVAL',1);
   </script>
 
-  <!-- 🔥 Firebase Realtime -->
+  <!-- 🔥 Firebase Realtime (lobby, presencia, grupos en jugador, score, host/solo) -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
     import { getDatabase, ref, onValue, set, update, onDisconnect, push, get, off, remove } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
@@ -363,7 +355,7 @@
     let lobbyCode = null;
     let isHost = false;
     let prevIsHost = false;
-    let playersConnected = 0; // ← NUEVO
+    let playersConnected = 0;
     let currentConnRef = null;
     let lobbyRef = null;
     let lobbyCallback = null;
@@ -427,7 +419,7 @@
     }
 
     function updateHostUI(){
-      const hostOrSolo = isHost || playersConnected <= 1; // ← NUEVO
+      const hostOrSolo = isHost || playersConnected <= 1;
       const ids = [
         'btnP','btnFusion','btnEvento','btnEscena',
         'btnPV','btnPA','btnPL','btnPVA','btnPAL','btnPVL','btnPVAL',
@@ -450,22 +442,8 @@
       }
     }
 
-    function renderGroups(groupsHtml){
-      const g = $("grupos");
-      if (!g) return;
-      g.innerHTML = groupsHtml || "";
-    }
-
-    /* Utilidades score */
+    /* Utilidades */
     const clampScore = (n)=> Math.max(0, Math.min(999, n|0));
-
-    /* Jugadores conectados */
-    function initials(name){
-      if(!name) return "?";
-      const parts = String(name).trim().split(/\s+/);
-      if(parts.length === 1) return parts[0][0]?.toUpperCase() || "?";
-      return (parts[0][0] + parts[parts.length-1][0]).toUpperCase();
-    }
 
     function renderPlayers(state){
       if(!playersCard || !playersList) return;
@@ -477,6 +455,7 @@
           id: pid,
           name: (p && p.name) || "Jugador",
           score: clampScore((p && p.score)!=null ? p.score : 0),
+          group: p && p.group ? String(p.group).toUpperCase() : null,
           connected,
           isAdmin: state.hostId === pid
         };
@@ -489,7 +468,7 @@
         playersList.innerHTML = items.map(x=>`
           <div class="playerChip" data-id="${x.id}" title="${escSafe(x.name)}${x.isAdmin?' • ADMIN':''}">
             <span class="dot" aria-label="online"></span>
-            <span class="avatar">${initials(x.name)}</span>
+            <span class="groupBadge">${x.group ? `Grupo ${escSafe(x.group)}` : '—'}</span>
             <span class="name">
               ${escSafe(x.name)}
               ${x.isAdmin ? `<span class="role">ADMIN</span>` : ``}
@@ -510,13 +489,13 @@
       playersCard.style.display = lobbyCode ? 'block' : 'none';
     }
 
-    /* Delegación de eventos para + / − (host o solo) */
+    /* + / − puntaje (host o solo) */
     playersList?.addEventListener('click', async (e)=>{
       const btn = e.target.closest('.scoreBtn');
       if(!btn) return;
 
       const hostOrSolo = isHost || playersConnected <= 1;
-      if(!hostOrSolo) return; // seguridad básica
+      if(!hostOrSolo) return;
 
       const pid = btn.getAttribute('data-id');
       const action = btn.getAttribute('data-action');
@@ -574,7 +553,6 @@
         if (statusEl) statusEl.textContent = `Sala: ${code} • ${isHost ? "Eres ADMIN" : "Jugador"} • Conectados: ${playersConnected}`;
 
         if (state.currentOutputHtml && $("salida")) $("salida").innerHTML = state.currentOutputHtml;
-        renderGroups(state.groupsHtml);
         renderPlayers(state);
         updateHostUI();
       };
@@ -587,7 +565,6 @@
         hostId: clientId,
         currentOutputHtml: "",
         currentOutputText: "",
-        groupsHtml: "",
         players: { [clientId]: { name: name||"Host", score: 0, connected: true } },
         createdAt: Date.now()
       };
@@ -653,7 +630,6 @@
       }
 
       clearLobbyCode();
-      const g = $("grupos"); if (g) g.innerHTML = "";
       const s = $("salida"); if (s) s.innerHTML = "";
       if (statusEl) statusEl.textContent = "";
       if (playersList) playersList.innerHTML = "";
@@ -713,6 +689,44 @@
       if(btn){ btn.onclick = ()=> handleGenerate(mode); }
     });
 
+    // Generar grupos: asigna letras y guarda en cada jugador (players/{pid}/group)
+    async function generarGrupos(){
+      if (!lobbyCode) return;
+      const hostOrSolo = isHost || playersConnected <= 1;
+      if (!hostOrSolo) return;
+
+      const snap = await get(ref(db, `lobbies/${lobbyCode}/players`));
+      const playersObj = snap.val() || {};
+
+      // Solo jugadores conectados, con id y nombre
+      const activos = Object.entries(playersObj)
+        .filter(([,p]) => p && p.name && p.connections && Object.keys(p.connections).length > 0)
+        .map(([pid,p]) => ({ pid, name: p.name }));
+
+      if (activos.length < 2 || activos.length % 2 !== 0) {
+        alert("Agrega o quita un jugador para formar grupos parejos");
+        return;
+      }
+
+      // Shuffle
+      for (let i = activos.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [activos[i], activos[j]] = [activos[j], activos[i]];
+      }
+
+      const letras = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+      const updates = {};
+      for (let i = 0; i < activos.length; i += 2) {
+        const letter = letras[i/2] || String(i/2 + 1);
+        const a = activos[i], b = activos[i+1];
+        updates[`lobbies/${lobbyCode}/players/${a.pid}/group`] = letter;
+        updates[`lobbies/${lobbyCode}/players/${b.pid}/group`] = letter;
+      }
+
+      await update(ref(db), updates);
+      // Render se actualizará por el onValue
+    }
+
     if ($("btnGenerar5")) {
       $("btnGenerar5").onclick = ()=>{
         if (lobbyCode){
@@ -726,46 +740,6 @@
         if (lobbyCode) publishOutput(html, text);
         else $("salida").innerHTML = html;
       };
-    }
-
-    async function generarGrupos(){
-      if (!lobbyCode) return;
-      const hostOrSolo = isHost || playersConnected <= 1;
-      if (!hostOrSolo) return;
-
-      const snap = await get(ref(db, `lobbies/${lobbyCode}/players`));
-      const playersObj = snap.val() || {};
-
-      const activos = Object.values(playersObj)
-        .filter(p => p && p.name)
-        .filter(p => p.connections && Object.keys(p.connections).length > 0)
-        .map(p => p.name);
-
-      if (activos.length < 2 || activos.length % 2 !== 0) {
-        alert("Agrega o quita un jugador para formar grupos parejos");
-        return;
-      }
-
-      for (let i = activos.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [activos[i], activos[j]] = [activos[j], activos[i]];
-      }
-
-      const letras = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-      const grupos = [];
-      for (let i = 0; i < activos.length; i += 2) {
-        const idx = i / 2;
-        const nombreGrupo = `Grupo ${letras[idx] || (idx+1)}`;
-        grupos.push({ nombre: nombreGrupo, miembros: [activos[i], activos[i+1]] });
-      }
-
-      const escSafe = window.esc || ((s)=>String(s));
-      const gruposHtml = grupos.map(g => {
-        const [a,b] = g.miembros;
-        return `<div style="margin-bottom:8px"><strong>${g.nombre}:</strong> ${escSafe(a)} y ${escSafe(b)}</div>`;
-      }).join("");
-
-      await update(ref(db, `lobbies/${lobbyCode}`), { groupsHtml: gruposHtml });
     }
 
     if ($("btnGrupos")) {
@@ -786,7 +760,7 @@
       }
     }, true);
 
-    // Init: entrar si hay sala guardada; si no, mostrar overlay
+    // Init
     (function initLobbyOnce(){
       const saved = localStorage.getItem(LS_CODE_KEY);
       if(saved){
