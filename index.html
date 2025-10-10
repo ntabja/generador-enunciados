@@ -161,8 +161,9 @@
    <!-- Nombre (siempre visible) -->
 <div class="inline" style="align-items:flex-end; gap:10px; flex-wrap:wrap; margin-bottom:10px">
   <div style="min-width:180px; flex:1">
-    <input id="playerName" placeholder="Tu nombre" aria-label="Tu nombre" style="max-width:100%">
-    <small id="nameError" style="color:#dc2626; display:none;">Por favor coloca tu nombre.</small>
+<input id="playerName" placeholder="Tu nombre" aria-label="Tu nombre" style="max-width:100%">
+<small id="nameError" style="color:#dc2626; display:none;">Por favor coloca tu nombre.</small>
+<small id="nameLengthError" style="color:#dc2626; display:none;">Máximo 12 caracteres permitidos.</small>
   </div>
 </div>
 
@@ -174,8 +175,8 @@
 
     <!-- Paso 2 (solo si eligen Unirse): ingresar código -->
     <div id="joinRow" class="inline" style="align-items:flex-end; gap:10px; flex-wrap:wrap; display:none">
-  <div>
-    <input id="lobbyCodeInput" placeholder="Código de sala" aria-label="Código de sala" style="max-width:140px; text-transform:uppercase">
+  <div style="flex:1; min-width:200px;">
+    <input id="lobbyCodeInput" placeholder="Código de sala" aria-label="Código de sala" style="width:100%; text-transform:uppercase">
   </div>
   <button class="btn" id="btnJoinLobby">Entrar</button>
   <button class="btn" id="btnBackJoin">← Atrás</button>
@@ -942,11 +943,24 @@ timerSelect?.addEventListener('change', ()=>{
 $("btnCreateLobby")?.addEventListener("click", ()=>{
   const name = $("playerName")?.value?.trim() || "";
   const err = $("nameError");
+  const errLen = $("nameLengthError");
+
+  // Validación 1: vacío
   if (!name.length) {
     if (err) err.style.display = "block";
+    if (errLen) errLen.style.display = "none";
     return;
   }
+  // Validación 2: más de 12 caracteres
+  if (name.length > 12) {
+    if (err) err.style.display = "none";
+    if (errLen) errLen.style.display = "block";
+    return;
+  }
+
+  // OK
   if (err) err.style.display = "none";
+  if (errLen) errLen.style.display = "none";
   createLobby(name);
 });
 
@@ -963,12 +977,24 @@ $("btnJoinLobby")?.addEventListener("click", ()=>{
   const name = $("playerName")?.value?.trim() || "";
   const code = ($("lobbyCodeInput")?.value || "").toUpperCase().trim();
   const err = $("nameError");
+  const errLen = $("nameLengthError");
 
+  // Validación 1: vacío
   if (!name.length) {
     if (err) err.style.display = "block";
+    if (errLen) errLen.style.display = "none";
     return;
   }
+  // Validación 2: más de 12 caracteres
+  if (name.length > 12) {
+    if (err) err.style.display = "none";
+    if (errLen) errLen.style.display = "block";
+    return;
+  }
+
+  // OK
   if (err) err.style.display = "none";
+  if (errLen) errLen.style.display = "none";
 
   if(!code){
     if(statusEl) statusEl.textContent = "Escribe un código de sala";
@@ -976,10 +1002,14 @@ $("btnJoinLobby")?.addEventListener("click", ()=>{
   }
   joinLobby(code, name);
 });
+
     $("playerName")?.addEventListener("input", ()=>{
   const val = $("playerName")?.value?.trim() || "";
   const err = $("nameError");
+  const errLen = $("nameLengthError");
+
   if (val.length && err) err.style.display = "none";
+  if (val.length <= 12 && errLen) errLen.style.display = "none";
 });
   </script>
 
