@@ -221,8 +221,8 @@
       <select id="timerSelect" class="btn" style="padding:8px 10px">
         <option value="30">30s</option>
         <option value="60">60s</option>
+        <option value="90">90s</option>
         <option value="120">120s</option>
-        <option value="180">180s</option>
       </select>
       <button class="btn" id="btnTimerStart">Iniciar</button>
       <button class="btn" id="btnTimerCancel">Cancelar</button>
@@ -564,6 +564,17 @@
 
     function handleTimerState(timer){
       clearTimerInterval();
+      // Sync selector con el estado (también en clientes no-host)
+      if(timerSelect && timer && typeof timer.durationSec === 'number'){
+        const val = String(timer.durationSec);
+        // Asegurar que exista la opción (por si el host tiene valores diferentes)
+        if(!Array.from(timerSelect.options).some(o=>o.value===val)){
+          const opt=document.createElement('option');
+          opt.value=val; opt.textContent=`${val}s`;
+          timerSelect.appendChild(opt);
+        }
+        if(timerSelect.value !== val) timerSelect.value = val;
+      }
       if(!timer || timer.canceled){ if(timerDisplay) timerDisplay.textContent='—:—'; if(btnTimerStart) btnTimerStart.disabled = !isHost || !lobbyCode; return; }
       const endAt = (timer.startedAt||0) + (timer.durationSec||0)*1000;
       function tick(){
@@ -583,6 +594,15 @@
       startTimer(dur);
     });
     btnTimerCancel?.addEventListener('click', ()=> cancelTimer());
+
+    // Cambio de duración (solo host) — reinicia el conteo desde ahora con el nuevo tiempo
+    timerSelect?.addEventListener('change', ()=>{
+      if(!isHost || !lobbyCode) return;
+      const dur = parseInt((timerSelect?.value)||'60',10);
+      if(Number.isNaN(dur)) return;
+      update(ref(db, `lobbies/${lobbyCode}`), { 'timer/durationSec': dur, 'timer/startedAt': Date.now(), 'timer/changedBy': clientId, 'timer/canceled': false })
+        .catch(e=>{ console.warn('No se pudo cambiar la duración', e); if(window.showToast) window.showToast('No se pudo cambiar el tiempo'); });
+    });
 
     // ======== Generación por grupo (usa el último estado del lobby) ========
     function buildGroupedOutput(mode){
