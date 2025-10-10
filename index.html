@@ -216,6 +216,18 @@
       <button class="btn" id="btnCopiar">Copiar</button>
       <button class="btn" id="btnTest">Test</button>
     </div>
+    <div id="timerWrap" class="inline" style="margin-top:10px;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap">
+      <span class="muted">Temporizador:</span>
+      <select id="timerSelect" class="btn" style="padding:8px 10px">
+        <option value="30">30s</option>
+        <option value="60">60s</option>
+        <option value="120">120s</option>
+        <option value="180">180s</option>
+      </select>
+      <button class="btn" id="btnTimerStart">Iniciar</button>
+      <button class="btn" id="btnTimerCancel">Cancelar</button>
+      <span id="timerDisplay" class="kbd" style="margin-left:6px">—:—</span>
+    </div>
     <div class="muted" style="margin-top:8px">© 2025 Tabja Games</div>
   </footer>
 
@@ -386,6 +398,13 @@
     const playersList = $("playersList");
     const btnGrupos = $("btnGrupos");
 
+    const btnTimerStart = $("btnTimerStart");
+    const btnTimerCancel = $("btnTimerCancel");
+    const timerSelect   = $("timerSelect");
+    const timerDisplay  = $("timerDisplay");
+
+    let timerInterval = null;
+
     const LS_CODE_KEY = "am_lobby_code";
 
     function makeCode(){
@@ -456,6 +475,11 @@
       });
 
       playersList?.querySelectorAll('.scoreBtn').forEach(b=> b.disabled = !hostOrSolo);
+
+      // Timer: solo el host puede iniciar/cancelar en lobby
+      const timerControls = [btnTimerStart, btnTimerCancel, timerSelect];
+      const timerDisabled = !isHost || !lobbyCode;
+      timerControls.forEach(el=>{ if(!el) return; el.disabled = timerDisabled; el.style.opacity = timerDisabled ? 0.5 : ''; });
     }
 
     const clampScore = (n)=> Math.max(0, Math.min(999, n|0));
@@ -517,6 +541,48 @@
 
       playersCard.style.display = lobbyCode ? 'block' : 'none';
     }
+
+    // ======== Temporizador por lobby (compartido) ========
+    function fmt(t){ t=Math.max(0,Math.floor(t)); const m=Math.floor(t/60); const s=String(t%60).padStart(2,'0'); return `${m}:${s}`; }
+
+    function clearTimerInterval(){ if(timerInterval){ clearInterval(timerInterval); timerInterval=null; } }
+
+    async function startTimer(durationSec){
+      if(!lobbyCode) { if(window.showToast) window.showToast('Únete a una sala'); return; }
+      if(!isHost){ return; }
+      try{
+        await update(ref(db, `lobbies/${lobbyCode}`), { timer: { startedAt: Date.now(), durationSec, startedBy: clientId, canceled: false } });
+      }catch(e){ console.warn('No se pudo iniciar timer', e); if(window.showToast) window.showToast('No se pudo iniciar el temporizador'); }
+    }
+
+    async function cancelTimer(){
+      if(!lobbyCode || !isHost) return;
+      try{
+        await update(ref(db, `lobbies/${lobbyCode}`), { 'timer/canceled': true, 'timer/canceledAt': Date.now() });
+      }catch(e){ console.warn('No se pudo cancelar timer', e); if(window.showToast) window.showToast('No se pudo cancelar'); }
+    }
+
+    function handleTimerState(timer){
+      clearTimerInterval();
+      if(!timer || timer.canceled){ if(timerDisplay) timerDisplay.textContent='—:—'; if(btnTimerStart) btnTimerStart.disabled = !isHost || !lobbyCode; return; }
+      const endAt = (timer.startedAt||0) + (timer.durationSec||0)*1000;
+      function tick(){
+        const rem = Math.max(0, Math.ceil((endAt - Date.now())/1000));
+        if(timerDisplay) timerDisplay.textContent = fmt(rem);
+        if(rem<=0){ clearTimerInterval(); if(window.showToast) window.showToast('⏰ ¡Tiempo!'); if(btnTimerStart) btnTimerStart.disabled = !isHost || !lobbyCode; }
+      }
+      tick();
+      timerInterval = setInterval(tick, 250);
+      if(btnTimerStart) btnTimerStart.disabled = true;
+    }
+
+    // Controles de UI del temporizador
+    btnTimerStart?.addEventListener('click', ()=>{
+      const dur = parseInt((timerSelect?.value)||'60',10);
+      if(Number.isNaN(dur)) return;
+      startTimer(dur);
+    });
+    btnTimerCancel?.addEventListener('click', ()=> cancelTimer());
 
     // ======== Generación por grupo (usa el último estado del lobby) ========
     function buildGroupedOutput(mode){
@@ -616,6 +682,9 @@
         if (statusEl) statusEl.textContent = `Sala: ${code} • ${isHost ? "Eres ADMIN" : "Jugador"} • Conectados: ${playersConnected}`;
 
         if (state.currentOutputHtml && document.getElementById("salida")) document.getElementById("salida").innerHTML = state.currentOutputHtml;
+
+        // Timer shared state
+        handleTimerState(state.timer);
 
         renderPlayers(state);
         updateHostUI();
@@ -749,6 +818,9 @@
         }
       }
     }, true);
+
+    // Deshabilitar iniciar/cancelar timer si no hay lobby
+    if(!lobbyCode){ [btnTimerStart, btnTimerCancel, timerSelect].forEach(el=>{ if(!el) return; el.disabled = true; el.style.opacity = 0.5; }); }
 
     // ====== Init ======
     (function initLobbyOnce(){
