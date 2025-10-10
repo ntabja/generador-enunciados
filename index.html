@@ -542,67 +542,61 @@
       playersCard.style.display = lobbyCode ? 'block' : 'none';
     }
 
-    // ======== Temporizador por lobby (compartido) ========
-    function fmt(t){ t=Math.max(0,Math.floor(t)); const m=Math.floor(t/60); const s=String(t%60).padStart(2,'0'); return `${m}:${s}`; }
+   // ======== Temporizador por lobby (compartido) ========
+function fmt(t){
+  const m = Math.floor(t/60), s = t%60;
+  return `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+}
+function clearTimerInterval(){ if(timerInterval){ clearInterval(timerInterval); timerInterval=null; } }
 
-    function clearTimerInterval(){ if(timerInterval){ clearInterval(timerInterval); timerInterval=null; } }
+async function startTimer(durationSec){
+  if(!lobbyCode || !(isHost || playersConnected<=1)) return;
+  const startTime = Date.now();
+  await update(ref(db, `lobbies/${lobbyCode}`), {
+    timer: { startedAt: startTime, durationSec, canceled:false }
+  });
+}
+async function cancelTimer(){
+  if(!lobbyCode || !(isHost || playersConnected<=1)) return;
+  await update(ref(db, `lobbies/${lobbyCode}/timer`), { canceled:true });
+}
 
-    async function startTimer(durationSec){
-      if(!lobbyCode) { if(window.showToast) window.showToast('Únete a una sala'); return; }
-      if(!isHost){ return; }
-      try{
-        await update(ref(db, `lobbies/${lobbyCode}`), { timer: { startedAt: Date.now(), durationSec, startedBy: clientId, canceled: false } });
-      }catch(e){ console.warn('No se pudo iniciar timer', e); if(window.showToast) window.showToast('No se pudo iniciar el temporizador'); }
+function handleTimerState(timer){
+  clearTimerInterval();
+  if(!timer || timer.canceled){
+    if(timerDisplay) timerDisplay.textContent='—:—';
+    if(timerDisplay) timerDisplay.style.color='';
+    return;
+  }
+  const { startedAt, durationSec } = timer;
+  if(!startedAt||!durationSec) return;
+  function tick(){
+    const elapsed = Math.floor((Date.now()-startedAt)/1000);
+    const remain = Math.max(0, durationSec - elapsed);
+    if(timerDisplay){
+      timerDisplay.textContent = fmt(remain);
+      timerDisplay.style.color = remain <= 10 ? 'var(--verb)' : '';
     }
-
-    async function cancelTimer(){
-      if(!lobbyCode || !isHost) return;
-      try{
-        await update(ref(db, `lobbies/${lobbyCode}`), { 'timer/canceled': true, 'timer/canceledAt': Date.now() });
-      }catch(e){ console.warn('No se pudo cancelar timer', e); if(window.showToast) window.showToast('No se pudo cancelar'); }
-    }
-
-    function handleTimerState(timer){
+    if(remain<=0){
       clearTimerInterval();
-      // Sync selector con el estado (también en clientes no-host)
-      if(timerSelect && timer && typeof timer.durationSec === 'number'){
-        const val = String(timer.durationSec);
-        // Asegurar que exista la opción (por si el host tiene valores diferentes)
-        if(!Array.from(timerSelect.options).some(o=>o.value===val)){
-          const opt=document.createElement('option');
-          opt.value=val; opt.textContent=`${val}s`;
-          timerSelect.appendChild(opt);
-        }
-        if(timerSelect.value !== val) timerSelect.value = val;
-      }
-      if(!timer || timer.canceled){ if(timerDisplay) timerDisplay.textContent='—:—'; if(btnTimerStart) btnTimerStart.disabled = !isHost || !lobbyCode; return; }
-      const endAt = (timer.startedAt||0) + (timer.durationSec||0)*1000;
-      function tick(){
-        const rem = Math.max(0, Math.ceil((endAt - Date.now())/1000));
-        if(timerDisplay) timerDisplay.textContent = fmt(rem);
-        if(rem<=0){ clearTimerInterval(); if(window.showToast) window.showToast('⏰ ¡Tiempo!'); if(btnTimerStart) btnTimerStart.disabled = !isHost || !lobbyCode; }
-      }
-      tick();
-      timerInterval = setInterval(tick, 250);
-      if(btnTimerStart) btnTimerStart.disabled = true;
+      if(window.showToast) window.showToast('⏰ ¡Tiempo!');
     }
+  }
+  tick();
+  timerInterval = setInterval(tick, 1000);
+}
 
-    // Controles de UI del temporizador
-    btnTimerStart?.addEventListener('click', ()=>{
-      const dur = parseInt((timerSelect?.value)||'60',10);
-      if(Number.isNaN(dur)) return;
-      startTimer(dur);
-    });
-    btnTimerCancel?.addEventListener('click', ()=> cancelTimer());
+btnTimerStart?.addEventListener('click', ()=>{
+  const sec = parseInt(timerSelect?.value||'60',10);
+  startTimer(sec);
+});
+btnTimerCancel?.addEventListener('click', ()=> cancelTimer());
 
-    // Cambio de duración (solo host) — reinicia el conteo desde ahora con el nuevo tiempo
-    timerSelect?.addEventListener('change', ()=>{
-      if(!isHost || !lobbyCode) return;
-      const dur = parseInt((timerSelect?.value)||'60',10);
-      if(Number.isNaN(dur)) return;
-      update(ref(db, `lobbies/${lobbyCode}`), { 'timer/durationSec': dur, 'timer/startedAt': Date.now(), 'timer/changedBy': clientId, 'timer/canceled': false })
-        .catch(e=>{ console.warn('No se pudo cambiar la duración', e); if(window.showToast) window.showToast('No se pudo cambiar el tiempo'); });
-    });
+timerSelect?.addEventListener('change', ()=>{
+  if(!(isHost||playersConnected<=1)||!lobbyCode) return;
+  const val = parseInt(timerSelect.value,10);
+  update(ref(db, `lobbies/${lobbyCode}/timer`), { durationSec: val, startedAt: Date.now(), canceled:false });
+});
 
     // ======== Generación por grupo (usa el último estado del lobby) ========
     function buildGroupedOutput(mode){
