@@ -153,24 +153,39 @@
   </header>
 
   <!-- Overlay de inicio -->
-  <div id="lobbyOverlay">
-    <section class="card" style="max-width:520px; width:92%; padding:20px">
-      <div class="title" style="margin-bottom:10px">Crear o unirse a una sala</div>
-      <div class="inline" style="align-items:flex-end; gap:10px; flex-wrap:wrap">
-        <div>
-          <label class="muted" for="playerName">Tu nombre</label><br>
-          <input id="playerName" placeholder="Ej: Tabja" style="max-width:180px">
-        </div>
-        <div>
-          <label class="muted" for="lobbyCodeInput">Código de sala</label><br>
-          <input id="lobbyCodeInput" placeholder="ABCD2" style="max-width:140px;text-transform:uppercase">
-        </div>
-        <button class="btn" id="btnCreateLobby">Crear sala</button>
-        <button class="btn" id="btnJoinLobby">Unirse</button>
+<!-- Overlay de inicio -->
+<div id="lobbyOverlay">
+  <section class="card" style="max-width:520px; width:92%; padding:20px">
+    <div class="title" style="margin-bottom:10px">Crear o unirse a una sala</div>
+
+    <!-- Nombre (siempre visible) -->
+    <div class="inline" style="align-items:flex-end; gap:10px; flex-wrap:wrap; margin-bottom:10px">
+      <div style="min-width:180px; flex:1">
+        <label class="muted" for="playerName">Tu nombre</label><br>
+        <input id="playerName" placeholder="Ej: Tabja" style="max-width:100%">
       </div>
-      <div class="muted" id="lobbyStatus" style="margin-top:10px; min-height:20px"></div>
-    </section>
-  </div>
+    </div>
+
+    <!-- Paso 1: elegir acción -->
+    <div id="choiceRow" class="inline" style="gap:10px; flex-wrap:wrap; margin-bottom:6px">
+      <button class="btn" id="btnCreateLobby">Crear sala</button>
+      <button class="btn" id="btnChooseJoin">Unirse a una sala</button>
+    </div>
+
+    <!-- Paso 2 (solo si eligen Unirse): ingresar código -->
+    <div id="joinRow" class="inline" style="align-items:flex-end; gap:10px; flex-wrap:wrap; display:none">
+      <div>
+        <label class="muted" for="lobbyCodeInput">Código de sala</label><br>
+        <input id="lobbyCodeInput" placeholder="ABCD2" style="max-width:140px; text-transform:uppercase">
+      </div>
+      <button class="btn" id="btnJoinLobby">Entrar</button>
+      <button class="btn" id="btnBackJoin">← Atrás</button>
+    </div>
+
+    <div class="muted" id="lobbyStatus" style="margin-top:10px; min-height:20px"></div>
+  </section>
+</div>
+
 
   <main class="container" style="padding-top:18px">
     <section class="card">
@@ -398,6 +413,11 @@
     const playersList = $("playersList");
     const btnGrupos = $("btnGrupos");
 
+    const choiceRow     = $("choiceRow");
+    const joinRow       = $("joinRow");
+    const btnChooseJoin = $("btnChooseJoin");
+    const btnBackJoin   = $("btnBackJoin");
+
     const btnTimerStart = $("btnTimerStart");
     const btnTimerCancel = $("btnTimerCancel");
     const timerSelect   = $("timerSelect");
@@ -439,6 +459,19 @@
       playersCard.style.display='none';
       lastLobbyState = null;
     }
+
+    let joinMode = false;
+function setJoinMode(on){
+  joinMode = !!on;
+  if (choiceRow) choiceRow.style.display = on ? "none" : "flex";
+  if (joinRow)   joinRow.style.display   = on ? "flex" : "none";
+  // reset de mensajes y código
+  if (!on) {
+    const input = $("lobbyCodeInput");
+    if (input) input.value = "";
+    if (statusEl) statusEl.textContent = "";
+  }
+}
 
     /* Presencia por pestaña */
     function setupPresence(code){
@@ -850,6 +883,7 @@ timerSelect?.addEventListener('change', ()=>{
       }else{
         overlayEl.style.display = 'flex';
         playersCard.style.display='none';
+        setJoinMode(false); // 👈 arranca mostrando Crear/Unirse
       }
     })();
 
@@ -906,15 +940,30 @@ timerSelect?.addEventListener('change', ()=>{
     window.showToast = (msg)=>{ const el=document.getElementById('toast'); if(!el) return; el.textContent=msg; el.classList.add('show'); clearTimeout(window.__tT); window.__tT=setTimeout(()=>el.classList.remove('show'),2200); };
 
     // Overlay actions
-    document.getElementById("btnCreateLobby")?.addEventListener("click", ()=>{
-      const name = document.getElementById("playerName")?.value || "Host";
-      createLobby(name);
-    });
-    document.getElementById("btnJoinLobby")?.addEventListener("click", ()=>{
-      const name = document.getElementById("playerName")?.value || "Jugador";
-      const code = (document.getElementById("lobbyCodeInput")?.value)||"";
-      joinLobby(code, name);
-    });
+    // Overlay actions (flujo por pasos)
+$("btnCreateLobby")?.addEventListener("click", ()=>{
+  const name = $("playerName")?.value?.trim() || "Host";
+  createLobby(name);
+});
+
+btnChooseJoin?.addEventListener("click", ()=>{
+  setJoinMode(true);
+  $("lobbyCodeInput")?.focus();
+});
+
+btnBackJoin?.addEventListener("click", ()=>{
+  setJoinMode(false);
+});
+
+$("btnJoinLobby")?.addEventListener("click", ()=>{
+  const name = $("playerName")?.value?.trim() || "Jugador";
+  const code = ($("lobbyCodeInput")?.value || "").toUpperCase().trim();
+  if(!code){
+    if(statusEl) statusEl.textContent = "Escribe un código de sala";
+    return;
+  }
+  joinLobby(code, name);
+});
   </script>
 
 </body>
