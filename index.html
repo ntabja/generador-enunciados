@@ -212,8 +212,6 @@
   </main>
 
   <footer>
-    Hecho para móvil y desktop.  
-    Atajos: <span class="kbd">Ctrl/Cmd + 1..6</span>
     <div id="footerBtns">
       <button class="btn" id="btnCopiar">Copiar</button>
       <button class="btn" id="btnTest">Test</button>
@@ -380,7 +378,7 @@
     let lastLobbyState = null;
 
     const $ = (id)=> document.getElementById(id);
-    const statusEl = $("lobbyStatus");
+    const statusEl = "lobbyStatus" in window ? window.lobbyStatus : document.getElementById('lobbyStatus');
     const badgeEl  = $("roomBadge");
     const overlayEl = $("lobbyOverlay");
     const leaveRow = $("leaveRow");
