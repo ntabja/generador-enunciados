@@ -177,6 +177,7 @@
     <div id="joinRow" class="inline" style="align-items:flex-end; gap:10px; flex-wrap:wrap; display:none">
   <div style="flex:1; min-width:200px;">
     <input id="lobbyCodeInput" placeholder="Código de sala" aria-label="Código de sala" style="width:100%; text-transform:uppercase">
+    <small id="codeError" style="color:#dc2626; display:none;">Escribe un código de sala.</small>
   </div>
   <button class="btn" id="btnJoinLobby">Entrar</button>
   <button class="btn" id="btnBackJoin">← Atrás</button>
@@ -978,17 +979,20 @@ $("btnJoinLobby")?.addEventListener("click", ()=>{
   const code = ($("lobbyCodeInput")?.value || "").toUpperCase().trim();
   const err = $("nameError");
   const errLen = $("nameLengthError");
+  const errCode = $("codeError");
 
   // Validación 1: vacío
   if (!name.length) {
     if (err) err.style.display = "block";
     if (errLen) errLen.style.display = "none";
+    if (errCode) errCode.style.display = "none";
     return;
   }
   // Validación 2: más de 12 caracteres
   if (name.length > 12) {
     if (err) err.style.display = "none";
     if (errLen) errLen.style.display = "block";
+    if (errCode) errCode.style.display = "none";
     return;
   }
 
@@ -996,10 +1000,13 @@ $("btnJoinLobby")?.addEventListener("click", ()=>{
   if (err) err.style.display = "none";
   if (errLen) errLen.style.display = "none";
 
+  // Validación del código
   if(!code){
-    if(statusEl) statusEl.textContent = "Escribe un código de sala";
+    if (errCode) errCode.style.display = "block";
     return;
   }
+
+  if (errCode) errCode.style.display = "none";
   joinLobby(code, name);
 });
 
