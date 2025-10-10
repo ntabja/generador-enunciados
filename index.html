@@ -163,6 +163,7 @@
       <div style="min-width:180px; flex:1">
         <label class="muted" for="playerName">Tu nombre</label><br>
         <input id="playerName" placeholder="Ej: Tabja" style="max-width:100%">
+        <small id="nameError" style="color:#dc2626; display:none;">Por favor coloca tu nombre.</small>
       </div>
     </div>
 
@@ -939,10 +940,15 @@ timerSelect?.addEventListener('change', ()=>{
     document.getElementById("btnLeave")?.addEventListener("click", leaveLobby);
     window.showToast = (msg)=>{ const el=document.getElementById('toast'); if(!el) return; el.textContent=msg; el.classList.add('show'); clearTimeout(window.__tT); window.__tT=setTimeout(()=>el.classList.remove('show'),2200); };
 
-    // Overlay actions
-    // Overlay actions (flujo por pasos)
+// Overlay actions (flujo por pasos)
 $("btnCreateLobby")?.addEventListener("click", ()=>{
-  const name = $("playerName")?.value?.trim() || "Host";
+  const name = $("playerName")?.value?.trim() || "";
+  const err = $("nameError");
+  if (!name.length) {
+    if (err) err.style.display = "block";
+    return;
+  }
+  if (err) err.style.display = "none";
   createLobby(name);
 });
 
@@ -956,13 +962,26 @@ btnBackJoin?.addEventListener("click", ()=>{
 });
 
 $("btnJoinLobby")?.addEventListener("click", ()=>{
-  const name = $("playerName")?.value?.trim() || "Jugador";
+  const name = $("playerName")?.value?.trim() || "";
   const code = ($("lobbyCodeInput")?.value || "").toUpperCase().trim();
+  const err = $("nameError");
+
+  if (!name.length) {
+    if (err) err.style.display = "block";
+    return;
+  }
+  if (err) err.style.display = "none";
+
   if(!code){
     if(statusEl) statusEl.textContent = "Escribe un código de sala";
     return;
   }
   joinLobby(code, name);
+});
+    $("playerName")?.addEventListener("input", ()=>{
+  const val = $("playerName")?.value?.trim() || "";
+  const err = $("nameError");
+  if (val.length && err) err.style.display = "none";
 });
   </script>
 
