@@ -153,51 +153,37 @@
   </header>
 
   <!-- Overlay de inicio -->
-  <div id="lobbyOverlay">
-    <section class="card" style="max-width:520px; width:92%; padding:20px">
-      <div class="title" style="margin-bottom:10px">Crear o unirse a una sala</div>
-      <div class="inline" style="align-items:flex-end; gap:10px; flex-wrap:wrap">
-        <div>
-          <label class="muted" for="playerName">Tu nombre</label><br>
-          <input id="playerName" placeholder="Ej: Tabja" style="max-width:180px">
-        </div>
-        <div>
-          <label class="muted" for="lobbyCodeInput">Código de sala</label><br>
-          <input id="lobbyCodeInput" placeholder="ABCD2" style="max-width:140px;text-transform:uppercase">
-        </div>
-        <button class="btn" id="btnCreateLobby">Crear sala</button>
-        <button class="btn" id="btnJoinLobby">Unirse</button>
-      </div>
-      <div class="muted" id="lobbyStatus" style="margin-top:10px; min-height:20px"></div>
-    </section>
-  </div>
+<div id="lobbyOverlay">
+  <section class="card" style="max-width:520px; width:92%; padding:20px">
+    <div class="title" style="margin-bottom:10px">Crear o unirse a una sala</div>
 
-  <main class="container" style="padding-top:18px">
-    <section class="card">
-      <div style="display:grid;gap:10px">
-        <div class="inline">
-          <button class="btn" id="btnP"><span class="letter-p">P</span></button>
-          <button class="btn" id="btnFusion"><span class="letter-p">P</span> + <span class="letter-p">P</span></button>
-          <button class="btn" id="btnEvento">EVENTOS</button>
-          <button class="btn" id="btnEscena">ESCENAS</button>
-        </div>
-        <div class="inline">
-          <button class="btn" id="btnPV"><span class="letter-p">P</span> + <span class="letter-v">V</span></button>
-          <button class="btn" id="btnPA"><span class="letter-p">P</span> + <span class="letter-a">A</span></button>
-          <button class="btn" id="btnPL"><span class="letter-p">P</span> + <span class="letter-l">L</span></button>
-          <button class="btn" id="btnPVA"><span class="letter-p">P</span> + <span class="letter-v">V</span> + <span class="letter-a">A</span></button>
-          <button class="btn" id="btnPAL"><span class="letter-p">P</span> + <span class="letter-a">A</span> + <span class="letter-l">L</span></button>
-          <button class="btn" id="btnPVL"><span class="letter-p">P</span> + <span class="letter-v">V</span> + <span class="letter-l">L</span></button>
-          <button class="btn" id="btnPVAL"><span class="letter-p">P</span> + <span class="letter-v">V</span> + <span class="letter-a">A</span> + <span class="letter-l">L</span></button>
-        </div>
+    <!-- Nombre (siempre visible) -->
+    <div class="inline" style="align-items:flex-end; gap:10px; flex-wrap:wrap; margin-bottom:10px">
+      <div style="min-width:180px; flex:1">
+        <label class="muted" for="playerName">Tu nombre</label><br>
+        <input id="playerName" placeholder="Ej: Tabja" style="max-width:100%">
       </div>
-    </section>
+    </div>
 
-    <section class="card" style="margin-top:14px">
-      <div class="title">Enunciado a dibujar</div>
-      <div id="salida" class="out" style="margin-top:10px;white-space:pre-wrap"></div>
-      <div id="testlog" class="muted" style="margin-top:10px"></div>
-    </section>
+    <!-- Paso 1: elegir acción -->
+    <div id="choiceRow" class="inline" style="gap:10px; flex-wrap:wrap; margin-bottom:6px">
+      <button class="btn" id="btnCreateLobby">Crear sala</button>
+      <button class="btn" id="btnChooseJoin">Unirse a una sala</button>
+    </div>
+
+    <!-- Paso 2 (solo si eligen Unirse): ingresar código -->
+    <div id="joinRow" class="inline" style="align-items:flex-end; gap:10px; flex-wrap:wrap; display:none">
+      <div>
+        <label class="muted" for="lobbyCodeInput">Código de sala</label><br>
+        <input id="lobbyCodeInput" placeholder="ABCD2" style="max-width:140px; text-transform:uppercase">
+      </div>
+      <button class="btn" id="btnJoinLobby">Entrar</button>
+      <button class="btn" id="btnBackJoin">← Atrás</button>
+    </div>
+
+    <div class="muted" id="lobbyStatus" style="margin-top:10px; min-height:20px"></div>
+  </section>
+</div>
 
     <!-- Jugadores conectados -->
     <section class="card" id="playersCard" style="margin-top:14px; display:none">
