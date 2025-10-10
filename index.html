@@ -158,14 +158,13 @@
   <section class="card" style="max-width:520px; width:92%; padding:20px">
     <div class="title" style="margin-bottom:10px">Crear o unirse a una sala</div>
 
-    <!-- Nombre (siempre visible) -->
-    <div class="inline" style="align-items:flex-end; gap:10px; flex-wrap:wrap; margin-bottom:10px">
-      <div style="min-width:180px; flex:1">
-        <label class="muted" for="playerName">Tu nombre</label><br>
-        <input id="playerName" placeholder="Ej: Tabja" style="max-width:100%">
-        <small id="nameError" style="color:#dc2626; display:none;">Por favor coloca tu nombre.</small>
-      </div>
-    </div>
+   <!-- Nombre (siempre visible) -->
+<div class="inline" style="align-items:flex-end; gap:10px; flex-wrap:wrap; margin-bottom:10px">
+  <div style="min-width:180px; flex:1">
+    <input id="playerName" placeholder="Tu nombre" aria-label="Tu nombre" style="max-width:100%">
+    <small id="nameError" style="color:#dc2626; display:none;">Por favor coloca tu nombre.</small>
+  </div>
+</div>
 
     <!-- Paso 1: elegir acción -->
     <div id="choiceRow" class="inline" style="gap:10px; flex-wrap:wrap; margin-bottom:6px">
@@ -175,13 +174,12 @@
 
     <!-- Paso 2 (solo si eligen Unirse): ingresar código -->
     <div id="joinRow" class="inline" style="align-items:flex-end; gap:10px; flex-wrap:wrap; display:none">
-      <div>
-        <label class="muted" for="lobbyCodeInput">Código de sala</label><br>
-        <input id="lobbyCodeInput" placeholder="ABCD2" style="max-width:140px; text-transform:uppercase">
-      </div>
-      <button class="btn" id="btnJoinLobby">Entrar</button>
-      <button class="btn" id="btnBackJoin">← Atrás</button>
-    </div>
+  <div>
+    <input id="lobbyCodeInput" placeholder="Código de sala" aria-label="Código de sala" style="max-width:140px; text-transform:uppercase">
+  </div>
+  <button class="btn" id="btnJoinLobby">Entrar</button>
+  <button class="btn" id="btnBackJoin">← Atrás</button>
+</div>
 
     <div class="muted" id="lobbyStatus" style="margin-top:10px; min-height:20px"></div>
   </section>
