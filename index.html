@@ -508,7 +508,7 @@
           connected,
           isAdmin: state.hostId === pid
         };
-      }).filter(x=>x.connected);
+      });
 
       if(items.length === 0){
         playersList.innerHTML = `<span class="muted">Nadie conectado aún…</span>`;
@@ -520,7 +520,7 @@
           const bd = rgba(col, 0.55);
           return `
           <div class="playerChip" data-id="${x.id}" title="${escSafe(x.name)}${x.isAdmin?' • ADMIN':''}" style="--gc:${col}">
-            <span class="dot" aria-label="online"></span>
+            <span class="dot" aria-label="${x.connected ? 'online' : 'offline'}" style="${x.connected ? '' : 'background:#94a3b8'}"></span>
             <span class="groupBadge" style="background:${bg};border-color:${bd}">${x.group ? `Grupo ${escSafe(x.group)}` : '—'}</span>
             <span class="name">
               ${escSafe(x.name)}
