@@ -288,6 +288,11 @@
           <button class="btn" id="btnEvento">EVENTOS</button>
           <button class="btn" id="btnEscena">ESCENAS</button>
         </div>
+        <!-- 🔹 Botones especiales de enunciados aleatorios -->
+<div class="inline" style="margin-top:8px;">
+  <button class="btn" id="btnDoble">Enunciado Doble</button>
+  <button class="btn" id="btnTriple">Enunciado Triple</button>
+</div>
         <div class="inline">
           <button class="btn" id="btnPV"><span class="letter-p">P</span> + <span class="letter-v">V</span></button>
           <button class="btn" id="btnPA"><span class="letter-p">P</span> + <span class="letter-a">A</span></button>
@@ -1103,6 +1108,88 @@ $("btnJoinLobby")?.addEventListener("click", ()=>{
   if (errCode) errCode.style.display = "none";
   joinLobby(code, name);
 });
+
+    // ======== Enunciado Doble y Triple ========
+
+// Función para generar enunciado doble por grupo (aleatorio entre PV, PA o PL)
+async function generarDoble(){
+  if (!lobbyCode) return;
+  const hostOrSolo = isHost || playersConnected <= 1;
+  if (!hostOrSolo) return;
+
+  const state = lastLobbyState;
+  const groups = getActiveGroupsFromState(state);
+  if (!groups || groups.length === 0) return;
+
+  const modos = ["PV", "PA", "PL"];
+  const now = Date.now();
+  const linesHtml = [];
+  const linesText = [];
+
+  for (const g of groups){
+    const modo = modos[Math.floor(Math.random() * modos.length)];
+    const R = rng(`${lobbyCode}-${g}-${now}-${modo}`);
+    const gens = { PV: window.genPV, PA: window.genPA, PL: window.genPL };
+    const fn = gens[modo];
+    const { html, text } = fn(R);
+
+    const col = groupColor(g);
+    const bg = rgba(col, 0.22);
+    const bd = rgba(col, 0.55);
+
+    linesHtml.push(`
+      <div class="lineGroup">
+        <span class="gBadge" style="background:${bg};border-color:${bd}">Grupo ${g}</span>
+        <span>${html}</span>
+      </div>
+    `);
+    linesText.push(`Grupo ${g}: ${text}`);
+  }
+
+  await publishOutput(linesHtml.join(""), linesText.join("\n"));
+}
+
+// Función para generar enunciado triple por grupo (aleatorio entre PVA, PAL o PVL)
+async function generarTriple(){
+  if (!lobbyCode) return;
+  const hostOrSolo = isHost || playersConnected <= 1;
+  if (!hostOrSolo) return;
+
+  const state = lastLobbyState;
+  const groups = getActiveGroupsFromState(state);
+  if (!groups || groups.length === 0) return;
+
+  const modos = ["PVA", "PAL", "PVL"];
+  const now = Date.now();
+  const linesHtml = [];
+  const linesText = [];
+
+  for (const g of groups){
+    const modo = modos[Math.floor(Math.random() * modos.length)];
+    const R = rng(`${lobbyCode}-${g}-${now}-${modo}`);
+    const gens = { PVA: window.genPVA, PAL: window.genPAL, PVL: window.genPVL };
+    const fn = gens[modo];
+    const { html, text } = fn(R);
+
+    const col = groupColor(g);
+    const bg = rgba(col, 0.22);
+    const bd = rgba(col, 0.55);
+
+    linesHtml.push(`
+      <div class="lineGroup">
+        <span class="gBadge" style="background:${bg};border-color:${bd}">Grupo ${g}</span>
+        <span>${html}</span>
+      </div>
+    `);
+    linesText.push(`Grupo ${g}: ${text}`);
+  }
+
+  await publishOutput(linesHtml.join(""), linesText.join("\n"));
+}
+
+// Asignar los botones
+document.getElementById("btnDoble")?.addEventListener("click", generarDoble);
+document.getElementById("btnTriple")?.addEventListener("click", generarTriple);
 
     $("playerName")?.addEventListener("input", ()=>{
   const val = $("playerName")?.value?.trim() || "";
