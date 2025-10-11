@@ -832,13 +832,14 @@ timerSelect?.addEventListener('change', ()=>{
       }
 
       const letras = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-      const updates = {};
-      for (let i = 0; i < activos.length; i += 2) {
-        const letter = letras[i/2] || String(i/2 + 1);
-        const a = activos[i], b = activos[i+1];
-        updates[`lobbies/${lobbyCode}/players/${a.pid}/group`] = letter;
-        updates[`lobbies/${lobbyCode}/players/${b.pid}/group`] = letter;
-      }
+const updates = {};
+for (let i = 0; i < activos.length; i += 2) {
+  const groupIndex = Math.floor(i / 2);
+  const letter = letras[groupIndex] || letras[letras.length - 1]; // usa Z si se pasa
+  const a = activos[i], b = activos[i+1];
+  updates[`lobbies/${lobbyCode}/players/${a.pid}/group`] = letter;
+  updates[`lobbies/${lobbyCode}/players/${b.pid}/group`] = letter;
+}
 
       await update(ref(db), updates);
     }
