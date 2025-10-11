@@ -287,6 +287,7 @@
           <button class="btn" id="btnFusion"><span class="letter-p">P</span> + <span class="letter-p">P</span></button>
           <button class="btn" id="btnEvento">EVENTOS</button>
           <button class="btn" id="btnEscena">ESCENAS</button>
+          <button class="btn" id="btnDoble">ENUNCIADO DOBLE</button>          
         </div>
         <div class="inline">
           <button class="btn" id="btnPV"><span class="letter-p">P</span> + <span class="letter-v">V</span></button>
@@ -376,6 +377,46 @@
     function genP(R){const p=pick(PERSONAJES,R);return{ text:`${p}`, html:`${wrapChar(p)}` }}
     function genEvento(R){const e=pick(EVENTOS,R),p=pick(PERSONAJES,R);return{ text:`${e} ${p}`, html:`${wrapEvent(e)} ${wrapChar(p)}` }}
     function genEscena(R){const s=pick(ESCENAS,R),l=pick(LUGARES,R);return{ text:`${s} ${l}`, html:`${wrapScene(s)} ${wrapPlace(l)}` }}
+    // Genera aleatoriamente uno de: PV / PA / PL (para un solo enunciado)
+function genRandPVPAorPL(R){
+  const modes = ['PV','PA','PL'];
+  const mode  = modes[Math.floor(R()*modes.length)];
+  const fns   = { PV: genPV, PA: genPA, PL: genPL };
+  return fns[mode](R);
+}
+
+// Versión por grupo: a cada grupo le toca aleatoriamente PV/PA/PL
+function buildGroupedOutputDouble(){
+  const state  = lastLobbyState;
+  const groups = getActiveGroupsFromState(state);
+  if(!groups || groups.length===0) return null;
+
+  const now = Date.now();
+  const linesHtml = [];
+  const linesText = [];
+
+  for(const g of groups){
+    const R = rng(`${lobbyCode}-${g}-${now}`); // semilla por grupo
+    const modes = ['PV','PA','PL'];
+    const mode  = modes[Math.floor(R()*modes.length)];
+    const fns   = { PV: genPV, PA: genPA, PL: genPL };
+    const { html, text } = fns[mode](R);
+
+    const col = groupColor(g);
+    const bg  = rgba(col, 0.22);
+    const bd  = rgba(col, 0.55);
+
+    linesHtml.push(`
+      <div class="lineGroup">
+        <span class="gBadge" style="background:${bg};border-color:${bd}">Grupo ${g}</span>
+        <span>${html}</span>
+      </div>
+    `.trim());
+    linesText.push(`Grupo ${g}: ${text}`);
+  }
+
+  return { html: linesHtml.join(""), text: linesText.join("\n") };
+}
 
     let lastCopyText='';
 
@@ -588,10 +629,10 @@ function setJoinMode(on){
     function updateHostUI(){
       const hostOrSolo = isHost || playersConnected <= 1;
       const ids = [
-        'btnP','btnFusion','btnEvento','btnEscena',
-        'btnPV','btnPA','btnPL','btnPVA','btnPAL','btnPVL','btnPVAL',
-        'btnGrupos'
-      ];
+  'btnP','btnFusion','btnEvento','btnEscena','btnDoble',
+  'btnPV','btnPA','btnPL','btnPVA','btnPAL','btnPVL','btnPVAL',
+  'btnGrupos'
+];
       const disabled = (lobbyCode && !hostOrSolo);
       ids.forEach(id=>{
         const el = $(id);
@@ -904,10 +945,11 @@ for (let i = 0; i < activos.length; i += 2) {
 
     // ====== Botones de generación ======
     const MAP = {
-      btnPVAL:'PVAL', btnPV:'PV', btnPA:'PA', btnPL:'PL',
-      btnPVA:'PVA', btnPAL:'PAL', btnPVL:'PVL',
-      btnFusion:'FUSION', btnP:'P', btnEvento:'EVENTO', btnEscena:'ESCENA'
-    };
+  btnPVAL:'PVAL', btnPV:'PV', btnPA:'PA', btnPL:'PL',
+  btnPVA:'PVA', btnPAL:'PAL', btnPVL:'PVL',
+  btnFusion:'FUSION', btnP:'P', btnEvento:'EVENTO', btnEscena:'ESCENA',
+  btnDoble:'DOBLE'
+};
 
     function genOne(mode){
       const R = (window.rng ? window.rng() : Math.random);
@@ -921,27 +963,58 @@ for (let i = 0; i < activos.length; i += 2) {
     }
 
     function handleGenerate(mode){
-      if(lobbyCode){
-        const hostOrSolo = isHost || playersConnected <= 1;
-        if(!hostOrSolo) return;
+  // Nuevo modo: DOBLE (por grupo PV/PA/PL aleatorio)
+  if(mode === 'DOBLE'){
+    if(lobbyCode){
+      const hostOrSolo = isHost || playersConnected <= 1;
+      if(!hostOrSolo) return;
 
-        const grouped = buildGroupedOutput(mode);
-        if (grouped){
-          publishOutput(grouped.html, grouped.text);
-        }else{
-          const { html, text } = genOne(mode);
-          publishOutput(html, text || '');
-        }
+      const grouped = buildGroupedOutputDouble();
+      if(grouped){
+        publishOutput(grouped.html, grouped.text);
       }else{
-        const grouped = buildGroupedOutput(mode);
-        if (grouped){
-          document.getElementById("salida").innerHTML = grouped.html;
-        }else{
-          const { html } = genOne(mode);
-          document.getElementById("salida").innerHTML = html;
-        }
+        // Sin grupos activos: un enunciado aleatorio PV/PA/PL
+        const R = rng();
+        const { html, text } = genRandPVPAorPL(R);
+        publishOutput(html, text || '');
+      }
+    }else{
+      const grouped = buildGroupedOutputDouble();
+      if(grouped){
+        document.getElementById("salida").innerHTML = grouped.html;
+        lastCopyText = grouped.text;
+      }else{
+        const R = rng();
+        const { html, text } = genRandPVPAorPL(R);
+        document.getElementById("salida").innerHTML = html;
+        lastCopyText = text;
       }
     }
+    return; // Importante: no sigas con el flujo estándar
+  }
+
+  // Flujo estándar (lo que ya tenías)
+  if(lobbyCode){
+    const hostOrSolo = isHost || playersConnected <= 1;
+    if(!hostOrSolo) return;
+
+    const grouped = buildGroupedOutput(mode);
+    if (grouped){
+      publishOutput(grouped.html, grouped.text);
+    }else{
+      const { html, text } = genOne(mode);
+      publishOutput(html, text || '');
+    }
+  }else{
+    const grouped = buildGroupedOutput(mode);
+    if (grouped){
+      document.getElementById("salida").innerHTML = grouped.html;
+    }else{
+      const { html } = genOne(mode);
+      document.getElementById("salida").innerHTML = html;
+    }
+  }
+}
 
     Object.entries(MAP).forEach(([id,mode])=>{
       const btn = $(id);
