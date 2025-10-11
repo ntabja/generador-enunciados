@@ -150,6 +150,34 @@
         <button class="btn" id="btnLeave">Salir</button>
       </div>
     </div>
+
+    <!-- Botón de ayuda -->
+    <a href="https://docs.google.com/document/d/1Y5aZf2fiynNV-wOyLERSH7mDVyFipPWosW3VVZwmEYE/edit?tab=t.0" 
+       target="_blank" 
+       title="Ver instrucciones del juego"
+       style="
+         position:fixed;
+         top:12px;
+         right:16px;
+         font-size:22px;
+         font-weight:900;
+         color:#0ea5e9;
+         text-decoration:none;
+         background:rgba(255,255,255,0.1);
+         border-radius:50%;
+         width:32px;
+         height:32px;
+         display:flex;
+         align-items:center;
+         justify-content:center;
+         backdrop-filter:blur(4px);
+         z-index:2000;
+         transition:background .2s, transform .15s;
+       "
+       onmouseover="this.style.background='rgba(255,255,255,0.25)'; this.style.transform='scale(1.1)';"
+       onmouseout="this.style.background='rgba(255,255,255,0.1)'; this.style.transform='scale(1)';">
+      ?
+    </a>
   </header>
 
 <!-- Overlay de inicio -->
