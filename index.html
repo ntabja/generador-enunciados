@@ -417,6 +417,46 @@ function buildGroupedOutputDouble(){
 
   return { html: linesHtml.join(""), text: linesText.join("\n") };
 }
+// Genera aleatoriamente uno de: PV / PA / PL (para un solo enunciado)
+function genRandPVPAorPL(R){
+  const modes = ['PV','PA','PL'];
+  const mode  = modes[Math.floor(R()*modes.length)];
+  const fns   = { PV: window.genPV, PA: window.genPA, PL: window.genPL };
+  return fns[mode](R);
+}
+
+// Versión por grupo: a cada grupo le toca aleatoriamente PV/PA/PL
+function buildGroupedOutputDouble(){
+  const state  = lastLobbyState;
+  const groups = getActiveGroupsFromState(state);
+  if(!groups || groups.length===0) return null;
+
+  const now = Date.now();
+  const linesHtml = [];
+  const linesText = [];
+
+  for(const g of groups){
+    const R = rng(`${lobbyCode}-${g}-${now}`); // semilla por grupo
+    const modes = ['PV','PA','PL'];
+    const mode  = modes[Math.floor(R()*modes.length)];
+    const fns   = { PV: window.genPV, PA: window.genPA, PL: window.genPL };
+    const { html, text } = fns[mode](R);
+
+    const col = groupColor(g);
+    const bg  = rgba(col, 0.22);
+    const bd  = rgba(col, 0.55);
+
+    linesHtml.push(`
+      <div class="lineGroup">
+        <span class="gBadge" style="background:${bg};border-color:${bd}">Grupo ${g}</span>
+        <span>${html}</span>
+      </div>
+    `.trim());
+    linesText.push(`Grupo ${g}: ${text}`);
+  }
+
+  return { html: linesHtml.join(""), text: linesText.join("\n") };
+}
 
     let lastCopyText='';
 
