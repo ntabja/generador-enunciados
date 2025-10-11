@@ -287,7 +287,8 @@
           <button class="btn" id="btnFusion"><span class="letter-p">P</span> + <span class="letter-p">P</span></button>
           <button class="btn" id="btnEvento">EVENTOS</button>
           <button class="btn" id="btnEscena">ESCENAS</button>
-          <button class="btn" id="btnDoble">ENUNCIADO DOBLE</button>          
+          <button class="btn" id="btnDoble">ENUNCIADO DOBLE</button>
+          <button class="btn" id="btnTriple">ENUNCIADO TRIPLE</button>
         </div>
         <div class="inline">
           <button class="btn" id="btnPV"><span class="letter-p">P</span> + <span class="letter-v">V</span></button>
@@ -589,7 +590,7 @@ function setJoinMode(on){
     function updateHostUI(){
       const hostOrSolo = isHost || playersConnected <= 1;
       const ids = [
-  'btnP','btnFusion','btnEvento','btnEscena','btnDoble',
+  'btnP','btnFusion','btnEvento','btnEscena','btnDoble','btnTriple',
   'btnPV','btnPA','btnPL','btnPVA','btnPAL','btnPVL','btnPVAL',
   'btnGrupos'
 ];
@@ -800,6 +801,46 @@ function buildGroupedOutputDouble(){
 
   return { html: linesHtml.join(""), text: linesText.join("\n") };
 }
+// Genera aleatoriamente uno de: PVA / PAL / PVL (para un solo enunciado, en ese orden)
+function genRandTriple(R){
+  const modes = ['PVA','PAL','PVL'];
+  const mode  = modes[Math.floor(R()*modes.length)];
+  const fns   = { PVA: window.genPVA, PAL: window.genPAL, PVL: window.genPVL };
+  return fns[mode](R);
+}
+
+// Versión por grupo: a cada grupo le toca aleatoriamente PVA / PAL / PVL
+function buildGroupedOutputTriple(){
+  const state  = lastLobbyState;
+  const groups = getActiveGroupsFromState(state);
+  if(!groups || groups.length===0) return null;
+
+  const now = Date.now();
+  const linesHtml = [];
+  const linesText = [];
+
+  for(const g of groups){
+    const R = rng(`${lobbyCode}-${g}-${now}`); // semilla por grupo
+    const modes = ['PVA','PAL','PVL'];
+    const mode  = modes[Math.floor(R()*modes.length)];
+    const fns   = { PVA: window.genPVA, PAL: window.genPAL, PVL: window.genPVL };
+    const { html, text } = fns[mode](R);
+
+    const col = groupColor(g);
+    const bg  = rgba(col, 0.22);
+    const bd  = rgba(col, 0.55);
+
+    linesHtml.push(`
+      <div class="lineGroup">
+        <span class="gBadge" style="background:${bg};border-color:${bd}">Grupo ${g}</span>
+        <span>${html}</span>
+      </div>
+    `.trim());
+    linesText.push(`Grupo ${g}: ${text}`);
+  }
+
+  return { html: linesHtml.join(""), text: linesText.join("\n") };
+}
 
     /* + / − puntaje */
     playersList?.addEventListener('click', async (e)=>{
@@ -948,7 +989,7 @@ for (let i = 0; i < activos.length; i += 2) {
   btnPVAL:'PVAL', btnPV:'PV', btnPA:'PA', btnPL:'PL',
   btnPVA:'PVA', btnPAL:'PAL', btnPVL:'PVL',
   btnFusion:'FUSION', btnP:'P', btnEvento:'EVENTO', btnEscena:'ESCENA',
-  btnDoble:'DOBLE'
+  btnDoble:'DOBLE', btnTriple:'TRIPLE'
 };
 
     function genOne(mode){
@@ -992,6 +1033,38 @@ for (let i = 0; i < activos.length; i += 2) {
     }
     return; // Importante: no sigas con el flujo estándar
   }
+// Nuevo modo: TRIPLE (por grupo PVA/PAL/PVL aleatorio)
+if(mode === 'TRIPLE'){
+  if(lobbyCode){
+    const hostOrSolo = isHost || playersConnected <= 1;
+    if(!hostOrSolo){
+      if(window.showToast) window.showToast('Solo el ADMIN puede generar enunciados en sala');
+      return;
+    }
+
+    const grouped = buildGroupedOutputTriple();
+    if(grouped){
+      publishOutput(grouped.html, grouped.text);
+    }else{
+      // Sin grupos activos: un enunciado aleatorio PVA/PAL/PVL
+      const R = rng();
+      const { html, text } = genRandTriple(R);
+      publishOutput(html, text || '');
+    }
+  }else{
+    const grouped = buildGroupedOutputTriple();
+    if(grouped){
+      document.getElementById("salida").innerHTML = grouped.html;
+      window.lastCopyText = grouped.text;
+    }else{
+      const R = rng();
+      const { html, text } = genRandTriple(R);
+      document.getElementById("salida").innerHTML = html;
+      window.lastCopyText = text;
+    }
+  }
+  return; // Importante
+}
 
   // Flujo estándar (lo que ya tenías)
   if(lobbyCode){
