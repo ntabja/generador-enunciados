@@ -307,7 +307,7 @@
 </div>
 
   <main class="container" style="padding-top:18px">
-    <section class="card" id="genPanel">
+    <section class="card">
       <div style="display:grid;gap:10px">
         <div class="inline">
           <button class="btn" id="btnP"><span class="letter-p">P</span></button>
@@ -340,6 +340,9 @@
   <div id="salida" class="out" style="margin-top:10px;white-space:pre-wrap"></div>
   <div id="testlog" class="muted" style="margin-top:10px"></div>
 </section>
+      <div class="title">Enunciado a dibujar</div>
+      <div id="salida" class="out" style="margin-top:10px;white-space:pre-wrap"></div>
+      <div id="testlog" class="muted" style="margin-top:10px"></div>
     </section>
 
  <!-- Jugadores conectados -->
@@ -649,48 +652,20 @@ function setJoinMode(on){
     }
 
     function updateHostUI(){
-  const hostOrSolo = isHost || playersConnected <= 1;
-
-  // 🔒 Deshabilitar botones cuando no seas admin en lobby
-  const ids = [
-    'btnP','btnFusion','btnEvento','btnEscena','btnDoble','btnTriple','btnSecreto',
-    'btnPV','btnPA','btnPL','btnPVA','btnPAL','btnPVL','btnPVAL',
-    'btnGrupos','btnClearOutput'
-  ];
-  const disabled = (lobbyCode && !hostOrSolo);
-  ids.forEach(id=>{
-    const el = document.getElementById(id);
-    if(!el) return;
-    el.disabled = disabled;
-    el.style.opacity = disabled ? 0.5 : '';
-    el.style.pointerEvents = disabled ? 'none' : '';
-  });
-
-  // 🧹 Ocultar COMPLETAMENTE el panel de generación si no eres admin en lobby
-  const genPanel = document.getElementById('genPanel');
-  const shouldShowGen = !lobbyCode || hostOrSolo; // visible local o si eres admin/estás solo
-  if(genPanel) genPanel.style.display = shouldShowGen ? 'block' : 'none';
-
-  // 🧽 Ocultar el botón "Limpiar" si no puedes usarlo
-  const btnClear = document.getElementById('btnClearOutput');
-  if(btnClear) btnClear.style.display = shouldShowGen ? '' : 'none';
-
-  // 👥 Ocultar "Generar grupos" si no eres admin
-  const btnGrupos = document.getElementById('btnGrupos');
-  if(btnGrupos) btnGrupos.style.display = shouldShowGen ? '' : 'none';
-
-  // ⏱️ Timer: solo el host puede iniciar/cancelar en lobby (mantengo tu lógica)
-  const timerControls = [btnTimerStart, btnTimerCancel, timerSelect];
-  const timerDisabled = !isHost || !lobbyCode;
-  timerControls.forEach(el=>{
-    if(!el) return;
-    el.disabled = timerDisabled;
-    el.style.opacity = timerDisabled ? 0.5 : '';
-  });
-
-  // Botones de +/− puntaje: visibles, pero deshabilitados si no eres admin
-  playersList?.querySelectorAll('.scoreBtn').forEach(b=> b.disabled = !hostOrSolo);
-}
+      const hostOrSolo = isHost || playersConnected <= 1;
+      const ids = [
+  'btnP','btnFusion','btnEvento','btnEscena','btnDoble','btnTriple','btnSecreto',
+  'btnPV','btnPA','btnPL','btnPVA','btnPAL','btnPVL','btnPVAL',
+  'btnGrupos','btnClearOutput'
+];
+      const disabled = (lobbyCode && !hostOrSolo);
+      ids.forEach(id=>{
+        const el = $(id);
+        if(!el) return;
+        el.disabled = disabled;
+        el.style.opacity = disabled ? 0.5 : '';
+        el.style.pointerEvents = disabled ? 'none' : '';
+      });
 
       playersList?.querySelectorAll('.scoreBtn').forEach(b=> b.disabled = !hostOrSolo);
 
@@ -993,11 +968,7 @@ function buildGroupedOutputTriple(){
 
         if (statusEl) statusEl.textContent = `Sala: ${code} • ${isHost ? "Eres ADMIN" : "Jugador"} • Conectados: ${playersConnected}`;
 
-        const salidaEl = document.getElementById("salida");
-if (salidaEl && ('currentOutputHtml' in state)) {
-  salidaEl.innerHTML = state.currentOutputHtml || "";
-  window.lastCopyText = state.currentOutputText || "";
-}
+        if (state.currentOutputHtml && document.getElementById("salida")) document.getElementById("salida").innerHTML = state.currentOutputHtml;
 
         // Timer shared state
         handleTimerState(state.timer);
