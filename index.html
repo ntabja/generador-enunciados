@@ -287,6 +287,24 @@
   </section>
 </div>
 
+<!-- Overlay Enunciado Secreto -->
+<div id="secretOverlay"
+     style="display:none; position:fixed; inset:0; z-index:1200;
+            align-items:center; justify-content:center;
+            background:rgba(11,16,32,.92); backdrop-filter:blur(8px);
+            padding:16px;">
+  <section class="card" style="max-width:520px; width:92%; padding:20px; text-align:center">
+    <div style="font-weight:900; font-size:20px; margin-bottom:8px;">
+      🕵️ Enunciado secreto
+    </div>
+    <div id="secretContent"
+         class="out"
+         style="margin-top:10px; white-space:pre-wrap"></div>
+    <div class="inline" style="justify-content:center; margin-top:14px;">
+      <button class="btn" id="btnSecretOK">Entendido</button>
+    </div>
+  </section>
+</div>
 
   <main class="container" style="padding-top:18px">
     <section class="card">
@@ -298,6 +316,7 @@
           <button class="btn" id="btnEscena">ESCENAS</button>
           <button class="btn" id="btnDoble">ENUNCIADO DOBLE</button>
           <button class="btn" id="btnTriple">ENUNCIADO TRIPLE</button>
+          <button class="btn" id="btnSecreto">ENUNCIADO SECRETO</button>
         </div>
         <div class="inline">
           <button class="btn" id="btnPV"><span class="letter-p">P</span> + <span class="letter-v">V</span></button>
@@ -530,6 +549,33 @@
 
     let timerInterval = null;
 
+    // ====== Enunciado Secreto ======
+let lastSecretTs = null;
+
+function showSecretOverlay(html){
+  const wrap = document.getElementById('secretOverlay');
+  const cont = document.getElementById('secretContent');
+  if(!wrap || !cont) return;
+  cont.innerHTML = html;
+  wrap.style.display = 'flex';
+}
+
+function hideSecretOverlay(){
+  const wrap = document.getElementById('secretOverlay');
+  if(!wrap) return;
+  wrap.style.display = 'none';
+}
+
+document.getElementById('btnSecretOK')?.addEventListener('click', async ()=>{
+  hideSecretOverlay();
+  // Marca ack en Firebase si estamos en lobby y hay secreto para este cliente
+  try{
+    if(lobbyCode){
+      await update(ref(db, `lobbies/${lobbyCode}/secrets/${clientId}`), { ack: true });
+    }
+  }catch(e){}
+});
+
     const LS_CODE_KEY = "am_lobby_code";
 
     function makeCode(){
@@ -599,7 +645,7 @@ function setJoinMode(on){
     function updateHostUI(){
       const hostOrSolo = isHost || playersConnected <= 1;
       const ids = [
-  'btnP','btnFusion','btnEvento','btnEscena','btnDoble','btnTriple',
+  'btnP','btnFusion','btnEvento','btnEscena','btnDoble','btnTriple','btnSecreto',
   'btnPV','btnPA','btnPL','btnPVA','btnPAL','btnPVL','btnPVAL',
   'btnGrupos'
 ];
@@ -917,7 +963,17 @@ function buildGroupedOutputTriple(){
 
         // Timer shared state
         handleTimerState(state.timer);
-
+// ==== Secretos personales por jugador
+const mySecret = state.secrets && state.secrets[clientId];
+if(mySecret && typeof mySecret.ts === 'number'){
+  if(lastSecretTs !== mySecret.ts){
+    lastSecretTs = mySecret.ts;
+    if(!mySecret.ack){ // sólo mostrar si no fue reconocido
+      showSecretOverlay(mySecret.html || '');
+    }
+  }
+}
+        
         renderPlayers(state);
         updateHostUI();
       };
@@ -957,6 +1013,48 @@ function buildGroupedOutputTriple(){
         currentOutputText: text
       });
     }
+function getActivePlayerIdsFromState(state){
+  const playersObj = state?.players || {};
+  return Object.entries(playersObj)
+    .filter(([,p]) => p && p.connections && Object.keys(p.connections).length > 0)
+    .map(([pid]) => pid);
+}
+
+// Genera P+V+A+L SEMPRE en ese orden, con una semilla propia por jugador
+function genSecretForPlayer(pid){
+  const seed = `${lobbyCode||'local'}-${pid}-${Date.now()}`;
+  const R = rng(seed);
+  const { html, text } = genPVAL(R); // ya respeta orden Personaje + Verbo + Adjetivo + Lugar
+  return { html, text };
+}
+
+// Host dispara secretos a todos los conectados
+async function sendSecretsToAll(){
+  if(!lobbyCode) return;
+  const hostOrSolo = isHost || playersConnected <= 1;
+  if(!hostOrSolo){
+    if(window.showToast) window.showToast('Solo el ADMIN puede enviar secretos en sala');
+    return;
+  }
+  const state = lastLobbyState;
+  const pids = getActivePlayerIdsFromState(state);
+  if(pids.length === 0) return;
+
+  const ts = Date.now();
+  const updates = {};
+  for(const pid of pids){
+    const { html, text } = genSecretForPlayer(pid);
+    updates[`lobbies/${lobbyCode}/secrets/${pid}`] = { html, text, ts, ack: false };
+  }
+  await update(ref(db), updates);
+  if(window.showToast) window.showToast(`Se enviaron ${pids.length} secretos`);
+}
+
+// Solo para modo sin lobby: muestra uno al dispositivo actual
+function sendLocalSecret(){
+  const { html } = genPVAL(rng());
+  showSecretOverlay(html);
+}
 
     async function generarGrupos(){
       if (!lobbyCode) return;
@@ -998,7 +1096,8 @@ for (let i = 0; i < activos.length; i += 2) {
   btnPVAL:'PVAL', btnPV:'PV', btnPA:'PA', btnPL:'PL',
   btnPVA:'PVA', btnPAL:'PAL', btnPVL:'PVL',
   btnFusion:'FUSION', btnP:'P', btnEvento:'EVENTO', btnEscena:'ESCENA',
-  btnDoble:'DOBLE', btnTriple:'TRIPLE'
+  btnDoble:'DOBLE', btnTriple:'TRIPLE',
+  btnSecreto:'SECRETO'    
 };
 
     function genOne(mode){
@@ -1073,6 +1172,15 @@ if(mode === 'TRIPLE'){
     }
   }
   return; // Importante
+}
+// Nuevo modo: SECRETO (overlay P+V+A+L a cada jugador)
+if(mode === 'SECRETO'){
+  if(lobbyCode){
+    sendSecretsToAll();
+  }else{
+    sendLocalSecret();
+  }
+  return;
 }
 
   // Flujo estándar (lo que ya tenías)
