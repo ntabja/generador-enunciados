@@ -331,6 +331,15 @@
     </section>
 
     <section class="card" style="margin-top:14px">
+  <div class="title" style="align-items:center">
+    <span>Enunciado a dibujar</span>
+    <div class="inline">
+      <button class="btn" id="btnClearOutput" title="Limpiar enunciado mostrado">Limpiar</button>
+    </div>
+  </div>
+  <div id="salida" class="out" style="margin-top:10px;white-space:pre-wrap"></div>
+  <div id="testlog" class="muted" style="margin-top:10px"></div>
+</section>
       <div class="title">Enunciado a dibujar</div>
       <div id="salida" class="out" style="margin-top:10px;white-space:pre-wrap"></div>
       <div id="testlog" class="muted" style="margin-top:10px"></div>
@@ -647,7 +656,7 @@ function setJoinMode(on){
       const ids = [
   'btnP','btnFusion','btnEvento','btnEscena','btnDoble','btnTriple','btnSecreto',
   'btnPV','btnPA','btnPL','btnPVA','btnPAL','btnPVL','btnPVAL',
-  'btnGrupos'
+  'btnGrupos','btnClearOutput'
 ];
       const disabled = (lobbyCode && !hostOrSolo);
       ids.forEach(id=>{
@@ -1013,6 +1022,38 @@ if(mySecret && typeof mySecret.ts === 'number'){
         currentOutputText: text
       });
     }
+
+    async function clearOutput(){
+  const salidaEl = document.getElementById("salida");
+
+  // Modo sala: solo el ADMIN (o si estás solo) puede limpiar para todos
+  if(lobbyCode){
+    const hostOrSolo = isHost || playersConnected <= 1;
+    if(!hostOrSolo){
+      if(window.showToast) window.showToast('Solo el ADMIN puede limpiar en sala');
+      return;
+    }
+    try{
+      await update(ref(db, `lobbies/${lobbyCode}`), {
+        currentOutputHtml: "",
+        currentOutputText: ""
+      });
+      if(salidaEl) salidaEl.innerHTML = "";
+      if(typeof window.lastCopyText !== "undefined") window.lastCopyText = "";
+      if(window.showToast) window.showToast('Enunciado limpiado');
+    }catch(e){
+      console.warn('No se pudo limpiar el enunciado:', e);
+      if(window.showToast) window.showToast('No se pudo limpiar');
+    }
+    return;
+  }
+
+  // Modo local (sin sala)
+  if(salidaEl) salidaEl.innerHTML = "";
+  if(typeof window.lastCopyText !== "undefined") window.lastCopyText = "";
+  if(window.showToast) window.showToast('Enunciado limpiado');
+}
+
 function getActivePlayerIdsFromState(state){
   const playersObj = state?.players || {};
   return Object.entries(playersObj)
@@ -1213,6 +1254,7 @@ if(mode === 'SECRETO'){
 
     // Botón de grupos en la tarjeta de jugadores
     btnGrupos?.addEventListener('click', generarGrupos);
+    document.getElementById('btnClearOutput')?.addEventListener('click', clearOutput);
 
     // Atajos de teclado (bloquea si no eres host en lobby)
     document.addEventListener('keydown', (e)=>{
