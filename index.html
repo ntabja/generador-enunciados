@@ -65,6 +65,15 @@
     .out{
       font-size:22px;line-height:1.45;background:#0b1426;border-radius:14px;padding:14px;border:1px dashed rgba(255,255,255,.15)
     }
+    /* Nota de desafío debajo del enunciado */
+.challengeNote{
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.35;
+  border-left: 3px solid var(--accent);
+  padding-left: 8px;
+  opacity: 0.95;
+}
     footer{opacity:.8;padding:16px 12px;text-align:center;font-size:12px;position:relative}
     .kbd{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;font-size:12px;border:1px solid rgba(255,255,255,.2);padding:2px 6px;border-radius:6px;background:#0e1628}
     .char{ color:#4cc9f0; } .verb{ color:var(--verb); } .adj{ color:var(--adj); } .place{ color:#ffe066; } .event{ color:#b266ff; } .scene{ color:#ffb347; }
@@ -318,6 +327,7 @@
       <button class="btn" id="btnFusion"><span class="letter-p">P</span> + <span class="letter-p">P</span></button>
       <button class="btn" id="btnDoble">x2</button>
       <button class="btn" id="btnTriple">x3</button>
+      <button class="btn" id="btnReto">Reto</button>
        <button class="btn" id="btnEvento">EVENTO</button>
       <button class="btn" id="btnEscena">ESCENA</button>
       <button class="btn" id="btnSecreto">SECRETO</button>
@@ -347,6 +357,7 @@
     </div>
   </div>
   <div id="salida" class="out" style="margin-top:10px;white-space:pre-wrap"></div>
+  <div id="challengeNote" class="challengeNote" style="margin-top:8px;"></div>
   <div id="testlog" class="muted" style="margin-top:10px"></div>
 </section>
 
@@ -524,6 +535,8 @@
 
     const appFB = initializeApp(firebaseConfig);
     const db = getDatabase(appFB);
+    const rng = window.rng;
+    const genPVAL = window.genPVAL;
 
     function getClientId(){
       const k="am_client_id";
@@ -964,7 +977,24 @@ function buildGroupedOutputTriple(){
 
   return { html: linesHtml.join(""), text: linesText.join("\n") };
 }
+/* ====== Desafíos del "Reto" ====== */
+const CHALLENGES = [
+  "Arte Abstracto: Todos deben dibujar sin levantar el plumón de la pizarra.",
+  "Arte Manco: Todos deben dibujar con su mano opuesta.",
+  "Arte Ciego: Todos deben dibujar con los ojos cerrados.",
+  "Arte Geométrico: Todos deben dibujar usando solo líneas rectas.",
+  "Arte Veloz: Todos tienen 20 segundos para dibujar."
+];
 
+function pickChallenge(){
+  const i = Math.floor(Math.random() * CHALLENGES.length);
+  return CHALLENGES[i];
+}
+
+function setChallengeNote(html){
+  const el = document.getElementById("challengeNote");
+  if(el) el.innerHTML = html || "";
+}
     /* + / − puntaje */
     playersList?.addEventListener('click', async (e)=>{
       const btn = e.target.closest('.scoreBtn');
@@ -1032,7 +1062,10 @@ if (salidaEl && ('currentOutputHtml' in state)) {
   salidaEl.innerHTML = state.currentOutputHtml || "";
   window.lastCopyText = state.currentOutputText || "";
 }
-
+// Nota/desafío compartido
+if ('currentChallengeHtml' in state) {
+  setChallengeNote(state.currentChallengeHtml || "");
+}
         // Timer shared state
         handleTimerState(state.timer);
 // ==== Secretos personales por jugador
@@ -1058,6 +1091,7 @@ if(mySecret && typeof mySecret.ts === 'number'){
         hostId: clientId,
         currentOutputHtml: "",
         currentOutputText: "",
+        currentChallengeHtml: "",
         players: { [clientId]: { name: name||"Host", score: 0, connected: true } },
         createdAt: Date.now()
       };
@@ -1099,10 +1133,12 @@ if(mySecret && typeof mySecret.ts === 'number'){
     try{
       await update(ref(db, `lobbies/${lobbyCode}`), {
         currentOutputHtml: "",
-        currentOutputText: ""
+        currentOutputText: "",
+        currentChallengeHtml: ""   // <-- limpiar también la nota del reto
       });
       if(salidaEl) salidaEl.innerHTML = "";
       if(typeof window.lastCopyText !== "undefined") window.lastCopyText = "";
+      setChallengeNote("");        // <-- borra la nota localmente
       if(window.showToast) window.showToast('Enunciado limpiado');
     }catch(e){
       console.warn('No se pudo limpiar el enunciado:', e);
@@ -1114,6 +1150,7 @@ if(mySecret && typeof mySecret.ts === 'number'){
   // Modo local (sin sala)
   if(salidaEl) salidaEl.innerHTML = "";
   if(typeof window.lastCopyText !== "undefined") window.lastCopyText = "";
+  setChallengeNote("");            // <-- también borra la nota en modo local
   if(window.showToast) window.showToast('Enunciado limpiado');
 }
 
@@ -1201,7 +1238,8 @@ for (let i = 0; i < activos.length; i += 2) {
   btnPVA:'PVA', btnPAL:'PAL', btnPVL:'PVL',
   btnFusion:'FUSION', btnP:'P', btnEvento:'EVENTO', btnEscena:'ESCENA',
   btnDoble:'DOBLE', btnTriple:'TRIPLE',
-  btnSecreto:'SECRETO'    
+  btnSecreto:'SECRETO',
+  btnReto: 'RETO'
 };
 
     function genOne(mode){
@@ -1215,7 +1253,7 @@ for (let i = 0; i < activos.length; i += 2) {
       return fn(R);
     }
 
-    function handleGenerate(mode){
+    async function handleGenerate(mode){
   // Nuevo modo: DOBLE (por grupo PV/PA/PL aleatorio)
   if(mode === 'DOBLE'){
     if(lobbyCode){
@@ -1277,6 +1315,48 @@ if(mode === 'TRIPLE'){
   }
   return; // Importante
 }
+      // Nuevo modo: RETO (igual que TRIPLE pero mostrando una nota)
+if(mode === 'RETO'){
+  let html, text;
+
+  if(lobbyCode){
+    const hostOrSolo = isHost || playersConnected <= 1;
+    if(!hostOrSolo){
+      if(window.showToast) window.showToast('Solo el ADMIN puede generar enunciados en sala');
+      return;
+    }
+    const grouped = buildGroupedOutputTriple();
+    if(grouped){ html = grouped.html; text = grouped.text; }
+    else{
+      const R = rng();
+      const res = genRandTriple(R);
+      html = res.html; text = res.text || '';
+    }
+    // Publica el enunciado
+    publishOutput(html, text || '');
+  }else{
+    const grouped = buildGroupedOutputTriple();
+    if(grouped){
+      document.getElementById("salida").innerHTML = grouped.html;
+      window.lastCopyText = grouped.text;
+    }else{
+      const R = rng();
+      const res = genRandTriple(R);
+      document.getElementById("salida").innerHTML = res.html;
+      window.lastCopyText = res.text || '';
+    }
+  }
+
+  // 👉 publicar/mostrar el desafío
+  const note = pickChallenge();
+  const noteHtml = `📝 <strong>Desafío:</strong> ${note}`;
+  if(lobbyCode){
+    await update(ref(db, `lobbies/${lobbyCode}`), { currentChallengeHtml: noteHtml });
+  }
+  setChallengeNote(noteHtml);
+  return;
+}
+
 // Nuevo modo: SECRETO (overlay P+V+A+L a cada jugador)
 if(mode === 'SECRETO'){
   if(lobbyCode){
