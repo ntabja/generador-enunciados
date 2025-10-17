@@ -401,6 +401,12 @@
       </div>
       <input id="wOtros" type="range" min="0" max="5" step="1" value="1" />
     </label>
+
+    <!-- ⬇️ AQUI VA EL BOTÓN DE PRUEBA Y EL RESULTADO -->
+    <div class="inline" style="width:100%; justify-content:space-between; margin-top:6px">
+      <button class="btn" id="btnSimDist" title="Simular 2,000 picks según los pesos">Probar distribución</button>
+      <span class="muted" id="simDistResult">—</span>
+    </div>
   </div>
 </section>
 
@@ -638,6 +644,42 @@ function initWeightSliders(){
 // Inicializa al cargar el DOM (el bloque está en el mismo script)
 document.addEventListener('DOMContentLoaded', initWeightSliders);
 initWeightSliders(); // por si el script se inyecta al final del body
+// === Simulador de distribución ===
+function categoriaDe(nombre){
+  // reutilizamos la ya definida arriba; este guard es por si el bundler mueve cosas
+  return (window.__categoriaDe__ || (window.__categoriaDe__ = (n)=>{
+    if (CAT_ANIME.has(n)) return 'anime';
+    if (CAT_VIDEOJUEGOS.has(n)) return 'videojuegos';
+    if (CAT_PELICULAS.has(n)) return 'peliculas';
+    if (CAT_PROFESIONES.has(n)) return 'profesiones';
+    return 'otros';
+  }))(nombre);
+}
+
+function simularDistribucion(n=2000){
+  const R = rng('sim-'+Date.now());
+  const tally = { anime:0, videojuegos:0, peliculas:0, profesiones:0, otros:0 };
+  for(let i=0;i<n;i++){
+    const p = pickPersonaje(R);
+    tally[categoriaDe(p)]++;
+  }
+  const pct = Object.fromEntries(Object.entries(tally).map(([k,v])=> [k, Math.round(v*100/n)]));
+  return { tally, pct, n };
+}
+
+function attachSimBtn(){
+  const btn = document.getElementById('btnSimDist');
+  const out = document.getElementById('simDistResult');
+  if(!btn || !out) return;
+  btn.addEventListener('click', ()=>{
+    const { pct, n } = simularDistribucion(2000);
+    out.textContent = `Anime ${pct.anime}% • Videojuegos ${pct.videojuegos}% • Películas ${pct.peliculas}% • Profesiones ${pct.profesiones}% • Otros ${pct.otros}% (n=${n})`;
+    if(window.showToast) window.showToast('Simulación lista');
+  });
+}
+
+// engancha el botón (DOM ya cargado porque el script está al final)
+attachSimBtn();
 
     const VERBOS=['leyendo','patinando','esquiando','surfeando','navegando','cabalgando','pedaleando','nadando','bailando','pescando','regando','componiendo','escribiendo','cocinando','conduciendo','cenando','trabajando','jugando','barriendo','corriendo','caminando','saltando','trepando','luchando','descansando','durmiendo','marchando','volando','bebiendo','fumando','vomitando','masturbando','orinando','cagando','copulando','muriendo','naciendo','pariendo','gritando','llorando','cantando','pensando','rezando','vendiendo','saludando','boxeando'];
     const ADJETIVOS=['content@','enojad@','asustad@','preocupad@','desnud@','cansad@','confundid@','excitad@','aburrid@','sorprendid@','doblad@','sentad@','parad@','arrodillad@','echad@','suspendid@','tembland@','derretid@','herid@','atad@','enamorad@','relajad@','borrach@','nervios@','enferm@','descalz@','tens@'];
