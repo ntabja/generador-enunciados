@@ -340,7 +340,6 @@
   <div id="salida" class="out" style="margin-top:10px;white-space:pre-wrap"></div>
   <div id="testlog" class="muted" style="margin-top:10px"></div>
 </section>
-    </section>
 
  <!-- Jugadores conectados -->
 <section class="card" id="playersCard" style="margin-top:10px; display:none">
@@ -691,15 +690,6 @@ function setJoinMode(on){
   // Botones de +/− puntaje: visibles, pero deshabilitados si no eres admin
   playersList?.querySelectorAll('.scoreBtn').forEach(b=> b.disabled = !hostOrSolo);
 }
-
-      playersList?.querySelectorAll('.scoreBtn').forEach(b=> b.disabled = !hostOrSolo);
-
-      // Timer: solo el host puede iniciar/cancelar en lobby
-      const timerControls = [btnTimerStart, btnTimerCancel, timerSelect];
-      const timerDisabled = !isHost || !lobbyCode;
-      timerControls.forEach(el=>{ if(!el) return; el.disabled = timerDisabled; el.style.opacity = timerDisabled ? 0.5 : ''; });
-    }
-
     const clampScore = (n)=> Math.max(0, Math.min(999, n|0));
 
     function getActiveGroupsFromState(state){
