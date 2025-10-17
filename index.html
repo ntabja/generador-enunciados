@@ -307,7 +307,7 @@
 </div>
 
   <main class="container" style="padding-top:18px">
-    <section class="card">
+    <section class="card" id="adminControls">
       <div style="display:grid;gap:10px">
         <div class="inline">
           <button class="btn" id="btnP"><span class="letter-p">P</span></button>
@@ -542,6 +542,7 @@
     const playersCard = $("playersCard");
     const playersList = $("playersList");
     const btnGrupos = $("btnGrupos");
+    const adminControls = $("adminControls");
 
     const choiceRow     = $("choiceRow");
     const joinRow       = $("joinRow");
@@ -649,28 +650,28 @@ function setJoinMode(on){
     }
 
     function updateHostUI(){
-      const hostOrSolo = isHost || playersConnected <= 1;
-      const ids = [
-  'btnP','btnFusion','btnEvento','btnEscena','btnDoble','btnTriple','btnSecreto',
-  'btnPV','btnPA','btnPL','btnPVA','btnPAL','btnPVL','btnPVAL',
-  'btnGrupos','btnClearOutput'
-];
-      const disabled = (lobbyCode && !hostOrSolo);
-      ids.forEach(id=>{
-        const el = $(id);
-        if(!el) return;
-        el.disabled = disabled;
-        el.style.opacity = disabled ? 0.5 : '';
-        el.style.pointerEvents = disabled ? 'none' : '';
-      });
+  const inLobby = !!lobbyCode;
 
-      playersList?.querySelectorAll('.scoreBtn').forEach(b=> b.disabled = !hostOrSolo);
+  // Mostrar botones solo si NO hay lobby (modo local) o si eres ADMIN.
+  if (adminControls) {
+    adminControls.style.display = (!inLobby || isHost) ? "" : "none";
+  }
 
-      // Timer: solo el host puede iniciar/cancelar en lobby
-      const timerControls = [btnTimerStart, btnTimerCancel, timerSelect];
-      const timerDisabled = !isHost || !lobbyCode;
-      timerControls.forEach(el=>{ if(!el) return; el.disabled = timerDisabled; el.style.opacity = timerDisabled ? 0.5 : ''; });
-    }
+  // Mantener deshabilitado el control de puntajes y timer cuando no seas ADMIN.
+  const hostOrSolo = isHost || playersConnected <= 1;
+
+  // Botones de puntaje (+/-) solo si eres admin o estás solo
+  playersList?.querySelectorAll('.scoreBtn').forEach(b=> b.disabled = !hostOrSolo);
+
+  // Timer: solo ADMIN en lobby
+  const timerControls = [btnTimerStart, btnTimerCancel, timerSelect];
+  const timerDisabled = !isHost || !lobbyCode;
+  timerControls.forEach(el=>{
+    if(!el) return;
+    el.disabled = timerDisabled;
+    el.style.opacity = timerDisabled ? 0.5 : '';
+  });
+}
 
     const clampScore = (n)=> Math.max(0, Math.min(999, n|0));
 
