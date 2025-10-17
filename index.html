@@ -311,31 +311,33 @@
 
   <main class="container" style="padding-top:18px">
     <section class="card" id="adminControls">
-      <div style="display:grid;gap:10px">
-        <div class="inline">
-          <button class="btn" id="btnP"><span class="letter-p">P</span></button>
-          <button class="btn" id="btnFusion"><span class="letter-p">P</span> + <span class="letter-p">P</span></button>
-          <button class="btn" id="btnEvento">EVENTOS</button>
-          <button class="btn" id="btnEscena">ESCENAS</button>
-          <button class="btn" id="btnDoble">ENUNCIADO DOBLE</button>
-          <button class="btn" id="btnTriple">ENUNCIADO TRIPLE</button>
-          <button class="btn" id="btnSecreto">ENUNCIADO SECRETO</button>
-          <button class="btn btn-chip" id="btnToggleAdv" aria-expanded="false" title="Mostrar/ocultar opciones avanzadas">
+  <div class="controlsGrid" style="display:grid;gap:10px">
+    <!-- Fila 1: botones principales -->
+    <div class="inline">
+      <button class="btn" id="btnP"><span class="letter-p">P</span></button>
+      <button class="btn" id="btnFusion"><span class="letter-p">P</span> + <span class="letter-p">P</span></button>
+      <button class="btn" id="btnEvento">EVENTOS</button>
+      <button class="btn" id="btnEscena">ESCENAS</button>
+      <button class="btn" id="btnDoble">ENUNCIADO DOBLE</button>
+      <button class="btn" id="btnTriple">ENUNCIADO TRIPLE</button>
+      <button class="btn" id="btnSecreto">ENUNCIADO SECRETO</button>
+      <button class="btn btn-chip" id="btnToggleAdv" aria-expanded="false" title="Mostrar/ocultar opciones avanzadas">
         Más opciones <span class="chev">▾</span>
       </button>
     </div>
-        </div>
-          <div class="inline" id="advRow" style="display:none">
-          <button class="btn" id="btnPV"><span class="letter-p">P</span> + <span class="letter-v">V</span></button>
-          <button class="btn" id="btnPA"><span class="letter-p">P</span> + <span class="letter-a">A</span></button>
-          <button class="btn" id="btnPL"><span class="letter-p">P</span> + <span class="letter-l">L</span></button>
-          <button class="btn" id="btnPVA"><span class="letter-p">P</span> + <span class="letter-v">V</span> + <span class="letter-a">A</span></button>
-          <button class="btn" id="btnPAL"><span class="letter-p">P</span> + <span class="letter-a">A</span> + <span class="letter-l">L</span></button>
-          <button class="btn" id="btnPVL"><span class="letter-p">P</span> + <span class="letter-v">V</span> + <span class="letter-l">L</span></button>
-          <button class="btn" id="btnPVAL"><span class="letter-p">P</span> + <span class="letter-v">V</span> + <span class="letter-a">A</span> + <span class="letter-l">L</span></button>
-        </div>
-      </div>
-    </section>
+
+    <!-- Fila 2 (plegable): opciones avanzadas -->
+    <div class="inline" id="advRow" style="display:none">
+      <button class="btn" id="btnPV"><span class="letter-p">P</span> + <span class="letter-v">V</span></button>
+      <button class="btn" id="btnPA"><span class="letter-p">P</span> + <span class="letter-a">A</span></button>
+      <button class="btn" id="btnPL"><span class="letter-p">P</span> + <span class="letter-l">L</span></button>
+      <button class="btn" id="btnPVA"><span class="letter-p">P</span> + <span class="letter-v">V</span> + <span class="letter-a">A</span></button>
+      <button class="btn" id="btnPAL"><span class="letter-p">P</span> + <span class="letter-a">A</span> + <span class="letter-l">L</span></button>
+      <button class="btn" id="btnPVL"><span class="letter-p">P</span> + <span class="letter-v">V</span> + <span class="letter-l">L</span></button>
+      <button class="btn" id="btnPVAL"><span class="letter-p">P</span> + <span class="letter-v">V</span> + <span class="letter-a">A</span> + <span class="letter-l">L</span></button>
+    </div>
+  </div>
+</section>
 
     <section class="card" style="margin-top:14px">
   <div class="title" style="align-items:center">
