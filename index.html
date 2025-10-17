@@ -995,6 +995,23 @@ function setChallengeNote(html){
   const el = document.getElementById("challengeNote");
   if(el) el.innerHTML = html || "";
 }
+    // Limpia el reto (nota/desafío) local y en Firebase (si eres admin o estás solo)
+async function clearChallengeForAll(){
+  // Limpia la nota local
+  setChallengeNote("");
+
+  // Limpia la nota compartida en la sala
+  if(lobbyCode){
+    const hostOrSolo = isHost || playersConnected <= 1;
+    if(hostOrSolo){
+      try{
+        await update(ref(db, `lobbies/${lobbyCode}`), { currentChallengeHtml: "" });
+      }catch(e){
+        console.warn('No se pudo limpiar el reto:', e);
+      }
+    }
+  }
+}
     /* + / − puntaje */
     playersList?.addEventListener('click', async (e)=>{
       const btn = e.target.closest('.scoreBtn');
@@ -1254,6 +1271,10 @@ for (let i = 0; i < activos.length; i += 2) {
     }
 
     async function handleGenerate(mode){
+  // Si NO es RETO, borra cualquier reto anterior
+  if(mode !== 'RETO'){
+    await clearChallengeForAll();
+  }
   // Nuevo modo: DOBLE (por grupo PV/PA/PL aleatorio)
   if(mode === 'DOBLE'){
     if(lobbyCode){
