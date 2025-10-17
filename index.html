@@ -55,6 +55,9 @@
     }
     .btn:hover{background:rgba(255,255,255,.08)}
     .btn:active{transform:translateY(1px)}
+      .btn-chip{ margin-left:auto; padding:8px 10px; font-size:12px; opacity:.85 }
+.btn-chip .chev{ display:inline-block; transition:transform .15s ease }
+.btn-chip[aria-expanded="true"] .chev{ transform:rotate(180deg) }
     .inline{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
     input{
       width:100%;background:#0f182a;color:var(--text);border:1px solid rgba(255,255,255,.14);border-radius:12px;padding:10px 12px;font-size:15px;
@@ -317,8 +320,12 @@
           <button class="btn" id="btnDoble">ENUNCIADO DOBLE</button>
           <button class="btn" id="btnTriple">ENUNCIADO TRIPLE</button>
           <button class="btn" id="btnSecreto">ENUNCIADO SECRETO</button>
+          <button class="btn btn-chip" id="btnToggleAdv" aria-expanded="false" title="Mostrar/ocultar opciones avanzadas">
+        Más opciones <span class="chev">▾</span>
+      </button>
+    </div>
         </div>
-        <div class="inline">
+          <div class="inline" id="advRow" style="display:none">
           <button class="btn" id="btnPV"><span class="letter-p">P</span> + <span class="letter-v">V</span></button>
           <button class="btn" id="btnPA"><span class="letter-p">P</span> + <span class="letter-a">A</span></button>
           <button class="btn" id="btnPL"><span class="letter-p">P</span> + <span class="letter-l">L</span></button>
@@ -340,7 +347,6 @@
   <div id="salida" class="out" style="margin-top:10px;white-space:pre-wrap"></div>
   <div id="testlog" class="muted" style="margin-top:10px"></div>
 </section>
-    </section>
 
  <!-- Jugadores conectados -->
 <section class="card" id="playersCard" style="margin-top:10px; display:none">
@@ -680,7 +686,52 @@ if (timerDisplay)   timerDisplay.style.display   = "";
     el.style.opacity = timerDisabled ? 0.5 : '';
   });
 }
+// === Plegado de opciones avanzadas (toggle) ===
+const btnToggleAdv = $("btnToggleAdv");
+const advRow = $("advRow");
 
+// Estado persistente (solo para modo local o cuando seas admin)
+function setAdvOpen(open){
+  if(!advRow || !btnToggleAdv) return;
+  advRow.style.display = open ? "" : "none";
+  btnToggleAdv.setAttribute("aria-expanded", open ? "true" : "false");
+  try{ localStorage.setItem("am_adv_open", open ? "1" : "0"); }catch(e){}
+}
+
+btnToggleAdv?.addEventListener("click", ()=>{
+  const open = btnToggleAdv.getAttribute("aria-expanded") !== "true";
+  setAdvOpen(open);
+});
+
+// Inicializa preferencia
+(function initAdvPref(){
+  const pref = (localStorage.getItem("am_adv_open") === "1");
+  setAdvOpen(pref);
+})();
+
+// ➕ Integra con tu control de host para sala
+const __origUpdateHostUI = updateHostUI;
+updateHostUI = function(){
+  __origUpdateHostUI();
+
+  const inLobby = !!lobbyCode;
+
+  // En sala: solo ADMIN ve el botón y la fila (plegable)
+  if(btnToggleAdv){
+    btnToggleAdv.style.display = (!inLobby || isHost) ? "" : "none";
+  }
+  if(advRow){
+    if(inLobby && !isHost){
+      advRow.style.display = "none"; // oculta a jugadores
+    }else{
+      // respeta preferencia local del admin / modo local
+      const pref = (localStorage.getItem("am_adv_open") === "1");
+      advRow.style.display = pref ? "" : "none";
+    }
+  }
+};
+updateHostUI(); // para aplicar el estado inicial fuera/antes del lobby
+    
     const clampScore = (n)=> Math.max(0, Math.min(999, n|0));
 
     function getActiveGroupsFromState(state){
