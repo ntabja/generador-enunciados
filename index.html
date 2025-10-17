@@ -331,9 +331,10 @@
        <button class="btn" id="btnEvento">EVENTO</button>
       <button class="btn" id="btnEscena">ESCENA</button>
       <button class="btn" id="btnSecreto">SECRETO</button>
+      <button class="btn" id="btnMasterpiece">OBRA MAESTRA</button>
       <button class="btn btn-chip" id="btnToggleAdv" aria-expanded="false" title="Mostrar/ocultar opciones avanzadas">
-        Más opciones <span class="chev">▾</span>
-      </button>
+  Más opciones <span class="chev">▾</span>
+</button>
     </div>
 
     <!-- Fila 2 (plegable): opciones avanzadas -->
@@ -1213,6 +1214,41 @@ function sendLocalSecret(){
   const { html } = genPVAL(rng());
   showSecretOverlay(html);
 }
+// Genera un único P+V+A+L para toda la sala (misma semilla para todos)
+function genSharedSecret(){
+  const seed = `${lobbyCode||'local'}-MASTERPIECE-${Date.now()}`;
+  const R = rng(seed);
+  const { html, text } = genPVAL(R);
+  return { html, text };
+}
+
+// Host: envía el MISMO secreto a todos los conectados
+async function sendMasterpieceToAll(){
+  if(!lobbyCode) return;
+  const hostOrSolo = isHost || playersConnected <= 1;
+  if(!hostOrSolo){
+    if(window.showToast) window.showToast('Solo el ADMIN puede enviar secretos en sala');
+    return;
+  }
+  const state = lastLobbyState;
+  const pids = getActivePlayerIdsFromState(state);
+  if(pids.length === 0) return;
+
+  const ts = Date.now();
+  const shared = genSharedSecret(); // <- único enunciado para todos
+  const updates = {};
+  for(const pid of pids){
+    updates[`lobbies/${lobbyCode}/secrets/${pid}`] = { html: shared.html, text: shared.text, ts, ack: false };
+  }
+  await update(ref(db), updates);
+  if(window.showToast) window.showToast(`OBRA MAESTRA enviada a ${pids.length} jugadores`);
+}
+
+// Modo local: muestra uno en el dispositivo actual
+function sendLocalMasterpiece(){
+  const { html } = genPVAL(rng());
+  showSecretOverlay(html);
+}
 
     async function generarGrupos(){
       if (!lobbyCode) return;
@@ -1255,8 +1291,9 @@ for (let i = 0; i < activos.length; i += 2) {
   btnPVA:'PVA', btnPAL:'PAL', btnPVL:'PVL',
   btnFusion:'FUSION', btnP:'P', btnEvento:'EVENTO', btnEscena:'ESCENA',
   btnDoble:'DOBLE', btnTriple:'TRIPLE',
-  btnSecreto:'SECRETO',
-  btnReto: 'RETO'
+  btnSecreto:'SECRETO', btnMasterpiece:'MASTERPIECE',
+  btnReto: 'RETO',
+  
 };
 
     function genOne(mode){
@@ -1384,6 +1421,15 @@ if(mode === 'SECRETO'){
     sendSecretsToAll();
   }else{
     sendLocalSecret();
+  }
+  return;
+}
+      // Nuevo modo: OBRA MAESTRA (un mismo P+V+A+L para todos)
+if(mode === 'MASTERPIECE'){
+  if(lobbyCode){
+    sendMasterpieceToAll();
+  }else{
+    sendLocalMasterpiece();
   }
   return;
 }
