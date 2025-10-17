@@ -511,6 +511,7 @@
       messagingSenderId: "478321511301",
       appId: "1:478321511301:web:6b46294944397c0ce952ec",
       measurementId: "G-BP2SKW1881"
+      databaseURL: "https://arte-moderno-5ff8a-default-rtdb.firebasedatabase.app"
     };
 
     const appFB = initializeApp(firebaseConfig);
@@ -1009,29 +1010,44 @@ if(mySecret && typeof mySecret.ts === 'number'){
     }
 
     async function createLobby(name){
-      const code = makeCode();
-      const state = {
-        hostId: clientId,
-        currentOutputHtml: "",
-        currentOutputText: "",
-        players: { [clientId]: { name: name||"Host", score: 0, connected: true } },
-        createdAt: Date.now()
-      };
-      await set(ref(db, `lobbies/${code}`), state);
-      setLobbyCode(code);
-      watchLobby(code);
-      setupPresence(code);
-    }
+  try{
+    const code = makeCode();
+    const state = {
+      hostId: clientId,
+      currentOutputHtml: "",
+      currentOutputText: "",
+      players: { [clientId]: { name: name||"Host", score: 0, connected: true } },
+      createdAt: Date.now()
+    };
+    await set(ref(db, `lobbies/${code}`), state);
+    setLobbyCode(code);
+    watchLobby(code);
+    setupPresence(code);
+  }catch(err){
+    console.error("createLobby error:", err);
+    if (statusEl) statusEl.textContent = `Error creando sala: ${err?.message||err}`;
+    if (window.showToast) window.showToast('No se pudo crear la sala');
+  }
+}
 
-    async function joinLobby(code, name){
-      code = (code||"").toUpperCase().trim();
-      if(!code) return alert("Escribe un código de sala");
-      const player = { name: name||"Jugador", score: 0, connected: true };
-      await update(ref(db, `lobbies/${code}/players/${clientId}`), player);
-      setLobbyCode(code);
-      watchLobby(code);
-      setupPresence(code);
+async function joinLobby(code, name){
+  try{
+    code = (code||"").toUpperCase().trim();
+    if(!code){
+      if (statusEl) statusEl.textContent = "Escribe un código de sala";
+      return;
     }
+    const player = { name: name||"Jugador", score: 0, connected: true };
+    await update(ref(db, `lobbies/${code}/players/${clientId}`), player);
+    setLobbyCode(code);
+    watchLobby(code);
+    setupPresence(code);
+  }catch(err){
+    console.error("joinLobby error:", err);
+    if (statusEl) statusEl.textContent = `Error entrando a sala: ${err?.message||err}`;
+    if (window.showToast) window.showToast('No se pudo entrar a la sala');
+  }
+}
 
     async function publishOutput(html, text){
       const hostOrSolo = isHost || playersConnected <= 1;
