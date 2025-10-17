@@ -547,7 +547,16 @@ const CAT_PROFESIONES = new Set([
   "Un Pintor","Un Carpinetro","Un Científico","Un Astronauta","Un Guerrero","Un Nigromante",
   "Una Druida","Un Mago"
 ]);
-
+// --- construir buckets una vez ---
+const BUCKETS = { anime:[], videojuegos:[], peliculas:[], profesiones:[], otros:[] };
+for (const name of PERSONAJES) {
+  const cat =
+    CAT_ANIME.has(name)        ? 'anime' :
+    CAT_VIDEOJUEGOS.has(name)  ? 'videojuegos' :
+    CAT_PELICULAS.has(name)    ? 'peliculas' :
+    CAT_PROFESIONES.has(name)  ? 'profesiones' : 'otros';
+  BUCKETS[cat].push(name);
+}
 function categoriaDe(nombre){
   if (CAT_ANIME.has(nombre)) return 'anime';
   if (CAT_VIDEOJUEGOS.has(nombre)) return 'videojuegos';
@@ -572,25 +581,36 @@ function getWeight(cat){
   return Number(WEIGHTS[cat] ?? 1);
 }
 
-// Picker ponderado por categoría (si todos los pesos son 0, cae a uniforme)
-function pickPersonaje(R){
-  const items = PERSONAJES;
+// --- elegir categoría SOLO por pesos (independiente del tamaño de la lista) ---
+function pickCategoryByWeight(R){
+  const cats = ['anime','videojuegos','peliculas','profesiones','otros'];
+  // usar solo categorías que tengan al menos 1 elemento
+  const alive = cats.filter(c => BUCKETS[c].length > 0);
   let total = 0;
-  const cum = new Array(items.length);
-  for (let i=0;i<items.length;i++){
-    const w = Math.max(0, getWeight(categoriaDe(items[i])));
-    total += w;
-    cum[i] = total;
-  }
-  if (total <= 0){ // fallback
-    return items[Math.floor(R()*items.length)];
+  const cum = [];
+  for (const c of alive){ total += Math.max(0, getWeight(c)); cum.push(total); }
+  if (total <= 0){
+    // todos los pesos en 0 → uniforme entre categorías vivas
+    return alive[Math.floor(R()*alive.length)];
   }
   const t = R()*total;
-  for (let i=0;i<cum.length;i++){
-    if (t < cum[i]) return items[i];
-  }
-  return items[items.length-1];
+  for (let i=0;i<cum.length;i++){ if (t < cum[i]) return alive[i]; }
+  return alive[alive.length-1];
 }
+
+// --- nuevo picker 2-pasos ---
+function pickPersonaje(R){
+  const cat = pickCategoryByWeight(R);
+  const arr = BUCKETS[cat];
+  if (!arr || arr.length === 0) {
+    // fallback improbable: uniforme entre todo
+    return PERSONAJES[Math.floor(R()*PERSONAJES.length)];
+  }
+  return arr[Math.floor(R()*arr.length)];
+}
+
+// exporta como antes
+window.pickPersonaje = pickPersonaje;
 
 // Exponemos helpers por si quieres probar desde la consola
 window.pickPersonaje = pickPersonaje;
