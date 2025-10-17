@@ -542,6 +542,7 @@
     const playersCard = $("playersCard");
     const playersList = $("playersList");
     const btnGrupos = $("btnGrupos");
+    const clearBtn = $("btnClearOutput");
     const adminControls = $("adminControls");
 
     const choiceRow     = $("choiceRow");
@@ -656,7 +657,8 @@ function setJoinMode(on){
   if (adminControls) {
     adminControls.style.display = (!inLobby || isHost) ? "" : "none";
   }
-
+if (clearBtn)  clearBtn.style.display  = (!inLobby || isHost) ? "" : "none";
+if (btnGrupos) btnGrupos.style.display = (!inLobby || isHost) ? "" : "none";
   // Mantener deshabilitado el control de puntajes y timer cuando no seas ADMIN.
   const hostOrSolo = isHost || playersConnected <= 1;
 
