@@ -965,7 +965,11 @@ function buildGroupedOutputTriple(){
 
         if (statusEl) statusEl.textContent = `Sala: ${code} • ${isHost ? "Eres ADMIN" : "Jugador"} • Conectados: ${playersConnected}`;
 
-        if (state.currentOutputHtml && document.getElementById("salida")) document.getElementById("salida").innerHTML = state.currentOutputHtml;
+        const salidaEl = document.getElementById("salida");
+if (salidaEl && ('currentOutputHtml' in state)) {
+  salidaEl.innerHTML = state.currentOutputHtml || "";
+  window.lastCopyText = state.currentOutputText || "";
+}
 
         // Timer shared state
         handleTimerState(state.timer);
