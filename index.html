@@ -306,9 +306,9 @@
             background:rgba(11,16,32,.92); backdrop-filter:blur(8px);
             padding:16px;">
   <section class="card" style="max-width:520px; width:92%; padding:20px; text-align:center">
-    <div style="font-weight:900; font-size:20px; margin-bottom:8px;">
-      🕵️ Enunciado secreto
-    </div>
+    <div id="secretTitle" style="font-weight:900; font-size:20px; margin-bottom:8px;">
+  🕵️ Enunciado secreto
+</div>
     <div id="secretContent"
          class="out"
          style="margin-top:10px; white-space:pre-wrap"></div>
@@ -582,11 +582,13 @@
     // ====== Enunciado Secreto ======
 let lastSecretTs = null;
 
-function showSecretOverlay(html){
+function showSecretOverlay(html, title='🕵️ Enunciado secreto'){
   const wrap = document.getElementById('secretOverlay');
   const cont = document.getElementById('secretContent');
+  const titleEl = document.getElementById('secretTitle');
   if(!wrap || !cont) return;
   cont.innerHTML = html;
+  if(titleEl) titleEl.textContent = title;
   wrap.style.display = 'flex';
 }
 
@@ -1091,8 +1093,11 @@ const mySecret = state.secrets && state.secrets[clientId];
 if(mySecret && typeof mySecret.ts === 'number'){
   if(lastSecretTs !== mySecret.ts){
     lastSecretTs = mySecret.ts;
-    if(!mySecret.ack){ // sólo mostrar si no fue reconocido
-      showSecretOverlay(mySecret.html || '');
+    if(!mySecret.ack){
+      showSecretOverlay(
+        mySecret.html || '',
+        mySecret.title || '🕵️ Enunciado secreto'
+      );
     }
   }
 }
@@ -1203,7 +1208,10 @@ async function sendSecretsToAll(){
   const updates = {};
   for(const pid of pids){
     const { html, text } = genSecretForPlayer(pid);
-    updates[`lobbies/${lobbyCode}/secrets/${pid}`] = { html, text, ts, ack: false };
+    updates[`lobbies/${lobbyCode}/secrets/${pid}`] = {
+  html, text, ts, ack:false,
+  title: '🕵️ Enunciado secreto'
+};
   }
   await update(ref(db), updates);
   if(window.showToast) window.showToast(`Se enviaron ${pids.length} secretos`);
@@ -1212,7 +1220,7 @@ async function sendSecretsToAll(){
 // Solo para modo sin lobby: muestra uno al dispositivo actual
 function sendLocalSecret(){
   const { html } = genPVAL(rng());
-  showSecretOverlay(html);
+  showSecretOverlay(html, '🕵️ Enunciado secreto');
 }
 // Genera un único P+V+A+L para toda la sala (misma semilla para todos)
 function genSharedSecret(){
@@ -1238,8 +1246,14 @@ async function sendMasterpieceToAll(){
   const shared = genSharedSecret(); // <- único enunciado para todos
   const updates = {};
   for(const pid of pids){
-    updates[`lobbies/${lobbyCode}/secrets/${pid}`] = { html: shared.html, text: shared.text, ts, ack: false };
-  }
+  updates[`lobbies/${lobbyCode}/secrets/${pid}`] = {
+    html: shared.html,
+    text: shared.text,
+    ts,
+    ack: false,
+    title: '🎨 Haz tu Obra Maestra con este enunciado'
+  };
+}
   await update(ref(db), updates);
   if(window.showToast) window.showToast(`OBRA MAESTRA enviada a ${pids.length} jugadores`);
 }
@@ -1247,7 +1261,7 @@ async function sendMasterpieceToAll(){
 // Modo local: muestra uno en el dispositivo actual
 function sendLocalMasterpiece(){
   const { html } = genPVAL(rng());
-  showSecretOverlay(html);
+  showSecretOverlay(html, '🎨 Haz tu Obra Maestra con este enunciado');
 }
 
     async function generarGrupos(){
