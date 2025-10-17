@@ -307,7 +307,7 @@
 </div>
 
   <main class="container" style="padding-top:18px">
-    <section class="card" id="genPanel">
+    <section class="card">
       <div style="display:grid;gap:10px">
         <div class="inline">
           <button class="btn" id="btnP"><span class="letter-p">P</span></button>
@@ -340,6 +340,7 @@
   <div id="salida" class="out" style="margin-top:10px;white-space:pre-wrap"></div>
   <div id="testlog" class="muted" style="margin-top:10px"></div>
 </section>
+    </section>
 
  <!-- Jugadores conectados -->
 <section class="card" id="playersCard" style="margin-top:10px; display:none">
@@ -511,7 +512,6 @@
       messagingSenderId: "478321511301",
       appId: "1:478321511301:web:6b46294944397c0ce952ec",
       measurementId: "G-BP2SKW1881"
-      databaseURL: "https://arte-moderno-5ff8a-default-rtdb.firebasedatabase.app"
     };
 
     const appFB = initializeApp(firebaseConfig);
@@ -649,48 +649,29 @@ function setJoinMode(on){
     }
 
     function updateHostUI(){
-  const hostOrSolo = isHost || playersConnected <= 1;
+      const hostOrSolo = isHost || playersConnected <= 1;
+      const ids = [
+  'btnP','btnFusion','btnEvento','btnEscena','btnDoble','btnTriple','btnSecreto',
+  'btnPV','btnPA','btnPL','btnPVA','btnPAL','btnPVL','btnPVAL',
+  'btnGrupos','btnClearOutput'
+];
+      const disabled = (lobbyCode && !hostOrSolo);
+      ids.forEach(id=>{
+        const el = $(id);
+        if(!el) return;
+        el.disabled = disabled;
+        el.style.opacity = disabled ? 0.5 : '';
+        el.style.pointerEvents = disabled ? 'none' : '';
+      });
 
-  // 🔒 Deshabilitar botones cuando no seas admin en lobby
-  const ids = [
-    'btnP','btnFusion','btnEvento','btnEscena','btnDoble','btnTriple','btnSecreto',
-    'btnPV','btnPA','btnPL','btnPVA','btnPAL','btnPVL','btnPVAL',
-    'btnGrupos','btnClearOutput'
-  ];
-  const disabled = (lobbyCode && !hostOrSolo);
-  ids.forEach(id=>{
-    const el = document.getElementById(id);
-    if(!el) return;
-    el.disabled = disabled;
-    el.style.opacity = disabled ? 0.5 : '';
-    el.style.pointerEvents = disabled ? 'none' : '';
-  });
+      playersList?.querySelectorAll('.scoreBtn').forEach(b=> b.disabled = !hostOrSolo);
 
-  // 🧹 Ocultar COMPLETAMENTE el panel de generación si no eres admin en lobby
-  const genPanel = document.getElementById('genPanel');
-  const shouldShowGen = !lobbyCode || hostOrSolo; // visible local o si eres admin/estás solo
-  if(genPanel) genPanel.style.display = shouldShowGen ? 'block' : 'none';
+      // Timer: solo el host puede iniciar/cancelar en lobby
+      const timerControls = [btnTimerStart, btnTimerCancel, timerSelect];
+      const timerDisabled = !isHost || !lobbyCode;
+      timerControls.forEach(el=>{ if(!el) return; el.disabled = timerDisabled; el.style.opacity = timerDisabled ? 0.5 : ''; });
+    }
 
-  // 🧽 Ocultar el botón "Limpiar" si no puedes usarlo
-  const btnClear = document.getElementById('btnClearOutput');
-  if(btnClear) btnClear.style.display = shouldShowGen ? '' : 'none';
-
-  // 👥 Ocultar "Generar grupos" si no eres admin
-  const btnGrupos = document.getElementById('btnGrupos');
-  if(btnGrupos) btnGrupos.style.display = shouldShowGen ? '' : 'none';
-
-  // ⏱️ Timer: solo el host puede iniciar/cancelar en lobby (mantengo tu lógica)
-  const timerControls = [btnTimerStart, btnTimerCancel, timerSelect];
-  const timerDisabled = !isHost || !lobbyCode;
-  timerControls.forEach(el=>{
-    if(!el) return;
-    el.disabled = timerDisabled;
-    el.style.opacity = timerDisabled ? 0.5 : '';
-  });
-
-  // Botones de +/− puntaje: visibles, pero deshabilitados si no eres admin
-  playersList?.querySelectorAll('.scoreBtn').forEach(b=> b.disabled = !hostOrSolo);
-}
     const clampScore = (n)=> Math.max(0, Math.min(999, n|0));
 
     function getActiveGroupsFromState(state){
@@ -1010,44 +991,29 @@ if(mySecret && typeof mySecret.ts === 'number'){
     }
 
     async function createLobby(name){
-  try{
-    const code = makeCode();
-    const state = {
-      hostId: clientId,
-      currentOutputHtml: "",
-      currentOutputText: "",
-      players: { [clientId]: { name: name||"Host", score: 0, connected: true } },
-      createdAt: Date.now()
-    };
-    await set(ref(db, `lobbies/${code}`), state);
-    setLobbyCode(code);
-    watchLobby(code);
-    setupPresence(code);
-  }catch(err){
-    console.error("createLobby error:", err);
-    if (statusEl) statusEl.textContent = `Error creando sala: ${err?.message||err}`;
-    if (window.showToast) window.showToast('No se pudo crear la sala');
-  }
-}
-
-async function joinLobby(code, name){
-  try{
-    code = (code||"").toUpperCase().trim();
-    if(!code){
-      if (statusEl) statusEl.textContent = "Escribe un código de sala";
-      return;
+      const code = makeCode();
+      const state = {
+        hostId: clientId,
+        currentOutputHtml: "",
+        currentOutputText: "",
+        players: { [clientId]: { name: name||"Host", score: 0, connected: true } },
+        createdAt: Date.now()
+      };
+      await set(ref(db, `lobbies/${code}`), state);
+      setLobbyCode(code);
+      watchLobby(code);
+      setupPresence(code);
     }
-    const player = { name: name||"Jugador", score: 0, connected: true };
-    await update(ref(db, `lobbies/${code}/players/${clientId}`), player);
-    setLobbyCode(code);
-    watchLobby(code);
-    setupPresence(code);
-  }catch(err){
-    console.error("joinLobby error:", err);
-    if (statusEl) statusEl.textContent = `Error entrando a sala: ${err?.message||err}`;
-    if (window.showToast) window.showToast('No se pudo entrar a la sala');
-  }
-}
+
+    async function joinLobby(code, name){
+      code = (code||"").toUpperCase().trim();
+      if(!code) return alert("Escribe un código de sala");
+      const player = { name: name||"Jugador", score: 0, connected: true };
+      await update(ref(db, `lobbies/${code}/players/${clientId}`), player);
+      setLobbyCode(code);
+      watchLobby(code);
+      setupPresence(code);
+    }
 
     async function publishOutput(html, text){
       const hostOrSolo = isHost || playersConnected <= 1;
@@ -1321,7 +1287,6 @@ if(mode === 'SECRETO'){
         setJoinMode(false); // 👈 arranca mostrando Crear/Unirse
       }
     })();
-    updateHostUI();
 
     // Salir
     async function leaveLobby(){
