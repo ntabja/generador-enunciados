@@ -349,6 +349,60 @@
     </div>
   </div>
 </section>
+<!-- Pesos por categoría -->
+<section class="card" id="catWeightsCard" style="margin-top:10px">
+  <div class="title" style="align-items:center">
+    <span>Frecuencia por categoría</span>
+    <button class="btn" id="btnResetWeights" title="Restablecer a 1">Reset</button>
+  </div>
+
+  <div class="inline" style="flex-direction:column; gap:12px; margin-top:10px">
+    <!-- anime -->
+    <label style="width:100%">
+      <div class="inline" style="justify-content:space-between">
+        <span class="muted">Anime</span>
+        <span class="kbd" id="wAnimeVal">1</span>
+      </div>
+      <input id="wAnime" type="range" min="0" max="5" step="1" value="1" />
+    </label>
+
+    <!-- videojuegos -->
+    <label style="width:100%">
+      <div class="inline" style="justify-content:space-between">
+        <span class="muted">Videojuegos</span>
+        <span class="kbd" id="wVideojuegosVal">1</span>
+      </div>
+      <input id="wVideojuegos" type="range" min="0" max="5" step="1" value="1" />
+    </label>
+
+    <!-- películas -->
+    <label style="width:100%">
+      <div class="inline" style="justify-content:space-between">
+        <span class="muted">Películas</span>
+        <span class="kbd" id="wPeliculasVal">1</span>
+      </div>
+      <input id="wPeliculas" type="range" min="0" max="5" step="1" value="1" />
+    </label>
+
+    <!-- profesiones -->
+    <label style="width:100%">
+      <div class="inline" style="justify-content:space-between">
+        <span class="muted">Profesiones</span>
+        <span class="kbd" id="wProfesionesVal">1</span>
+      </div>
+      <input id="wProfesiones" type="range" min="0" max="5" step="1" value="1" />
+    </label>
+
+    <!-- otros -->
+    <label style="width:100%">
+      <div class="inline" style="justify-content:space-between">
+        <span class="muted">Otros</span>
+        <span class="kbd" id="wOtrosVal">1</span>
+      </div>
+      <input id="wOtros" type="range" min="0" max="5" step="1" value="1" />
+    </label>
+  </div>
+</section>
 
     <section class="card" style="margin-top:14px">
   <div class="title" style="align-items:center">
@@ -444,6 +498,147 @@ const PERSONAJES = [
   "Danny Phantom","Groot","Knuckles","Ryu","Sephiroth","Cloud Strife","Steve","Nier","Bomberman","Diddy Kong",
   "Toad","Fox McCloud","Mewtwo","Cuphead","Agumon","Rayman","Hollow Knight","Wario","La Princesa Peach","2B"
 ];
+    // === Categorización y pesos ===
+/* Categorías principales:
+   - anime
+   - videojuegos
+   - peliculas
+   - profesiones
+   - otros (fallback)
+*/
+
+const CAT_ANIME = new Set([
+  "Goku","Vegeta","Piccolo","Freezer","Monkey D. Luffy","Roronoa Zoro","Sanji","Nami",
+  "Naruto Uzumaki","Sasuke Uchiha","Kakashi Hatake","Ichigo Kurusaki","Satoru Gojo",
+  "Eren Yeager","Levi Ackerman","Shigeo Kageyama","Saitama","Edward Elric",
+  "Tanjiro Kamado","Nezuko Kamado","Kenshin Himura","Joseph Joestar","Guts",
+  "Ash Ketchum","Yugi Muto","Sailor Moon","Astroboy","Izuku Midoriya","Itachi Uchiha",
+  "Frieren","Fern","Yor Forger","Agumon"
+]);
+
+const CAT_VIDEOJUEGOS = new Set([
+  "Pikachu","Mario","Bowser","Yoshi","Donkey Kong","Kirby","Link","Zelda","Samus Aran",
+  "Sonic","Crash Bandicoot","Mega Man","Pac-Man","Leon S. Kennedy","Lara Croft",
+  "El Amongus","Doomguy","Nier","Bomberman","Diddy Kong","Toad","Fox McCloud",
+  "Mewtwo","Cuphead","Rayman","Hollow Knight","Wario","La Princesa Peach","2B","Steve"
+]);
+
+const CAT_PELICULAS = new Set([
+  "Shrek","Wall-E","Elsa","Simba","Luke Skywalker","Darth Vader","Yoda","E.T.",
+  "John Wick","Neo","Indiana Jones","El Terminator","Jack Sparrow","Borat",
+  "Charlie Chaplin","Jason Voorhees","Chucky","Freddy Krueger","Jigsaw","Pennywise",
+  "Edward Scissorhands","Jack Skellington","Godzilla","El Joker","Gandalf",
+  "Frodo Baggins","Gollum","Harry Potter","Voldemort","Willy Wonka","Cenicienta",
+  "Rapunzel","Aladino","Dracula","Frankenstein","Wednesday Addams","James Bond",
+  "Quasimodo"
+]);
+
+// Profesiones (tomadas de tu lista tal cual aparecen, sensitivo a mayúsculas)
+const CAT_PROFESIONES = new Set([
+  "El Héroe","El Rey","El Caballero","Un Profeta","El Verdugo","Un Viajero","Un Gladiador",
+  "Un Esclavo","Un Samurai","Un Ninja","Un Nómada","Un Vikingo","Un Soldado","Un Bufón",
+  "Un Pirata","Un Vaquero","Un Leñador","Un Detective","Un Payaso","Un Chef","Un Músico",
+  "Un Pintor","Un Carpinetro","Un Científico","Un Astronauta","Un Guerrero","Un Nigromante",
+  "Una Druida","Un Mago"
+]);
+
+function categoriaDe(nombre){
+  if (CAT_ANIME.has(nombre)) return 'anime';
+  if (CAT_VIDEOJUEGOS.has(nombre)) return 'videojuegos';
+  if (CAT_PELICULAS.has(nombre)) return 'peliculas';
+  if (CAT_PROFESIONES.has(nombre)) return 'profesiones';
+  return 'otros';
+}
+
+// Pesos (persisten en localStorage). Por defecto todo en 1.
+const DEFAULT_WEIGHTS = { anime:1, videojuegos:1, peliculas:1, profesiones:1, otros:1 };
+let WEIGHTS = (()=> {
+  try{ return JSON.parse(localStorage.getItem('am_weights')) || {...DEFAULT_WEIGHTS}; }
+  catch(e){ return {...DEFAULT_WEIGHTS}; }
+})();
+
+function setWeight(cat, val){
+  WEIGHTS[cat] = Math.max(0, Number(val)||0);
+  try{ localStorage.setItem('am_weights', JSON.stringify(WEIGHTS)); }catch(e){}
+}
+
+function getWeight(cat){
+  return Number(WEIGHTS[cat] ?? 1);
+}
+
+// Picker ponderado por categoría (si todos los pesos son 0, cae a uniforme)
+function pickPersonaje(R){
+  const items = PERSONAJES;
+  let total = 0;
+  const cum = new Array(items.length);
+  for (let i=0;i<items.length;i++){
+    const w = Math.max(0, getWeight(categoriaDe(items[i])));
+    total += w;
+    cum[i] = total;
+  }
+  if (total <= 0){ // fallback
+    return items[Math.floor(R()*items.length)];
+  }
+  const t = R()*total;
+  for (let i=0;i<cum.length;i++){
+    if (t < cum[i]) return items[i];
+  }
+  return items[items.length-1];
+}
+
+// Exponemos helpers por si quieres probar desde la consola
+window.pickPersonaje = pickPersonaje;
+window.setWeight = setWeight;
+window.getWeight = getWeight;
+    // === UI de pesos ===
+function setSliderVal(idSlider, idBadge, v){
+  const s = document.getElementById(idSlider);
+  const b = document.getElementById(idBadge);
+  if(s) s.value = v;
+  if(b) b.textContent = String(v);
+}
+
+function initWeightSliders(){
+  // Carga valores actuales
+  setSliderVal('wAnime','wAnimeVal',        getWeight('anime'));
+  setSliderVal('wVideojuegos','wVideojuegosVal', getWeight('videojuegos'));
+  setSliderVal('wPeliculas','wPeliculasVal',     getWeight('peliculas'));
+  setSliderVal('wProfesiones','wProfesionesVal', getWeight('profesiones'));
+  setSliderVal('wOtros','wOtrosVal',             getWeight('otros'));
+
+  // Listeners
+  const hook = (idSlider, idBadge, cat)=>{
+    const s = document.getElementById(idSlider);
+    if(!s) return;
+    s.addEventListener('input', ()=>{
+      const v = parseInt(s.value,10);
+      setWeight(cat, v);
+      const b = document.getElementById(idBadge);
+      if(b) b.textContent = String(v);
+    });
+  };
+
+  hook('wAnime','wAnimeVal','anime');
+  hook('wVideojuegos','wVideojuegosVal','videojuegos');
+  hook('wPeliculas','wPeliculasVal','peliculas');
+  hook('wProfesiones','wProfesionesVal','profesiones');
+  hook('wOtros','wOtrosVal','otros');
+
+  // Reset
+  const btnReset = document.getElementById('btnResetWeights');
+  if(btnReset){
+    btnReset.addEventListener('click', ()=>{
+      ['anime','videojuegos','peliculas','profesiones','otros'].forEach(cat=> setWeight(cat,1));
+      initWeightSliders();
+      if(window.showToast) window.showToast('Pesos restablecidos');
+    });
+  }
+}
+
+// Inicializa al cargar el DOM (el bloque está en el mismo script)
+document.addEventListener('DOMContentLoaded', initWeightSliders);
+initWeightSliders(); // por si el script se inyecta al final del body
+
     const VERBOS=['leyendo','patinando','esquiando','surfeando','navegando','cabalgando','pedaleando','nadando','bailando','pescando','regando','componiendo','escribiendo','cocinando','conduciendo','cenando','trabajando','jugando','barriendo','corriendo','caminando','saltando','trepando','luchando','descansando','durmiendo','marchando','volando','bebiendo','fumando','vomitando','masturbando','orinando','cagando','copulando','muriendo','naciendo','pariendo','gritando','llorando','cantando','pensando','rezando','vendiendo','saludando','boxeando'];
     const ADJETIVOS=['content@','enojad@','asustad@','preocupad@','desnud@','cansad@','confundid@','excitad@','aburrid@','sorprendid@','doblad@','sentad@','parad@','arrodillad@','echad@','suspendid@','tembland@','derretid@','herid@','atad@','enamorad@','relajad@','borrach@','nervios@','enferm@','descalz@','tens@'];
     const LUGARES=['bajo el agua','bajo el sol','bajo la luna','bajo la lluvia','bajo la tierra','bajo las estrellas','bajo un árbol','bajo un puente','sobre un tren','sobre una torre','sobre una cama','sobre una mesa','sobre un techo','sobre las nubes','tras los arbustos','tras una roca','tras la ventana','tras las rejas','en el campo','en el mar','en el espacio','en el futuro','en el pasado','en el infierno','en el cielo','en la ciudad','en la montaña','en la playa','en la selva','en el Valhalla','en el Olimpo','en la corte','en el fin del mundo','en la prehistoria','en un baño','en un bosque','en un colegio','en un desierto','en un gimnasio','en un zoológico','en un pantano','en una tormenta','en una oficina','en un bar','en un hospital','en un cementerio','en un parque','en un balcón','en una granja','en un teatro','en una biblioteca','en un cine','en un avión','en un helicóptero','en un cohete','en un castillo','en un mercado','en una pradera','en un globo','en un burdel','en un laboratorio','en una prisión','en un jardín','en Egipto','en Francia','en Japón','en Perú','en Australia','en la Antártida','en su casa','en su habitación'];
@@ -463,16 +658,21 @@ const PERSONAJES = [
     const wrapEvent=e=>`<span class="event">${esc(e)}</span>`;
     const wrapScene=s=>`<span class="scene">${esc(s)}</span>`;
 
-    function genPVAL(R){const p=pick(PERSONAJES,R),v=pick(VERBOS,R),a=pick(ADJETIVOS,R),l=pick(LUGARES,R);return{ text:`${p} ${v} ${a} ${l}`, html:`${wrapChar(p)} ${wrapVerb(v)} ${wrapAdj(a)} ${wrapPlace(l)}` }}
-    function genPV(R){const p=pick(PERSONAJES,R),v=pick(VERBOS,R);return{ text:`${p} ${v}`, html:`${wrapChar(p)} ${wrapVerb(v)}` }}
-    function genPA(R){const p=pick(PERSONAJES,R),a=pick(ADJETIVOS,R);return{ text:`${p} ${a}`, html:`${wrapChar(p)} ${wrapAdj(a)}` }}
-    function genPL(R){const p=pick(PERSONAJES,R),l=pick(LUGARES,R);return{ text:`${p} ${l}`, html:`${wrapChar(p)} ${wrapPlace(l)}` }}
-    function genPAL(R){const p=pick(PERSONAJES,R),a=pick(ADJETIVOS,R),l=pick(LUGARES,R);return{ text:`${p} ${a} ${l}`, html:`${wrapChar(p)} ${wrapAdj(a)} ${wrapPlace(l)}` }}
-    function genPVA(R){const p=pick(PERSONAJES,R),v=pick(VERBOS,R),a=pick(ADJETIVOS,R);return{ text:`${p} ${v} ${a}`, html:`${wrapChar(p)} ${wrapVerb(v)} ${wrapAdj(a)}` }}
-    function genPVL(R){const p=pick(PERSONAJES,R),v=pick(VERBOS,R),l=pick(LUGARES,R);return{ text:`${p} ${v} ${l}`, html:`${wrapChar(p)} ${wrapVerb(v)} ${wrapPlace(l)}` }}
-    function genFusion(R){let p1=pick(PERSONAJES,R);let p2;do{p2=pick(PERSONAJES,R)}while(p2===p1);return{ text:`${p1} + ${p2}`, html:`${wrapChar(p1)} + ${wrapChar(p2)}` }}
-    function genP(R){const p=pick(PERSONAJES,R);return{ text:`${p}`, html:`${wrapChar(p)}` }}
-    function genEvento(R){const e=pick(EVENTOS,R),p=pick(PERSONAJES,R);return{ text:`${e} ${p}`, html:`${wrapEvent(e)} ${wrapChar(p)}` }}
+    function genPVAL(R){const p=pickPersonaje(R),v=pick(VERBOS,R),a=pick(ADJETIVOS,R),l=pick(LUGARES,R);return{ text:`${p} ${v} ${a} ${l}`, html:`${wrapChar(p)} ${wrapVerb(v)} ${wrapAdj(a)} ${wrapPlace(l)}` }}
+    function genPV(R){const p=pickPersonaje(R),v=pick(VERBOS,R);return{ text:`${p} ${v}`, html:`${wrapChar(p)} ${wrapVerb(v)}` }}
+    function genPA(R){const p=pickPersonaje(R),a=pick(ADJETIVOS,R);return{ text:`${p} ${a}`, html:`${wrapChar(p)} ${wrapAdj(a)}` }}
+    function genPL(R){const p=pickPersonaje(R),l=pick(LUGARES,R);return{ text:`${p} ${l}`, html:`${wrapChar(p)} ${wrapPlace(l)}` }}
+    function genPAL(R){const p=pickPersonaje(R),a=pick(ADJETIVOS,R),l=pick(LUGARES,R);return{ text:`${p} ${a} ${l}`, html:`${wrapChar(p)} ${wrapAdj(a)} ${wrapPlace(l)}` }}
+    function genPVA(R){const p=pickPersonaje(R),v=pick(VERBOS,R),a=pick(ADJETIVOS,R);return{ text:`${p} ${v} ${a}`, html:`${wrapChar(p)} ${wrapVerb(v)} ${wrapAdj(a)}` }}
+    function genPVL(R){const p=pickPersonaje(R),v=pick(VERBOS,R),l=pick(LUGARES,R);return{ text:`${p} ${v} ${l}`, html:`${wrapChar(p)} ${wrapVerb(v)} ${wrapPlace(l)}` }}
+function genFusion(R){
+  let p1 = pickPersonaje(R);
+  let p2;
+  do{ p2 = pickPersonaje(R); }while(p2 === p1);
+  return { text:`${p1} + ${p2}`, html:`${wrapChar(p1)} + ${wrapChar(p2)}` }
+}
+    function genP(R){const p=pickPersonaje(R);return{ text:`${p}`, html:`${wrapChar(p)}` }}
+    function genEvento(R){const e=pick(EVENTOS,R),p=pickPersonaje(R);return{ text:`${e} ${p}`, html:`${wrapEvent(e)} ${wrapChar(p)}` }}
     function genEscena(R){const s=pick(ESCENAS,R),l=pick(LUGARES,R);return{ text:`${s} ${l}`, html:`${wrapScene(s)} ${wrapPlace(l)}` }}
 
     let lastCopyText='';
