@@ -634,15 +634,26 @@ function initWeightSliders(){
 
   // Listeners
   const hook = (idSlider, idBadge, cat)=>{
-    const s = document.getElementById(idSlider);
-    if(!s) return;
-    s.addEventListener('input', ()=>{
-      const v = parseInt(s.value,10);
-      setWeight(cat, v);
-      const b = document.getElementById(idBadge);
-      if(b) b.textContent = String(v);
-    });
-  };
+  const s = document.getElementById(idSlider);
+  if(!s) return;
+  s.addEventListener('input', async ()=>{
+    const v = parseInt(s.value,10);
+    setWeight(cat, v);
+    const b = document.getElementById(idBadge);
+    if(b) b.textContent = String(v);
+
+    // 👇 Publicar a Firebase solo si estás en sala y eres ADMIN
+    if (window.lobbyCode && window.isHost && window.db && window.fbRef && window.fbUpdate) {
+      try {
+        const path = `lobbies/${window.lobbyCode}/weights`;
+        await window.fbUpdate(window.fbRef(window.db, path), { ...WEIGHTS });
+        if (window.showToast) window.showToast('Pesos guardados');
+      } catch (e) {
+        console.warn('No se pudieron publicar los pesos:', e);
+      }
+    }
+  });
+};
 
   hook('wAnime','wAnimeVal','anime');
   hook('wVideojuegos','wVideojuegosVal','videojuegos');
@@ -840,6 +851,10 @@ function genFusion(R){
 
     const appFB = initializeApp(firebaseConfig);
     const db = getDatabase(appFB);
+    // Exponer Firebase helpers para el script no-module
+window.db = db;
+window.fbRef = ref;
+window.fbUpdate = update;
     const rng = window.rng;
     const genPVAL = window.genPVAL;
 
@@ -853,6 +868,9 @@ function genFusion(R){
 
     let lobbyCode = null;
     let isHost = false;
+    // Espejos iniciales para el otro script
+window.lobbyCode = lobbyCode;
+window.isHost = isHost;
     let prevIsHost = false;
     let playersConnected = 0;
     let currentConnRef = null;
@@ -936,6 +954,7 @@ document.getElementById('btnSecretOK')?.addEventListener('click', async ()=>{
       leaveRow.style.display='flex';
       overlayEl.style.display='none';
       playersCard.style.display='block';
+      window.lobbyCode = lobbyCode;
     }
     function clearLobbyCode(){
       lobbyCode = null;
@@ -945,6 +964,7 @@ document.getElementById('btnSecretOK')?.addEventListener('click', async ()=>{
       overlayEl.style.display='flex';
       playersCard.style.display='none';
       lastLobbyState = null;
+      window.lobbyCode = lobbyCode;
     }
 
     let joinMode = false;
@@ -1367,6 +1387,7 @@ async function clearChallengeForAll(){
 
         prevIsHost = isHost;
         isHost = state.hostId === clientId;
+        window.isHost = isHost;
 
         playersConnected = 0;
         if (state.players) {
