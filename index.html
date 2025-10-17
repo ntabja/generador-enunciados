@@ -659,6 +659,12 @@ function setJoinMode(on){
   }
 if (clearBtn)  clearBtn.style.display  = (!inLobby || isHost) ? "" : "none";
 if (btnGrupos) btnGrupos.style.display = (!inLobby || isHost) ? "" : "none";
+      // Temporizador: mostrar select y botones solo si NO hay lobby o si eres ADMIN.
+// El display del tiempo (#timerDisplay) siempre visible.
+if (timerSelect)    timerSelect.style.display    = (!inLobby || isHost) ? "" : "none";
+if (btnTimerStart)  btnTimerStart.style.display  = (!inLobby || isHost) ? "" : "none";
+if (btnTimerCancel) btnTimerCancel.style.display = (!inLobby || isHost) ? "" : "none";
+if (timerDisplay)   timerDisplay.style.display   = "";
   // Mantener deshabilitado el control de puntajes y timer cuando no seas ADMIN.
   const hostOrSolo = isHost || playersConnected <= 1;
 
