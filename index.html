@@ -1251,7 +1251,7 @@ async function sendMasterpieceToAll(){
     text: shared.text,
     ts,
     ack: false,
-    title: '🎨 Haz tu Obra Maestra con este enunciado'
+    title: '🎨 Dibuja tu Obra Maestra con este enunciado'
   };
 }
   await update(ref(db), updates);
@@ -1261,7 +1261,7 @@ async function sendMasterpieceToAll(){
 // Modo local: muestra uno en el dispositivo actual
 function sendLocalMasterpiece(){
   const { html } = genPVAL(rng());
-  showSecretOverlay(html, '🎨 Haz tu Obra Maestra con este enunciado');
+  showSecretOverlay(html, '🎨 Dibuja tu Obra Maestra con este enunciado');
 }
 
     async function generarGrupos(){
