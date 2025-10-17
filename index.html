@@ -623,6 +623,18 @@ function setSliderVal(idSlider, idBadge, v){
   if(s) s.value = v;
   if(b) b.textContent = String(v);
 }
+// === Control de visibilidad/habilitación de sliders según rol ===
+window.setWeightsEnabled = function onOff(on){
+  // si quisieras deshabilitar en vez de ocultar, lo dejo listo:
+  const ids = ['wAnime','wVideojuegos','wPeliculas','wProfesiones','wOtros'];
+  ids.forEach(id=>{
+    const el = document.getElementById(id);
+    if(!el) return;
+    el.disabled = !on;
+    el.style.opacity = on ? '' : '0.6';
+    el.style.pointerEvents = on ? '' : 'none';
+  });
+};
 
 function initWeightSliders(){
   // Carga valores actuales
@@ -662,31 +674,29 @@ function initWeightSliders(){
   hook('wOtros','wOtrosVal','otros');
 
   // Reset
-  const btnReset = document.getElementById('btnResetWeights');
-  if(btnReset){
-    btnReset.addEventListener('click', ()=>{
-      ['anime','videojuegos','peliculas','profesiones','otros'].forEach(cat=> setWeight(cat,1));
-      initWeightSliders();
-      if(window.showToast) window.showToast('Pesos restablecidos');
-    });
-  }
+const btnReset = document.getElementById('btnResetWeights');
+if(btnReset){
+  btnReset.addEventListener('click', async ()=>{
+    ['anime','videojuegos','peliculas','profesiones','otros'].forEach(cat=> setWeight(cat,1));
+    initWeightSliders();
+
+    // Publica a la sala si eres ADMIN
+    if (window.lobbyCode && window.isHost && window.db && window.fbRef && window.fbUpdate) {
+      try{
+        const path = `lobbies/${window.lobbyCode}/weights`;
+        await window.fbUpdate(window.fbRef(window.db, path), { ...WEIGHTS });
+        if (window.showToast) window.showToast('Pesos restablecidos (sala)');
+      }catch(e){ console.warn('No se pudieron publicar los pesos (reset):', e); }
+    } else {
+      if (window.showToast) window.showToast('Pesos restablecidos');
+    }
+  });
 }
+  }
 
 // Inicializa al cargar el DOM (el bloque está en el mismo script)
 document.addEventListener('DOMContentLoaded', initWeightSliders);
 initWeightSliders(); // por si el script se inyecta al final del body
-// === Simulador de distribución ===
-function categoriaDe(nombre){
-  // reutilizamos la ya definida arriba; este guard es por si el bundler mueve cosas
-  return (window.__categoriaDe__ || (window.__categoriaDe__ = (n)=>{
-    if (CAT_ANIME.has(n)) return 'anime';
-    if (CAT_VIDEOJUEGOS.has(n)) return 'videojuegos';
-    if (CAT_PELICULAS.has(n)) return 'peliculas';
-    if (CAT_PROFESIONES.has(n)) return 'profesiones';
-    return 'otros';
-  }))(nombre);
-}
-
 function simularDistribucion(n=2000){
   const R = rng('sim-'+Date.now());
   const tally = { anime:0, videojuegos:0, peliculas:0, profesiones:0, otros:0 };
@@ -1071,6 +1081,14 @@ updateHostUI = function(){
       advRow.style.display = pref ? "" : "none";
     }
   }
+  // ⬇️⬇️ PÉGALO AQUÍ ⬇️⬇️
+  // Sliders de pesos: solo ADMIN en sala (o cualquiera en modo local)
+  const catCard = document.getElementById('catWeightsCard');
+  const canControlWeights = (!inLobby || isHost);
+  if (catCard) catCard.style.display = canControlWeights ? '' : 'none';
+  // si prefieres mostrarlos pero deshabilitados, descomenta:
+  // if (window.setWeightsEnabled) window.setWeightsEnabled(canControlWeights);
+  // ⬆️⬆️ FIN DEL PEGADO ⬆️⬆️
 };
 updateHostUI(); // para aplicar el estado inicial fuera/antes del lobby
     
@@ -1401,6 +1419,13 @@ async function clearChallengeForAll(){
         leaveRow.style.display='flex';
 
         if (statusEl) statusEl.textContent = `Sala: ${code} • ${isHost ? "Eres ADMIN" : "Jugador"} • Conectados: ${playersConnected}`;
+        // === Hidratar pesos desde Firebase (si existen)
+if (state.weights && typeof state.weights === 'object') {
+  WEIGHTS = { ...DEFAULT_WEIGHTS, ...state.weights };
+  try { localStorage.setItem('am_weights', JSON.stringify(WEIGHTS)); } catch(e){}
+  // Refresca sliders si están presentes (el admin los verá; jugadores no)
+  if (typeof initWeightSliders === 'function') initWeightSliders();
+}
 
         const salidaEl = document.getElementById("salida");
 if (salidaEl && ('currentOutputHtml' in state)) {
@@ -1440,6 +1465,7 @@ if(mySecret && typeof mySecret.ts === 'number'){
         currentOutputHtml: "",
         currentOutputText: "",
         currentChallengeHtml: "",
+        weights: { ...WEIGHTS }, 
         players: { [clientId]: { name: name||"Host", score: 0, connected: true } },
         createdAt: Date.now()
       };
