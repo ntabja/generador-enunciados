@@ -1358,7 +1358,7 @@ updateHostUI(); // para aplicar el estado inicial fuera/antes del lobby
 
             <div class="scoreBox">
               <button class="scoreBtn" data-action="dec" data-id="${x.id}">−</button>
-              <span class="score" data-id="${x.id}">${String(x.score).padStart(2,'0')}</span>
+              <span class="score" data-id="${x.id}">${x.score}</span>
               <button class="scoreBtn" data-action="inc" data-id="${x.id}">+</button>
             </div>
           </div>
