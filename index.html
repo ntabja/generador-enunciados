@@ -1433,7 +1433,16 @@ timerDisplay?.addEventListener('click', ()=>{
 timerSelect?.addEventListener('change', ()=>{
   if(!(isHost||playersConnected<=1)||!lobbyCode) return;
   const val = parseInt(timerSelect.value,10);
-  update(ref(db, `lobbies/${lobbyCode}/timer`), { durationSec: val, startedAt: Date.now(), canceled:false });
+  timerSelect?.addEventListener('change', async ()=>{
+  if(!(isHost || playersConnected <= 1) || !lobbyCode) return;
+  const val = parseInt(timerSelect.value, 10);
+
+  // Solo actualizar la duración SIN iniciar el temporizador.
+  await update(ref(db, `lobbies/${lobbyCode}/timer`), {
+    durationSec: val,
+    canceled: true,
+    startedAt: null   // elimina/neutraliza el arranque previo
+  });
 });
 
     // ======== Generación por grupo (usa el último estado del lobby) ========
