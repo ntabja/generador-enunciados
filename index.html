@@ -1145,40 +1145,42 @@ function setJoinMode(on){
       });
     }
 
-    function updateHostUI(){
+   function updateHostUI(){
   const inLobby = !!lobbyCode;
 
-  // Mostrar botones solo si NO hay lobby (modo local) o si eres ADMIN.
-  if (adminControls) {
-    adminControls.style.display = (!inLobby || isHost) ? "" : "none";
-  }
-if (clearBtn)  clearBtn.style.display  = (!inLobby || isHost) ? "" : "none";
-if (btnGrupos) btnGrupos.style.display = (!inLobby || isHost) ? "" : "none";
-      // Temporizador:
-// - select visible solo si NO hay lobby o si sos ADMIN
-// - el reloj siempre visible, pero desactivamos interacción si no corresponde
-if (timerSelect)    timerSelect.style.display = (!inLobby || isHost) ? "" : "none";
-if (timerDisplay)   timerDisplay.style.display = "";
+  // Mostrar controles solo si NO hay lobby o si eres ADMIN
+  if (adminControls) adminControls.style.display = (!inLobby || isHost) ? "" : "none";
+  if (clearBtn)      clearBtn.style.display      = (!inLobby || isHost) ? "" : "none";
+  if (btnGrupos)     btnGrupos.style.display     = (!inLobby || isHost) ? "" : "none";
 
-const canControlTimer = (!inLobby) ? false : (isHost || playersConnected <= 1);
-if (timerDisplay){
-  timerDisplay.tabIndex = canControlTimer ? 0 : -1;
-  timerDisplay.style.opacity = canControlTimer ? '' : '0.6';
-  timerDisplay.style.pointerEvents = canControlTimer ? '' : 'none';
-}
+  // Temporizador
+  if (timerSelect) timerSelect.style.display = (!inLobby || isHost) ? "" : "none";
+
+  if (timerDisplay) {
+    // el reloj siempre visible
+    timerDisplay.style.display = "";
+
+    // quién puede controlarlo: admin en lobby o si estás solo
+    const canControlTimer = (!inLobby) ? false : (isHost || playersConnected <= 1);
+    timerDisplay.tabIndex = canControlTimer ? 0 : -1;
+    timerDisplay.style.opacity = canControlTimer ? '' : '0.6';
+    timerDisplay.style.pointerEvents = canControlTimer ? '' : 'none';
+  }
+
+  // Habilitar/deshabilitar el <select> del tiempo (solo admin en lobby)
+  if (timerSelect) {
+    const disableSel = !(isHost && inLobby);
+    timerSelect.disabled = disableSel;
+    timerSelect.style.opacity = disableSel ? 0.5 : '';
+  }
 
   // Botones de puntaje (+/-) solo si eres admin o estás solo
-  playersList?.querySelectorAll('.scoreBtn').forEach(b=> b.disabled = !hostOrSolo);
-
-  // Timer: solo ADMIN en lobby
-  const timerControls = [btnTimer, timerSelect];
-  const timerDisabled = !isHost || !lobbyCode;
-  timerControls.forEach(el=>{
-    if(!el) return;
-    el.disabled = timerDisabled;
-    el.style.opacity = timerDisabled ? 0.5 : '';
-  });
+  const hostOrSolo = isHost || playersConnected <= 1;
+  if (playersList) {
+    playersList.querySelectorAll('.scoreBtn').forEach(b => b.disabled = !hostOrSolo);
+  }
 }
+
 // === Plegado de opciones avanzadas (toggle) ===
 const btnToggleAdv = $("btnToggleAdv");
 const advRow = $("advRow");
