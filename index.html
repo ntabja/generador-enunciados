@@ -149,42 +149,14 @@
     .lineGroup .gBadge{
       padding:2px 8px; border:1px solid rgba(255,255,255,.18); border-radius:8px; background:#0e1628; font-weight:800; font-size:12px; white-space:nowrap;
     }
-    /* Centrar verticalmente el botón "?" dentro del header (desktop/tablet) */
-header a[title="Ver instrucciones del juego"] {
-  position: absolute !important;
-  top: 50% !important;
-  transform: translateY(-50%) !important;
-
-  /* tamaño y estilo del botón en desktop/tablet */
-  width: 32px !important;
-  height: 32px !important;
-  font-size: 16px !important;
-
-  /* que NO se superponga al header (header tiene z-index:10) */
-  z-index: 9 !important;
-
-  opacity: 0.9 !important;
-  background: rgba(255,255,255,0.08) !important;
-  border-color: rgba(255,255,255,0.2) !important;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.35) !important;
-}
-
-header a[title="Ver instrucciones del juego"]:hover {
-  opacity: 1 !important;
-  background: rgba(255,255,255,0.16) !important;
-}
-
-/* === Ajuste responsive para el botón de ayuda (móvil/tablet) === */
+    /* === Ajuste responsive para el botón de ayuda (móvil/tablet) === */
 @media (max-width: 820px) {
   header a[title="Ver instrucciones del juego"] {
     /* lo bajamos a la esquina inferior derecha */
-    position: fixed !important;
     top: auto !important;
     bottom: calc(env(safe-area-inset-bottom, 0px) + 16px) !important;
     right: calc(env(safe-area-inset-right, 0px) + 14px) !important;
-    transform: none !important;
-  }
-}
+
     /* más pequeño y sin tapar el header */
     width: 32px !important;
     height: 32px !important;
@@ -204,16 +176,13 @@ header a[title="Ver instrucciones del juego"]:hover {
     background: rgba(255,255,255,0.16) !important;
   }
 }
- /* Animación suave para el overlay de Filtros */
+    /* Animación suave para el overlay de Filtros */
 #filtersOverlay{
-  /* IMPORTANTE: oculto por defecto */
-  display: none;
   opacity: 0;
   pointer-events: none;
   transition: opacity .25s ease;
 }
 #filtersOverlay.open{
-  display: flex;          /* se muestra solo cuando tiene .open */
   opacity: 1;
   pointer-events: auto;
 }
@@ -225,15 +194,13 @@ header a[title="Ver instrucciones del juego"]:hover {
 #filtersOverlay.open .card{
   transform: scale(1);
 }
-
-/* Ocultar botones Copiar y Test en móviles */
+    /* Ocultar botones Copiar y Test en móviles */
 @media (max-width: 820px) {
   #btnCopiar, #btnTest {
     display: none !important;
   }
 }
-
-/* Toast un poco más abajo en móviles */
+    /* Toast un poco más abajo en móviles */
 @media (max-width: 820px) {
   #toast {
     bottom: 14px !important; /* antes 24px */
@@ -346,7 +313,7 @@ header a[title="Ver instrucciones del juego"]:hover {
 @media (max-width: 820px) {
   /* deja un colchón a la derecha, para que se vean más “metidos” a la izquierda */
   #leaveRow {
-    margin-right: calc(env(safe-area-inset-right, 0px) + 45px) !important;
+    margin-right: calc(env(safe-area-inset-right, 0px) + 40px) !important;
   }
 
   /* opcional: acércalos un poquito entre sí (sobre-escribe el inline de 8px) */
@@ -497,7 +464,7 @@ header a[title="Ver instrucciones del juego"]:hover {
 </div>
 <!-- Overlay Filtros (solo admin en sala; cualquiera en modo local) -->
 <div id="filtersOverlay"
-     style="position:fixed; inset:0; z-index:1200; display:none;
+     style="position:fixed; inset:0; z-index:1200; display:flex;
             align-items:center; justify-content:center;
             background:rgba(11,16,32,.92); backdrop-filter:blur(8px);
             padding:16px;">
@@ -1110,18 +1077,12 @@ function openFilters(){
     if(window.showToast) window.showToast('Solo el ADMIN puede abrir Filtros en sala');
     return;
   }
-  if(filtersOverlay){
-    filtersOverlay.style.display = 'flex';
-    filtersOverlay.classList.add('open');
-  }
+  if(filtersOverlay) filtersOverlay.classList.add('open');
   if(typeof window.initWeightSliders === 'function') window.initWeightSliders();
 }
 
 function closeFilters(){
-  if(filtersOverlay){
-    filtersOverlay.classList.remove('open');
-    filtersOverlay.style.display = 'none';
-  }
+  if(filtersOverlay) filtersOverlay.classList.remove('open');
 }
 
 // Botones abrir/cerrar
