@@ -194,6 +194,18 @@
 #filtersOverlay.open .card{
   transform: scale(1);
 }
+    /* Ocultar botones Copiar y Test en móviles */
+@media (max-width: 820px) {
+  #btnCopiar, #btnTest {
+    display: none !important;
+  }
+}
+    /* Toast un poco más abajo en móviles */
+@media (max-width: 820px) {
+  #toast {
+    bottom: 14px !important; /* antes 24px */
+  }
+}
   </style>
 </head>
 <body>
@@ -396,7 +408,7 @@
       </label>
 
       <!-- Simulador -->
-      <<div class="inline" style="width:100%; justify-content:space-between; margin-top:10px">
+      <div class="inline" style="width:100%; justify-content:space-between; margin-top:10px">
   <div class="inline" style="gap:8px">
     <button class="btn" id="btnResetWeights" title="Restablecer a 1">Reset</button>
     <button class="btn" id="btnSimDist" title="Simular 2,000 picks según los pesos">Test</button>
@@ -473,15 +485,13 @@
       <button class="btn" id="btnTest">Test</button>
     </div>
     <div id="timerWrap" class="inline" style="margin-top:10px;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap">
-      <span class="muted">Temporizador:</span>
       <select id="timerSelect" class="btn" style="padding:8px 10px">
         <option value="30">30s</option>
         <option value="60">60s</option>
         <option value="90">90s</option>
         <option value="120">120s</option>
       </select>
-      <button class="btn" id="btnTimerStart">Iniciar</button>
-      <button class="btn" id="btnTimerCancel">Cancelar</button>
+      <button class="btn" id="btnTimer">Iniciar</button>
       <span id="timerDisplay" class="kbd" style="margin-left:6px">—:—</span>
     </div>
     <div class="muted" style="margin-top:8px">© 2025 Tabja Games</div>
@@ -975,10 +985,10 @@ filtersOverlay?.addEventListener('click', (e)=>{
     const btnChooseJoin = $("btnChooseJoin");
     const btnBackJoin   = $("btnBackJoin");
 
-    const btnTimerStart = $("btnTimerStart");
-    const btnTimerCancel = $("btnTimerCancel");
+    const btnTimer = $("btnTimer");
     const timerSelect   = $("timerSelect");
     const timerDisplay  = $("timerDisplay");
+    let timerActive = false; // control local del estado del timer
 
     let timerInterval = null;
 
@@ -1091,8 +1101,7 @@ if (btnGrupos) btnGrupos.style.display = (!inLobby || isHost) ? "" : "none";
       // Temporizador: mostrar select y botones solo si NO hay lobby o si eres ADMIN.
 // El display del tiempo (#timerDisplay) siempre visible.
 if (timerSelect)    timerSelect.style.display    = (!inLobby || isHost) ? "" : "none";
-if (btnTimerStart)  btnTimerStart.style.display  = (!inLobby || isHost) ? "" : "none";
-if (btnTimerCancel) btnTimerCancel.style.display = (!inLobby || isHost) ? "" : "none";
+if (btnTimer) btnTimer.style.display = (!inLobby || isHost) ? "" : "none";
 if (timerDisplay)   timerDisplay.style.display   = "";
   // Mantener deshabilitado el control de puntajes y timer cuando no seas ADMIN.
   const hostOrSolo = isHost || playersConnected <= 1;
@@ -1101,7 +1110,7 @@ if (timerDisplay)   timerDisplay.style.display   = "";
   playersList?.querySelectorAll('.scoreBtn').forEach(b=> b.disabled = !hostOrSolo);
 
   // Timer: solo ADMIN en lobby
-  const timerControls = [btnTimerStart, btnTimerCancel, timerSelect];
+  const timerControls = [btnTimer, timerSelect];
   const timerDisabled = !isHost || !lobbyCode;
   timerControls.forEach(el=>{
     if(!el) return;
@@ -1249,13 +1258,20 @@ async function cancelTimer(){
 
 function handleTimerState(timer){
   clearTimerInterval();
+
+  // estado base
+  timerActive = false;
+  if(btnTimer) btnTimer.textContent = 'Iniciar';
+
   if(!timer || timer.canceled){
     if(timerDisplay) timerDisplay.textContent='—:—';
     if(timerDisplay) timerDisplay.style.color='';
     return;
   }
+
   const { startedAt, durationSec } = timer;
   if(!startedAt||!durationSec) return;
+
   function tick(){
     const elapsed = Math.floor((Date.now()-startedAt)/1000);
     const remain = Math.max(0, durationSec - elapsed);
@@ -1263,20 +1279,30 @@ function handleTimerState(timer){
       timerDisplay.textContent = fmt(remain);
       timerDisplay.style.color = remain <= 10 ? 'var(--verb)' : '';
     }
+    // actualizar estado del botón según quede tiempo
+    timerActive = remain > 0 && !timer.canceled;
+    if(btnTimer) btnTimer.textContent = timerActive ? 'Cancelar' : 'Iniciar';
+
     if(remain<=0){
       clearTimerInterval();
       if(window.showToast) window.showToast('⏰ ¡Tiempo!');
     }
   }
+
   tick();
   timerInterval = setInterval(tick, 1000);
 }
 
-btnTimerStart?.addEventListener('click', ()=>{
-  const sec = parseInt(timerSelect?.value||'60',10);
-  startTimer(sec);
+btnTimer?.addEventListener('click', ()=>{
+  const hostOrSolo = isHost || playersConnected <= 1;
+  if(!(hostOrSolo) || !lobbyCode) return;
+  if (timerActive) {
+    cancelTimer();
+  } else {
+    const sec = parseInt(timerSelect?.value||'60',10);
+    startTimer(sec);
+  }
 });
-btnTimerCancel?.addEventListener('click', ()=> cancelTimer());
 
 timerSelect?.addEventListener('change', ()=>{
   if(!(isHost||playersConnected<=1)||!lobbyCode) return;
@@ -1918,7 +1944,7 @@ if(mode === 'MASTERPIECE'){
     }, true);
 
     // Deshabilitar iniciar/cancelar timer si no hay lobby
-    if(!lobbyCode){ [btnTimerStart, btnTimerCancel, timerSelect].forEach(el=>{ if(!el) return; el.disabled = true; el.style.opacity = 0.5; }); }
+    if(!lobbyCode){ [btnTimer, timerSelect].forEach(el=>{ if(!el) return; el.disabled = true; el.style.opacity = 0.5; }); }
 
     // ====== Init ======
     (function initLobbyOnce(){
