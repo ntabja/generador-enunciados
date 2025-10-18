@@ -281,6 +281,34 @@
 #timerWrap {
   gap: 6px; /* antes 10px */
 }
+    /* 🔧 Estilo oscuro para el selector del temporizador */
+#timerSelect {
+  background: #0e1628; /* mismo fondo que los demás controles */
+  color: #fff; /* texto blanco */
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 10px;
+  padding: 8px 12px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  appearance: none; /* quita el estilo nativo (Safari/Chrome) */
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  transition: background 0.2s, border-color 0.2s;
+}
+
+#timerSelect:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+#timerSelect:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+ #timerSelect option {
+ background: #0e1628;
+ color: #fff;
+}
   </style>
 </head>
 <body>
