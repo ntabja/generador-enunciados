@@ -2018,7 +2018,7 @@ if(mode === 'RETO'){
 
   // 👉 publicar/mostrar el desafío
   const note = pickChallenge();
-  const noteHtml = `📝 <strong>Reto:</strong> ${note}`;
+  const noteHtml = `📝 <strong>RETO:</strong> ${note}`;
   if(lobbyCode){
     await update(ref(db, `lobbies/${lobbyCode}`), { currentChallengeHtml: noteHtml });
   }
