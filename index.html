@@ -176,6 +176,24 @@
     background: rgba(255,255,255,0.16) !important;
   }
 }
+    /* Animación suave para el overlay de Filtros */
+#filtersOverlay{
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .25s ease;
+}
+#filtersOverlay.open{
+  opacity: 1;
+  pointer-events: auto;
+}
+/* pequeño pop del panel */
+#filtersOverlay .card{
+  transform: scale(.98);
+  transition: transform .25s ease;
+}
+#filtersOverlay.open .card{
+  transform: scale(1);
+}
   </style>
 </head>
 <body>
@@ -319,7 +337,7 @@
 </div>
 <!-- Overlay Filtros (solo admin en sala; cualquiera en modo local) -->
 <div id="filtersOverlay"
-     style="display:none; position:fixed; inset:0; z-index:1200;
+     style="position:fixed; inset:0; z-index:1200;
             align-items:center; justify-content:center;
             background:rgba(11,16,32,.92); backdrop-filter:blur(8px);
             padding:16px;">
@@ -926,13 +944,12 @@ function openFilters(){
     if(window.showToast) window.showToast('Solo el ADMIN puede abrir Filtros en sala');
     return;
   }
-  if(filtersOverlay) filtersOverlay.style.display = 'flex';
-  // Refrescar los sliders con el estado actual
+  if(filtersOverlay) filtersOverlay.classList.add('open');
   if(typeof window.initWeightSliders === 'function') window.initWeightSliders();
 }
 
 function closeFilters(){
-  if(filtersOverlay) filtersOverlay.style.display = 'none';
+  if(filtersOverlay) filtersOverlay.classList.remove('open');
 }
 
 // Botones abrir/cerrar
@@ -941,7 +958,7 @@ btnCloseFilters?.addEventListener('click', closeFilters);
 
 // Cerrar con ESC
 document.addEventListener('keydown', (e)=>{
-  if(e.key === 'Escape' && filtersOverlay?.style.display === 'flex'){
+  if(e.key === 'Escape' && filtersOverlay?.classList.contains('open')){
     closeFilters();
   }
 });
@@ -1143,9 +1160,9 @@ updateHostUI = function(){
   if (btnFiltersEl) btnFiltersEl.style.display = (!inLobby || isHost) ? '' : 'none';
 
    // 🔒 Si el overlay de Filtros estaba abierto y perdiste permisos, ciérralo
-  const wasOpen = filtersOverlay && filtersOverlay.style.display === 'flex';
-  const stillCan = (!inLobby || isHost); // mismo criterio que usas para mostrar el botón
-  if (wasOpen && !stillCan) closeFilters();
+const wasOpen = filtersOverlay?.classList.contains('open');
+const stillCan = (!inLobby || isHost);
+if (wasOpen && !stillCan) closeFilters();
 };
 updateHostUI(); // para aplicar el estado inicial fuera/antes del lobby
     
