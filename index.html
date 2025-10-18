@@ -545,12 +545,12 @@
 
   <!-- El reloj AHORA es el botón -->
   <button id="timerDisplay"
-          class="kbd"
-          type="button"
-          aria-label="Iniciar o cancelar temporizador"
-          title="Iniciar / Cancelar">
-    —:—
-  </button>
+        class="kbd"
+        type="button"
+        aria-label="Iniciar o cancelar temporizador"
+        title="Iniciar / Cancelar">
+  Iniciar
+</button>
 </div>
   </footer>
 
@@ -1323,16 +1323,16 @@ function handleTimerState(timer){
   clearTimerInterval();
 
   // estado base
-timerActive = false;
+  timerActive = false;
 
-if(!timer || timer.canceled){
-  if(timerDisplay){
-    timerDisplay.textContent='—:—';
-    timerDisplay.classList.remove('running','warning');
-    timerDisplay.style.color='';
+  if(!timer || timer.canceled){
+    if(timerDisplay){
+      timerDisplay.textContent='Iniciar';
+      timerDisplay.classList.remove('running','warning');
+      timerDisplay.style.color=''; // vuelve al color normal
+    }
+    return;
   }
-  return;
-}
 
   const { startedAt, durationSec } = timer;
   if(!startedAt||!durationSec) return;
