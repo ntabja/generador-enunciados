@@ -408,7 +408,7 @@
   <div style="min-width:180px; flex:1">
 <input id="playerName" placeholder="Tu nombre" aria-label="Tu nombre" style="max-width:100%">
 <small id="nameError" style="color:#dc2626; display:none;">Por favor coloca tu nombre.</small>
-<small id="nameLengthError" style="color:#dc2626; display:none;">Máximo 12 caracteres permitidos.</small>
+<small id="nameLengthError" style="color:#dc2626; display:none;">Máximo 10 caracteres permitidos.</small>
   </div>
 </div>
 
@@ -2163,7 +2163,7 @@ $("btnCreateLobby")?.addEventListener("click", ()=>{
     return;
   }
   // Validación 2: más de 12 caracteres
-  if (name.length > 12) {
+  if (name.length > 10) {
     if (err) err.style.display = "none";
     if (errLen) errLen.style.display = "block";
     return;
