@@ -229,6 +229,34 @@
   color: var(--verb); /* rojo cuando queda poco */
   transform: scale(1.2);
 }
+    /* Reloj grande y centrado */
+#timerWrap { justify-content: center !important; }
+
+#timerDisplay{
+  display:inline-flex; align-items:center; justify-content:center;
+  min-width:140px;
+  font-size:28px; line-height:1; font-variant-numeric: tabular-nums;
+  padding:12px 16px; border-radius:14px;
+  background:#0e1628; border:1px solid rgba(255,255,255,.20);
+  cursor:pointer; user-select:none;
+  transition: transform .08s ease, box-shadow .2s ease, border-color .2s ease;
+}
+#timerDisplay:hover{ transform: translateY(-1px); }
+#timerDisplay:active{ transform: translateY(0); }
+#timerDisplay.running{
+  font-weight:800;
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.08), 0 8px 26px rgba(0,0,0,.35);
+  border-color: rgba(255,255,255,.28);
+}
+#timerDisplay.warning{
+  color: var(--verb);
+  animation: timerPulse 1000ms ease-in-out infinite;
+}
+@keyframes timerPulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.045); }
+  100% { transform: scale(1); }
+}
   </style>
 </head>
 <body>
@@ -507,17 +535,23 @@
       <button class="btn" id="btnCopiar">Copiar</button>
       <button class="btn" id="btnTest">Test</button>
     </div>
-    <div id="timerWrap" class="inline" style="margin-top:10px;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap">
-      <select id="timerSelect" class="btn" style="padding:8px 10px">
-        <option value="30">30s</option>
-        <option value="60">60s</option>
-        <option value="90">90s</option>
-        <option value="120">120s</option>
-      </select>
-      <button class="btn" id="btnTimer">Iniciar</button>
-      <span id="timerDisplay" class="kbd" style="margin-left:6px">—:—</span>
-    </div>
-    <div class="muted" style="margin-top:8px">© 2025 Tabja Games</div>
+    <div id="timerWrap" class="inline" style="margin-top:10px;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap">
+  <select id="timerSelect" class="btn" style="padding:8px 10px">
+    <option value="30">30s</option>
+    <option value="60">60s</option>
+    <option value="90">90s</option>
+    <option value="120">120s</option>
+  </select>
+
+  <!-- El reloj AHORA es el botón -->
+  <button id="timerDisplay"
+          class="kbd"
+          type="button"
+          aria-label="Iniciar o cancelar temporizador"
+          title="Iniciar / Cancelar">
+    —:—
+  </button>
+</div>
   </footer>
 
   <!-- Toast element -->
@@ -1008,7 +1042,6 @@ filtersOverlay?.addEventListener('click', (e)=>{
     const btnChooseJoin = $("btnChooseJoin");
     const btnBackJoin   = $("btnBackJoin");
 
-    const btnTimer = $("btnTimer");
     const timerSelect   = $("timerSelect");
     const timerDisplay  = $("timerDisplay");
     let timerActive = false; // control local del estado del timer
@@ -1121,13 +1154,18 @@ function setJoinMode(on){
   }
 if (clearBtn)  clearBtn.style.display  = (!inLobby || isHost) ? "" : "none";
 if (btnGrupos) btnGrupos.style.display = (!inLobby || isHost) ? "" : "none";
-      // Temporizador: mostrar select y botones solo si NO hay lobby o si eres ADMIN.
-// El display del tiempo (#timerDisplay) siempre visible.
-if (timerSelect)    timerSelect.style.display    = (!inLobby || isHost) ? "" : "none";
-if (btnTimer) btnTimer.style.display = (!inLobby || isHost) ? "" : "none";
-if (timerDisplay)   timerDisplay.style.display   = "";
-  // Mantener deshabilitado el control de puntajes y timer cuando no seas ADMIN.
-  const hostOrSolo = isHost || playersConnected <= 1;
+      // Temporizador:
+// - select visible solo si NO hay lobby o si sos ADMIN
+// - el reloj siempre visible, pero desactivamos interacción si no corresponde
+if (timerSelect)    timerSelect.style.display = (!inLobby || isHost) ? "" : "none";
+if (timerDisplay)   timerDisplay.style.display = "";
+
+const canControlTimer = (!inLobby) ? false : (isHost || playersConnected <= 1);
+if (timerDisplay){
+  timerDisplay.tabIndex = canControlTimer ? 0 : -1;
+  timerDisplay.style.opacity = canControlTimer ? '' : '0.6';
+  timerDisplay.style.pointerEvents = canControlTimer ? '' : 'none';
+}
 
   // Botones de puntaje (+/-) solo si eres admin o estás solo
   playersList?.querySelectorAll('.scoreBtn').forEach(b=> b.disabled = !hostOrSolo);
@@ -1283,14 +1321,16 @@ function handleTimerState(timer){
   clearTimerInterval();
 
   // estado base
-  timerActive = false;
-  if(btnTimer) btnTimer.textContent = 'Iniciar';
+timerActive = false;
 
-  if(!timer || timer.canceled){
-    if(timerDisplay) timerDisplay.textContent='—:—';
-    if(timerDisplay) timerDisplay.style.color='';
-    return;
+if(!timer || timer.canceled){
+  if(timerDisplay){
+    timerDisplay.textContent='—:—';
+    timerDisplay.classList.remove('running','warning');
+    timerDisplay.style.color='';
   }
+  return;
+}
 
   const { startedAt, durationSec } = timer;
   if(!startedAt||!durationSec) return;
@@ -1298,25 +1338,24 @@ function handleTimerState(timer){
   function tick(){
   const elapsed = Math.floor((Date.now()-startedAt)/1000);
   const remain = Math.max(0, durationSec - elapsed);
+
   if(timerDisplay){
     timerDisplay.textContent = fmt(remain);
-
-    // 🎨 Actualiza clases visuales según el estado del tiempo
+    // Estado visual
     timerDisplay.classList.add('running');
-    if (remain <= 10) {
+    if(remain <= 10){
       timerDisplay.classList.add('warning');
-    } else {
+    }else{
       timerDisplay.classList.remove('warning');
     }
   }
 
-  // actualizar estado del botón según quede tiempo
+  // Estado lógico
   timerActive = remain > 0 && !timer.canceled;
-  if(btnTimer) btnTimer.textContent = timerActive ? 'Cancelar' : 'Iniciar';
 
   if(remain<=0){
     clearTimerInterval();
-    if(timerDisplay) timerDisplay.classList.remove('running', 'warning');
+    if(timerDisplay) timerDisplay.classList.remove('running','warning');
     if(window.showToast) window.showToast('⏰ ¡Tiempo!');
   }
 }
@@ -1325,7 +1364,7 @@ function handleTimerState(timer){
   timerInterval = setInterval(tick, 1000);
 }
 
-btnTimer?.addEventListener('click', ()=>{
+timerDisplay?.addEventListener('click', ()=>{
   const hostOrSolo = isHost || playersConnected <= 1;
   if(!(hostOrSolo) || !lobbyCode) return;
   if (timerActive) {
@@ -1975,8 +2014,17 @@ if(mode === 'MASTERPIECE'){
       }
     }, true);
 
-    // Deshabilitar iniciar/cancelar timer si no hay lobby
-    if(!lobbyCode){ [btnTimer, timerSelect].forEach(el=>{ if(!el) return; el.disabled = true; el.style.opacity = 0.5; }); }
+    // Deshabilitar timer si no hay lobby
+if(!lobbyCode){
+  if(timerSelect){
+    timerSelect.disabled = true;
+    timerSelect.style.opacity = 0.5;
+  }
+  if(timerDisplay){
+    timerDisplay.style.pointerEvents = 'none';
+    timerDisplay.style.opacity = 0.6;
+  }
+}
 
     // ====== Init ======
     (function initLobbyOnce(){
