@@ -755,6 +755,7 @@ function attachSimBtn(){
   btn.addEventListener('click', ()=>{
     const { pct, n } = simularDistribucion(2000);
     out.textContent = `Anime ${pct.anime}% • Videojuegos ${pct.videojuegos}% • Películas ${pct.peliculas}% • Profesiones ${pct.profesiones}% • Otros ${pct.otros}% (n=${n})`;
+    out.style.visibility = 'visible'; // 👈 antes estaba visible con “—”
     if(window.showToast) window.showToast('Simulación lista');
   });
 }
