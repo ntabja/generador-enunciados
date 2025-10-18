@@ -206,6 +206,29 @@
     bottom: 14px !important; /* antes 24px */
   }
 }
+    #timerDisplay {
+  font-size: 2.2rem;     /* tamaño grande */
+  font-weight: 900;      /* más grueso */
+  letter-spacing: 1px;
+  padding: 8px 16px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  min-width: 90px;
+  text-align: center;
+  display: inline-block;
+  transition: transform 0.25s ease, color 0.25s ease;
+}
+
+#timerDisplay.running {
+  transform: scale(1.1);
+  color: var(--accent2);
+}
+
+#timerDisplay.warning {
+  color: var(--verb); /* rojo cuando queda poco */
+  transform: scale(1.2);
+}
   </style>
 </head>
 <body>
@@ -1273,21 +1296,30 @@ function handleTimerState(timer){
   if(!startedAt||!durationSec) return;
 
   function tick(){
-    const elapsed = Math.floor((Date.now()-startedAt)/1000);
-    const remain = Math.max(0, durationSec - elapsed);
-    if(timerDisplay){
-      timerDisplay.textContent = fmt(remain);
-      timerDisplay.style.color = remain <= 10 ? 'var(--verb)' : '';
-    }
-    // actualizar estado del botón según quede tiempo
-    timerActive = remain > 0 && !timer.canceled;
-    if(btnTimer) btnTimer.textContent = timerActive ? 'Cancelar' : 'Iniciar';
+  const elapsed = Math.floor((Date.now()-startedAt)/1000);
+  const remain = Math.max(0, durationSec - elapsed);
+  if(timerDisplay){
+    timerDisplay.textContent = fmt(remain);
 
-    if(remain<=0){
-      clearTimerInterval();
-      if(window.showToast) window.showToast('⏰ ¡Tiempo!');
+    // 🎨 Actualiza clases visuales según el estado del tiempo
+    timerDisplay.classList.add('running');
+    if (remain <= 10) {
+      timerDisplay.classList.add('warning');
+    } else {
+      timerDisplay.classList.remove('warning');
     }
   }
+
+  // actualizar estado del botón según quede tiempo
+  timerActive = remain > 0 && !timer.canceled;
+  if(btnTimer) btnTimer.textContent = timerActive ? 'Cancelar' : 'Iniciar';
+
+  if(remain<=0){
+    clearTimerInterval();
+    if(timerDisplay) timerDisplay.classList.remove('running', 'warning');
+    if(window.showToast) window.showToast('⏰ ¡Tiempo!');
+  }
+}
 
   tick();
   timerInterval = setInterval(tick, 1000);
