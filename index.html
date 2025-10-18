@@ -296,6 +296,7 @@
   -moz-appearance: none;
   transition: background 0.2s, border-color 0.2s;
 }
+
 #timerSelect:hover {
   background: rgba(255, 255, 255, 0.08);
   border-color: rgba(255, 255, 255, 0.3);
@@ -304,11 +305,9 @@
   opacity: 0.5;
   cursor: not-allowed;
 }
-
-/* Opciones del dropdown */
-#timerSelect option {
-  background: #0e1628;
-  color: #fff;
+ #timerSelect option {
+ background: #0e1628;
+ color: #fff;
 }
   </style>
 </head>
@@ -1433,16 +1432,7 @@ timerDisplay?.addEventListener('click', ()=>{
 timerSelect?.addEventListener('change', ()=>{
   if(!(isHost||playersConnected<=1)||!lobbyCode) return;
   const val = parseInt(timerSelect.value,10);
-  timerSelect?.addEventListener('change', async ()=>{
-  if(!(isHost || playersConnected <= 1) || !lobbyCode) return;
-  const val = parseInt(timerSelect.value, 10);
-
-  // Solo actualizar la duración SIN iniciar el temporizador.
-  await update(ref(db, `lobbies/${lobbyCode}/timer`), {
-    durationSec: val,
-    canceled: true,
-    startedAt: null   // elimina/neutraliza el arranque previo
-  });
+  update(ref(db, `lobbies/${lobbyCode}/timer`), { durationSec: val, startedAt: Date.now(), canceled:false });
 });
 
     // ======== Generación por grupo (usa el último estado del lobby) ========
