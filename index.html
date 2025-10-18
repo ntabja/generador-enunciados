@@ -318,7 +318,17 @@
     margin-left: 6px !important;
   }
 }
-  </style>
+  /* ⬇️ Pega esto al final del <style> */
+  /* Texto más chico cuando está parado */
+  #timerDisplay:not(.running){
+    font-size: 16px !important;
+  }
+
+  /* Opcional: un poquito más grande al correr */
+  #timerDisplay.running{
+    font-size: 18px;              /* sin !important para que esta gane solo si existe */
+  }
+</style>
 </head>
 <body>
   <!-- Appbar compacto -->
