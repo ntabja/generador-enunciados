@@ -241,6 +241,20 @@
   cursor:pointer; user-select:none;
   transition: transform .08s ease, box-shadow .2s ease, border-color .2s ease;
 }
+    #timerDisplay {
+  color: #fff !important; /* 🔥 fuerza el texto blanco en todos los estados */
+}
+
+/* Cuando el temporizador corre, el color se mantiene claro */
+#timerDisplay.running {
+  color: #fff !important;
+}
+
+/* Si quieres, puedes mantener el “warning” en rojo como ya lo tienes */
+#timerDisplay.warning {
+  color: #ff4d4d !important;
+}
+
 #timerDisplay:hover{ transform: translateY(-1px); }
 #timerDisplay:active{ transform: translateY(0); }
 #timerDisplay.running{
