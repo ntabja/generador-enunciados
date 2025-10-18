@@ -343,14 +343,13 @@
             padding:16px;">
   <section class="card" style="max-width:520px; width:92%; padding:18px;">
     <div class="title" style="align-items:center">
-      <span>Filtros: Frecuencia por categoría</span>
-      <div class="inline" style="gap:8px">
-        <button class="btn" id="btnResetWeights" title="Restablecer a 1">Reset</button>
-        <button class="btn" id="btnCloseFilters" aria-label="Cerrar">✕</button>
-      </div>
-    </div>
+  <span>Filtros: Frecuencia por categoría</span>
+  <div class="inline" style="gap:8px">
+    <button class="btn" id="btnCloseFilters" aria-label="Cerrar">✕</button>
+  </div>
+</div>
 
-    <div class="inline" style="flex-direction:column; gap:12px; margin-top:10px">
+    <div class="inline" style="flex-direction:column; gap:14px; margin-top:16px">
       <!-- anime -->
       <label style="width:100%">
         <div class="inline" style="justify-content:space-between">
@@ -397,10 +396,13 @@
       </label>
 
       <!-- Simulador -->
-      <div class="inline" style="width:100%; justify-content:space-between; margin-top:6px">
-        <button class="btn" id="btnSimDist" title="Simular 2,000 picks según los pesos">Test</button>
-        <span class="muted" id="simDistResult">—</span>
-      </div>
+      <<div class="inline" style="width:100%; justify-content:space-between; margin-top:10px">
+  <div class="inline" style="gap:8px">
+    <button class="btn" id="btnResetWeights" title="Restablecer a 1">Reset</button>
+    <button class="btn" id="btnSimDist" title="Simular 2,000 picks según los pesos">Probar distribución</button>
+  </div>
+  <span class="muted" id="simDistResult">—</span>
+</div>
     </div>
   </section>
 </div>
