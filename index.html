@@ -1158,13 +1158,9 @@ function genFusion(R){
       toastTimer = setTimeout(()=> toastEl.classList.remove('show'), 2200);
     }
    function playClick(){
-  try{
-    const a = window.sndButton || new Audio('sfx/button_press.mp3'); // fallback por si acaso
-    a.currentTime = 0;  // evita solaparse si haces clics seguidos
-    const p = a.play();
-    if (p && p.catch) p.catch(()=>{ /* autoplay blocked, no pasa nada */ });
-  }catch(e){}
+  if (window.playUiClick) window.playUiClick();
 }
+
     (function(){ document.querySelectorAll('button').forEach(b=> b.addEventListener('click', playClick, {capture:true})); })();
 
     document.getElementById('btnCopiar').onclick=async()=>{
@@ -1234,6 +1230,24 @@ sndBeep.preload  = 'auto';
 sndAlarm.preload = 'auto';
 sndBeep.volume   = 0.7; // ajusta si quieres
 sndAlarm.volume  = 1.0; // ajusta si quieres
+// Pool de audios para clicks
+const BUTTON_POOL_SIZE = 6;
+const buttonPool = Array.from({length: BUTTON_POOL_SIZE}, () => {
+  const a = new Audio('sfx/button_press.mp3');
+  a.preload = 'auto';
+  a.volume = 0.8;
+  return a;
+});
+let buttonPoolIndex = 0;
+window.playUiClick = () => {
+  try{
+    const a = buttonPool[buttonPoolIndex];
+    buttonPoolIndex = (buttonPoolIndex + 1) % BUTTON_POOL_SIZE;
+    a.currentTime = 0;           // reinicia esta instancia
+    const p = a.play();
+    if (p && p.catch) p.catch(()=>{});
+  }catch(e){}
+};
 
 // 🧩 función para detener el beep
 function stopBeep(){
