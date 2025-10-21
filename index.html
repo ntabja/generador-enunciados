@@ -373,7 +373,7 @@
   </section>
 </div>
 <!-- Overlay Filtros (solo admin en sala; cualquiera en modo local) -->
-<div id="filtersOverlay" class="overlay">
+<div id="filtersOverlay" class="overlay" style="display:none">
   <section class="card" style="max-width:520px; width:92%; padding:18px;">
     <div class="title" style="align-items:center">
   <span>Frecuencia de Personajes</span>
@@ -1129,12 +1129,24 @@ function openFilters(){
     if(window.showToast) window.showToast('Solo el ADMIN puede abrir Filtros en sala');
     return;
   }
-  if(filtersOverlay) filtersOverlay.classList.add('open');
+  if(filtersOverlay){
+    filtersOverlay.style.display = 'flex';   // 👈 mostrar
+    // forzar un reflow para que la transición de .open se vea (opcional)
+    void filtersOverlay.offsetWidth;
+    filtersOverlay.classList.add('open');
+  }
   if(typeof window.initWeightSliders === 'function') window.initWeightSliders();
 }
 
 function closeFilters(){
-  if(filtersOverlay) filtersOverlay.classList.remove('open');
+  if(!filtersOverlay) return;
+  filtersOverlay.classList.remove('open');
+  // espera el fin de la transición y oculta
+  setTimeout(()=>{ 
+    if(!filtersOverlay.classList.contains('open')){
+      filtersOverlay.style.display = 'none'; // 👈 ocultar de verdad
+    }
+  }, 250); // mismo tiempo que transition:opacity .25s
 }
 
 // Botones abrir/cerrar
