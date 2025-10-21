@@ -1375,6 +1375,7 @@ generarN('PVAL',1);
     const wasOpen = filtersOverlay?.classList.contains('open');
     const stillCan = (!inLobby || isHost);
     if (wasOpen && !stillCan) closeFilters();
+    upsertRerollButtons();
   }
 
   // Toggle de opciones avanzadas (persistencia local)
@@ -1821,6 +1822,8 @@ generarN('PVAL',1);
         salidaEl.innerHTML = state.currentOutputHtml || "";
         window.lastCopyText = state.currentOutputText || "";
       }
+      // Inserta / quita los botones ↻ según rol y ronda
+      upsertRerollButtons();
 
       // Nota/desafío compartido
       if ('currentChallengeHtml' in state) {
@@ -2107,6 +2110,7 @@ function renderLocal(html, text){
   const out = document.getElementById("salida");
   if(out) out.innerHTML = html || "";
   if(typeof window.lastCopyText !== "undefined") window.lastCopyText = text || "";
+  upsertRerollButtons();
 }
 
 async function handleGenerate(mode){
@@ -2290,32 +2294,20 @@ function renderRoundHTML(round, groups){
   const linesText = [];
 
   for (const g of groups){
-    const used = (round.rerolls && round.rerolls[g]) || 0;
+    const used  = (round.rerolls && round.rerolls[g]) || 0;
     const limit = round.maxRerollsPerGroup || 1;
 
-    // Semilla determinista por grupo + número de reroll usado
     const R = rng(`${(lobbyCode||'local')}-${g}-${round.id}-r${Math.min(used, limit)}`);
     const { html, text } = window.genP(R);
 
-    // Colores de tu UI
     const col = groupColor(g);
     const bg  = rgba(col, 0.22);
     const bd  = rgba(col, 0.55);
-
-    // Solo el ADMIN o modo local ve el botón ↻
-    let btn = "";
-    if (isHost || playersConnected <= 1) {
-    const disabled = used >= limit
-    ? ' disabled aria-disabled="true" style="opacity:.5;pointer-events:none"'
-    : '';
-    btn = `<button class="btn rerollBtn" data-group="${g}" title="Cambiar una vez"${disabled}>↻ Cambiar</button>`;
-  }
-
+    
     linesHtml.push(`
       <div class="lineGroup" data-line-group="${g}">
         <span class="gBadge" style="background:${bg};border-color:${bd}">Grupo ${g}</span>
-        <span>${html}</span>
-        ${btn}
+        <span class="groupText">${html}</span>
       </div>
     `.trim());
 
@@ -2323,6 +2315,53 @@ function renderRoundHTML(round, groups){
   }
 
   return { html: linesHtml.join(""), text: linesText.join("\n") };
+}
+
+  function upsertRerollButtons(){
+  // Estado actual de la ronda (sala o local)
+  const round = lobbyCode ? (lastLobbyState && lastLobbyState.round) : window.__localRound;
+
+  // Si no hay ronda P, eliminar cualquier botón que haya quedado
+  if (!round || round.mode !== 'P'){
+    document.querySelectorAll('#salida .rerollBtn').forEach(b => b.remove());
+    return;
+  }
+
+  const hostOrSolo = isHost || playersConnected <= 1;
+
+  // Recorre cada línea de grupo dibujada
+  document.querySelectorAll('#salida .lineGroup').forEach(line=>{
+    const g = line.getAttribute('data-line-group');
+    if(!g) return;
+
+    // Si no eres host (y estás en sala), asegúrate de NO tener botón
+    if (lobbyCode && !hostOrSolo){
+      const old = line.querySelector('.rerollBtn');
+      if (old) old.remove();
+      return;
+    }
+
+    // Host o local: crea/actualiza botón
+    let btn = line.querySelector('.rerollBtn');
+    if (!btn){
+      btn = document.createElement('button');
+      btn.className = 'btn rerollBtn';
+      btn.setAttribute('data-group', g);
+      btn.title = 'Cambiar una vez';
+      btn.textContent = '↻ Cambiar';
+      line.appendChild(btn);
+    }
+
+    // Habilitar/Deshabilitar según usos
+    const used  = (round.rerolls && round.rerolls[g]) || 0;
+    const limit = round.maxRerollsPerGroup || 1;
+    const disabled = used >= limit;
+
+    btn.disabled = disabled;
+    btn.setAttribute('aria-disabled', disabled ? 'true' : 'false');
+    btn.style.opacity = disabled ? '.5' : '';
+    btn.style.pointerEvents = disabled ? 'none' : '';
+  });
 }
 
 // Reroll (↻) para un grupo específico (solo ADMIN en sala; en local cualquiera)
