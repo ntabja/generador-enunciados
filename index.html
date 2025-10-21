@@ -1872,7 +1872,7 @@ async function createLobby(name){
     currentOutputHtml: "",
     currentOutputText: "",
     currentChallengeHtml: "",
-    weights: { ...WEIGHTS },
+    weights: { ...safeWeights },
     players: { [clientId]: { name: name || "Host", score: 0, connected: true } },
     createdAt: Date.now()
   };
