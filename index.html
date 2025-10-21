@@ -1599,14 +1599,11 @@ async function cancelTimer(){
 function handleTimerState(timer){
   clearTimerInterval();
 
-  // reset de estado local del sonido
-  lastBeepSecond = null;              // para no repetir beep por segundo
-  // NOTA: alarmPlayedForTimerId se setea cuando hay startedAt válido
-
-  // estado base
+  // reset sonido por sesión
+  lastBeepSecond = null;
   timerActive = false;
 
-  // Si no hay timer o está cancelado → UI base y parar sonidos
+  // si no hay timer o está cancelado
   if(!timer || timer.canceled){
     if(timerDisplay){
       timerDisplay.textContent='Iniciar';
@@ -1618,10 +1615,10 @@ function handleTimerState(timer){
     return;
   }
 
-  const { startedAt, durationSec } = timer;
+  const { startedAt, durationSec } = timer;   // ← única vez
   if(!startedAt || !durationSec) return;
 
-  // Marcar esta sesión para la alarma (usamos startedAt como id único)
+  // id de esta sesión para tocar la alarma una sola vez
   alarmPlayedForTimerId = startedAt;
 
   function fmt(t){
@@ -1633,23 +1630,17 @@ function handleTimerState(timer){
     const elapsed = Math.floor((Date.now()-startedAt)/1000);
     const remain  = Math.max(0, durationSec - elapsed);
 
-    // UI
     if(timerDisplay){
       timerDisplay.textContent = fmt(remain);
       timerDisplay.classList.add('running');
-      if(remain <= 10){
-        timerDisplay.classList.add('warning');
-      }else{
-        timerDisplay.classList.remove('warning');
-      }
+      if(remain <= 10){ timerDisplay.classList.add('warning'); }
+      else{ timerDisplay.classList.remove('warning'); }
     }
 
-    // Estado lógico
     timerActive = remain > 0 && !timer.canceled;
 
-    // 🎵 Sonidos
+    // sonidos
     try{
-      // Beep cada segundo en los últimos 10s
       if(remain > 0 && remain <= 10){
         if(lastBeepSecond !== remain){
           sndBeep.currentTime = 0;
@@ -1660,7 +1651,6 @@ function handleTimerState(timer){
         lastBeepSecond = null;
       }
 
-      // Alarma al llegar a 0 (una vez por sesión)
       if(remain === 0 && alarmPlayedForTimerId === startedAt){
         sndAlarm.currentTime = 0;
         sndAlarm.play().catch(()=>{});
@@ -1668,7 +1658,7 @@ function handleTimerState(timer){
       }
     }catch(e){}
 
-    if(remain <= 0){
+    if(remain<=0){
       clearTimerInterval();
       if(timerDisplay) timerDisplay.classList.remove('running','warning');
       if(window.showToast) window.showToast('⏰ ¡Tiempo!');
