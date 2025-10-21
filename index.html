@@ -2403,42 +2403,11 @@ async function rerollGroupOnce(groupLetter){
   }
 }
 
-  // Seguridad: solo ADMIN (o solo) en sala
-  const hostOrSolo = isHost || playersConnected <= 1;
-  if (lobbyCode && !hostOrSolo){
-    if (window.showToast) window.showToast('Solo el ADMIN puede cambiar personajes');
-    return;
-  }
-
-  // Incrementar contador y re-render completo (para mantener consistencia)
-  const next = { ...round, rerolls: { ...(round.rerolls || {}), [groupLetter]: used + 1 } };
-
-  const groups = lobbyCode ? getActiveGroupsFromState(lastLobbyState) : (()=>{
-    // En local, obtén grupos desde la salida actual (si quieres) o simula A,B,C
-    // Para simplicidad, si no tienes grupos locales, no hacemos nada:
-    return getActiveGroupsFromState(lastLobbyState) || [];
-  })();
-
-  const { html, text } = renderRoundHTML(next, groups);
-
-  if (lobbyCode){
-    await window.fbUpdate(window.fbRef(window.db, `lobbies/${lobbyCode}`), {
-      currentOutputHtml: html,
-      currentOutputText: text,
-      round: next
-    });
-  } else {
-    window.__localRound = next;
-    renderLocal(html, text);
-  }
-}
-
 // Delegación de clics en los botones ↻ (en el contenedor #salida)
 document.getElementById('salida')?.addEventListener('click', (e)=>{
   const btn = e.target.closest('.rerollBtn');
   if (!btn) return;
 
-  // En sala: solo ADMIN o modo local
   const hostOrSolo = isHost || playersConnected <= 1;
   if (lobbyCode && !hostOrSolo) return;
 
