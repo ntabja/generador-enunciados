@@ -2302,9 +2302,14 @@ function renderRoundHTML(round, groups){
     const bg  = rgba(col, 0.22);
     const bd  = rgba(col, 0.55);
 
-    // Botón ↻ (se desactiva si ya usó su cambio)
-    const disabled = used >= limit ? ' disabled aria-disabled="true" style="opacity:.5;pointer-events:none"' : '';
-    const btn = `<button class="btn rerollBtn" data-group="${g}" title="Cambiar una vez"${disabled}>↻ Cambiar</button>`;
+    // Solo el ADMIN o modo local ve el botón ↻
+    let btn = "";
+    if (isHost || playersConnected <= 1) {
+    const disabled = used >= limit
+    ? ' disabled aria-disabled="true" style="opacity:.5;pointer-events:none"'
+    : '';
+    btn = `<button class="btn rerollBtn" data-group="${g}" title="Cambiar una vez"${disabled}>↻ Cambiar</button>`;
+  }
 
     linesHtml.push(`
       <div class="lineGroup" data-line-group="${g}">
