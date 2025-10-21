@@ -172,7 +172,7 @@
   }
 
   /* Lobby overlay: visible por defecto en HTML; se esconderá en JS */
-  #lobbyOverlay{ z-index:1000 } /* hereda estilos de .overlay si le añades la clase en HTML (lo haremos en Parte 2) */
+  #lobbyOverlay{ z-index:2000 } /* hereda estilos de .overlay si le añades la clase en HTML (lo haremos en Parte 2) */
 
   /* ============ Timer (UNIFICADO, sin duplicados) ============ */
   #timerWrap{ justify-content:center !important; gap:10px; flex-wrap:wrap }
@@ -272,7 +272,7 @@
   </header>
 
 <!-- Overlay de inicio -->
-<div id="lobbyOverlay">
+<div id="lobbyOverlay" class="overlay" style="display:flex">
   <section class="card" style="max-width:520px; width:92%; padding:20px">
 <!-- Título principal del menú -->
 <div style="
