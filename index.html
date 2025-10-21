@@ -403,15 +403,21 @@
     align-items: center;
   }
 }
-    /* Overlay de Confirmación Salir (abre/cierra con clase .open) */
-#confirmExitOverlay.open{
+    /* Overlay de Confirmación Salir (cerrado por defecto) */
+#confirmExitOverlay {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Overlay de Confirmación Salir (abre/cierra con clase .open) */
+#confirmExitOverlay.open {
   opacity: 1;
   pointer-events: auto;
 }
-#confirmExitOverlay.open .card{
+#confirmExitOverlay.open .card {
   transform: scale(1);
 }
-#confirmExitOverlay .card{
+#confirmExitOverlay .card {
   transform: scale(.98);
   transition: transform .25s ease;
 }
@@ -557,7 +563,7 @@
 </div>
   <!-- Overlay Confirmar Salida -->
 <div id="confirmExitOverlay"
-     style="position:fixed; inset:0; z-index:1300; display:flex; align-items:center; justify-content:center; background:rgba(11,16,32,.92); backdrop-filter:blur(8px); padding:16px; transition:opacity .25s ease;">
+     style="position:fixed; inset:0; z-index:1300; display:flex; align-items:center; justify-content:center; background:rgba(11,16,32,.92); backdrop-filter:blur(8px); padding:16px; transition:opacity .25s ease; opacity:0; pointer-events:none;">
   <section class="card" style="max-width:520px; width:92%; padding:20px; text-align:center">
     <div style="font-weight:900; font-size:18px; margin-bottom:10px;">
       ¿Estás seguro de salir?
