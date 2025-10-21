@@ -6,447 +6,339 @@
   <title>ARTE MODERNO</title>
   <meta name="theme-color" content="#0ea5e9" />
   <style>
-    :root{
-      --bg:#0b1020;--panel:#111a2b;--muted:#99a3b4;--text:#e7eefc;
-      --accent:#0ea5e9;--accent2:#22c55e;
-      --verb:#ff4d4d; --adj:#7CFC00; --place:#ffe066; --event:#b266ff; --scene:#ffb347;
-    }
-    *{box-sizing:border-box}
-    body{
-      margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,'Helvetica Neue',Arial;
-      color:var(--text);background:linear-gradient(180deg,#0b1020,#0b1428) fixed;
-    }
+    /* ===============================
+   VARIABLES & BASE
+=================================*/
+:root{
+  --bg:#0b1020; --panel:#111a2b; --muted:#99a3b4; --text:#e7eefc;
+  --accent:#0ea5e9; --accent2:#22c55e;
+  --verb:#ff4d4d; --adj:#7CFC00; --place:#ffe066; --event:#b266ff; --scene:#ffb347;
+}
+*{ box-sizing:border-box }
+body{
+  margin:0;
+  font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,'Helvetica Neue',Arial;
+  color:var(--text);
+  background:linear-gradient(180deg,#0b1020,#0b1428) fixed;
+}
+.container{ max-width:820px; margin:0 auto; padding:16px }
+.card{
+  background:linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.02));
+  border:1px solid rgba(255,255,255,.08);
+  border-radius:16px;
+  padding:16px;
+  box-shadow:0 6px 30px rgba(0,0,0,.25);
+}
+.title{
+  font-size:18px; font-weight:800;
+  display:flex; gap:10px; align-items:center; justify-content:space-between;
+}
+.muted{ color:var(--muted) }
 
-    /* === Appbar compacto (horizontal) === */
-    header{
-      position:sticky;top:0;z-index:10;
-      background:rgba(9,13,26,.7);backdrop-filter:blur(8px);
-      border-bottom:1px solid rgba(255,255,255,.06);
-    }
-    .appbar{
-      max-width:820px;margin:0 auto;
-      padding:8px 12px; /* compacto */
-      display:flex;align-items:center;gap:10px;
-      min-height:48px;
-    }
-    .brand{
-      display:flex;align-items:center;gap:8px;min-width:0;white-space:nowrap;
-      font-weight:800;font-size:16px; /* pequeño */
-    }
-    .spacer{flex:1}
-    #roomBadge{
-      display:none;font-weight:700;font-size:12px;
-      padding:4px 10px;border:1px solid rgba(255,255,255,.15);border-radius:999px;
-      white-space:nowrap;
-    }
-    #leaveRow{display:none}
-    #btnLeave{padding:8px 10px;font-size:13px;border-radius:10px}
+/* Typography accents */
+.char{ color:#4cc9f0 } .verb{ color:var(--verb) } .adj{ color:var(--adj) }
+.place{ color:#ffe066 } .event{ color:#b266ff } .scene{ color:#ffb347 }
 
-    .container{max-width:820px;margin:0 auto;padding:16px}
-    .card{
-      background:linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.02));
-      border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:16px;box-shadow:0 6px 30px rgba(0,0,0,.25)
-    }
-    .title{font-size:18px;font-weight:800;display:flex;gap:10px;align-items:center;justify-content:space-between}
-    .muted{color:var(--muted)}
-    .btn{
-      appearance:none;border:0;border-radius:12px;padding:12px 14px;font-weight:700;color:var(--text);
-      background:transparent;border:1px solid rgba(255,255,255,.12);cursor:pointer;transition:background .15s,color .15s,font-weight .05s;font-size:14px;
-    }
-    .btn:hover{background:rgba(255,255,255,.08)}
-    .btn:active{transform:translateY(1px)}
-      .btn-chip{ margin-left:auto; padding:8px 10px; font-size:12px; opacity:.85 }
+/* ===============================
+   HEADER / APPBAR
+=================================*/
+header{
+  position:sticky; top:0; z-index:10;
+  background:rgba(9,13,26,.7);
+  backdrop-filter:blur(8px);
+  border-bottom:1px solid rgba(255,255,255,.06);
+}
+.appbar{
+  max-width:820px; margin:0 auto;
+  padding:8px 12px; /* compacto */
+  display:flex; align-items:center; gap:10px;
+  min-height:48px;
+}
+.brand{
+  display:flex; align-items:center; gap:8px; min-width:0; white-space:nowrap;
+  font-weight:800; font-size:16px;
+}
+.spacer{ flex:1 }
+#roomBadge{
+  display:none; font-weight:700; font-size:12px;
+  padding:4px 10px; border:1px solid rgba(255,255,255,.15); border-radius:999px;
+  white-space:nowrap;
+}
+#leaveRow{ display:none }
+#btnLeave{ padding:8px 10px; font-size:13px; border-radius:10px }
+
+/* Acciones header solo desktop */
+.header-actions{ display:none }
+@media (min-width:1024px){
+  .header-actions{ display:flex; gap:8px; align-items:center; }
+}
+
+/* Botón flotante “Ver instrucciones del juego” en móvil */
+@media (max-width:820px){
+  header a[title="Ver instrucciones del juego"]{
+    top:10px !important; bottom:auto !important; right:16px !important; z-index:2000 !important;
+    width:30px !important; height:30px !important; font-size:18px !important;
+    opacity:.9 !important; background:rgba(255,255,255,.08) !important;
+    border-color:rgba(255,255,255,.2) !important;
+    box-shadow:0 2px 8px rgba(0,0,0,.35) !important;
+  }
+  header a[title="Ver instrucciones del juego"]:hover{
+    opacity:1 !important; background:rgba(255,255,255,.16) !important;
+  }
+}
+
+/* ===============================
+   BOTONES / CONTROLES
+=================================*/
+.btn{
+  appearance:none; border:0; border-radius:12px; padding:12px 14px;
+  font-weight:700; color:var(--text);
+  background:transparent; border:1px solid rgba(255,255,255,.12);
+  cursor:pointer; transition:background .15s,color .15s,font-weight .05s; font-size:14px;
+}
+.btn:hover{ background:rgba(255,255,255,.08) }
+.btn:active{ transform:translateY(1px) }
+
+.btn-chip{
+  margin-left:auto; padding:8px 10px; font-size:12px; opacity:.85;
+}
 .btn-chip .chev{ display:inline-block; transition:transform .15s ease }
 .btn-chip[aria-expanded="true"] .chev{ transform:rotate(180deg) }
-    .inline{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
-    input{
-      width:100%;background:#0f182a;color:var(--text);border:1px solid rgba(255,255,255,.14);border-radius:12px;padding:10px 12px;font-size:15px;
-    }
-    .out{
-      font-size:22px;line-height:1.45;background:#0b1426;border-radius:14px;padding:14px;border:1px dashed rgba(255,255,255,.15)
-    }
-    /* Nota de desafío debajo del enunciado */
+
+.inline{ display:flex; gap:8px; flex-wrap:wrap; align-items:center }
+input{
+  width:100%; background:#0f182a; color:var(--text);
+  border:1px solid rgba(255,255,255,.14); border-radius:12px; padding:10px 12px; font-size:15px;
+}
+
+/* Secundarios: Más opciones + Filtros (mismo look) */
+:is(#btnToggleAdv, #btnFilters){
+  padding:8px 10px !important;
+  font-size:12px !important; line-height:1 !important;
+  background:linear-gradient(180deg, rgba(148,163,184,.16), rgba(148,163,184,.10)) !important;
+  border:1px solid rgba(148,163,184,.45) !important;
+  color:#d9e1ee !important; opacity:1 !important;
+  box-shadow:inset 0 0 0 1px rgba(0,0,0,.08);
+}
+:is(#btnToggleAdv, #btnFilters):hover{
+  background:linear-gradient(180deg, rgba(148,163,184,.24), rgba(148,163,184,.16)) !important;
+  border-color:rgba(148,163,184,.60) !important;
+}
+:is(#btnToggleAdv, #btnFilters):active{
+  transform:translateY(1px);
+  background:rgba(148,163,184,.28) !important;
+  border-color:rgba(148,163,184,.70) !important;
+}
+#btnToggleAdv{ margin-left:auto }
+#btnFilters{ margin-left:2px }
+#btnToggleAdv .chev{ opacity:.95 }
+
+/* Ajuste móvil de secundarios */
+@media (max-width:820px){
+  :is(#btnToggleAdv, #btnFilters){
+    background:linear-gradient(180deg, rgba(148,163,184,.14), rgba(148,163,184,.08)) !important;
+    border-color:rgba(148,163,184,.38) !important;
+  }
+}
+
+/* Letras “P” / “P+P” en blanco */
+#btnP .letter-p,
+#btnFusion .letter-p{ color:var(--text) !important }
+
+/* ===============================
+   SALA / LOBBY / OVERLAYS
+=================================*/
+#lobbyOverlay{
+  position:fixed; inset:0;
+  background:rgba(11,16,32,.92);
+  backdrop-filter:blur(8px);
+  display:flex; align-items:center; justify-content:center;
+  z-index:1000;
+}
+
+/* Overlay de Filtros */
+#filtersOverlay{
+  position:fixed; inset:0; z-index:1200;
+  display:flex; align-items:center; justify-content:center;
+  background:rgba(11,16,32,.92); backdrop-filter:blur(8px);
+  padding:16px; opacity:0; pointer-events:none; transition:opacity .25s ease;
+  overflow:auto; /* scroll si no entra */
+}
+#filtersOverlay.open{ opacity:1; pointer-events:auto }
+#filtersOverlay .card{
+  background:rgba(20,25,40,.98); border-radius:12px; padding:18px;
+  max-height:calc(100vh - 32px); overflow:auto; -webkit-overflow-scrolling:touch;
+}
+#filtersOverlay .card .title{
+  position:sticky; top:0; z-index:2;
+  background:rgba(20,25,40,.98); border-bottom:1px solid rgba(255,255,255,.08);
+  margin:-18px -18px 0; padding:10px 18px;
+}
+
+/* Overlay Confirmar Salir */
+#confirmExitOverlay{ opacity:0; pointer-events:none }
+#confirmExitOverlay.open{ opacity:1; pointer-events:auto }
+#confirmExitOverlay.open .card{ transform:scale(1) }
+#confirmExitOverlay .card{ transform:scale(.98); transition:transform .25s ease }
+
+/* ===============================
+   TOAST
+=================================*/
+#toast{
+  position:fixed; left:50%; bottom:24px; transform:translateX(-50%) translateY(20px);
+  background:rgba(20,28,48,.96); border:1px solid rgba(255,255,255,.15); color:var(--text);
+  padding:10px 14px; border-radius:12px; box-shadow:0 10px 30px rgba(0,0,0,.35);
+  opacity:0; transition:opacity .25s, transform .25s; z-index:1200; pointer-events:none; font-weight:700;
+}
+#toast.show{ opacity:1; transform:translateX(-50%) translateY(0) }
+/* Toast un poco más abajo en móviles */
+@media (max-width:820px){ #toast{ bottom:14px !important } }
+
+/* ===============================
+   JUGADORES / PUNTAJE / GRUPOS
+=================================*/
+.players-wrap{ display:flex; flex-direction:column; gap:8px }
+.players-title-actions{ display:flex; gap:8px; flex-wrap:wrap; align-items:center }
+
+.playerChip{
+  position:relative; display:flex; align-items:center; gap:10px;
+  padding:10px 12px; border:1px solid rgba(255,255,255,.14);
+  border-radius:12px; background:rgba(255,255,255,.04); width:100%;
+  --gc:#64748b;
+}
+.playerChip::before{
+  content:""; position:absolute; left:0; top:0; bottom:0; width:4px;
+  background:var(--gc);
+  border-top-left-radius:12px; border-bottom-left-radius:12px; opacity:.95;
+}
+.playerChip .dot{ width:8px; height:8px; border-radius:50%; background:var(--accent2) }
+.groupBadge{
+  padding:2px 8px; border:1px solid rgba(255,255,255,.18); border-radius:8px;
+  background:#0e1628; font-weight:800; font-size:12px; white-space:nowrap;
+}
+.playerChip .name{ font-weight:700; display:flex; align-items:center; gap:8px }
+.playerChip .role{
+  font-size:10px; border:1px solid rgba(255,255,255,.2);
+  padding:2px 6px; border-radius:999px; opacity:.9;
+}
+.scoreBox{
+  margin-left:auto; display:flex; align-items:center; gap:6px;
+  font-variant-numeric:tabular-nums; user-select:none;
+}
+.score{
+  min-width:36px; text-align:right; font-weight:800; padding:2px 6px;
+  border:1px solid rgba(255,255,255,.18); border-radius:8px; background:#0e1628;
+}
+.scoreBtn{
+  width:28px; height:28px; display:flex; align-items:center; justify-content:center;
+  border:1px solid rgba(255,255,255,.2); background:rgba(255,255,255,.06);
+  border-radius:8px; cursor:pointer; font-weight:900; font-size:14px;
+}
+.scoreBtn[disabled]{ opacity:.35; cursor:not-allowed }
+
+/* Enunciado por grupo */
+.lineGroup{ display:flex; align-items:center; gap:10px; margin:6px 0 }
+.lineGroup .gBadge{
+  padding:2px 8px; border:1px solid rgba(255,255,255,.18); border-radius:8px;
+  background:#0e1628; font-weight:800; font-size:12px; white-space:nowrap;
+}
+
+/* ===============================
+   OUTPUT / NOTAS / FOOTER
+=================================*/
+.out{
+  font-size:22px; line-height:1.45;
+  background:#0b1426; border-radius:14px; padding:14px;
+  border:1px dashed rgba(255,255,255,.15);
+}
 .challengeNote{
-  color: var(--muted);
-  font-size: 13px;
-  line-height: 1.35;
-  border-left: 3px solid var(--accent);
-  padding-left: 8px;
-  opacity: 0.95;
+  color:var(--muted); font-size:13px; line-height:1.35;
+  border-left:3px solid var(--accent); padding-left:8px; opacity:.95;
 }
-    footer{opacity:.8;padding:16px 12px;text-align:center;font-size:12px;position:relative}
-    .kbd{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;font-size:12px;border:1px solid rgba(255,255,255,.2);padding:2px 6px;border-radius:6px;background:#0e1628}
-    .char{ color:#4cc9f0; } .verb{ color:var(--verb); } .adj{ color:var(--adj); } .place{ color:#ffe066; } .event{ color:#b266ff; } .scene{ color:#ffb347; }
-
-    #footerBtns{position:absolute;right:12px;bottom:8px;opacity:0;transition:opacity .3s;display:flex;gap:6px;}
-    footer:hover #footerBtns{opacity:0.5;}
-    #footerBtns .btn{font-size:10px;padding:4px 8px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.05);}
-    .btn span { font-weight: bold; }
-    .letter-p{color:#4cc9f0}.letter-v{color:#ff4d4d}.letter-a{color:#7CFC00}.letter-l{color:#ffe066}
-
-    /* Overlay inicial — visible por defecto; se oculta al entrar a sala */
-    #lobbyOverlay{
-      position:fixed; inset:0; background:rgba(11,16,32,.92);backdrop-filter: blur(8px);
-      display:flex; align-items:center; justify-content:center; z-index:1000;
-    }
-
-    /* Toast */
-    #toast{
-      position:fixed; left:50%; bottom:24px; transform:translateX(-50%) translateY(20px);
-      background:rgba(20,28,48,.96); border:1px solid rgba(255,255,255,.15); color:var(--text);
-      padding:10px 14px; border-radius:12px; box-shadow:0 10px 30px rgba(0,0,0,.35);
-      opacity:0; transition:opacity .25s, transform .25s; z-index:1200; pointer-events:none; font-weight:700;
-    }
-    #toast.show{opacity:1; transform:translateX(-50%) translateY(0)}
-
-    /* Jugadores (vertical + group-colored + score) */
-    .players-wrap{ display:flex; flex-direction:column; gap:8px; }
-    .players-title-actions{ display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
-    .playerChip{
-      position:relative;
-      display:flex;align-items:center;gap:10px;
-      padding:10px 12px;border:1px solid rgba(255,255,255,.14);
-      border-radius:12px;background:rgba(255,255,255,.04); width:100%;
-      --gc:#64748b;
-    }
-    .playerChip::before{
-      content:"";
-      position:absolute; left:0; top:0; bottom:0; width:4px;
-      background:var(--gc);
-      border-top-left-radius:12px;border-bottom-left-radius:12px;
-      opacity:.95;
-    }
-    .playerChip .dot{ width:8px;height:8px;border-radius:50%;background:var(--accent2) }
-    .groupBadge{
-      padding:2px 8px; border:1px solid rgba(255,255,255,.18); border-radius:8px;
-      background:#0e1628; font-weight:800; font-size:12px; white-space:nowrap;
-    }
-    .playerChip .name{ font-weight:700; display:flex; align-items:center; gap:8px; }
-    .playerChip .role{
-      font-size:10px;border:1px solid rgba(255,255,255,.2);
-      padding:2px 6px;border-radius:999px;opacity:.9
-    }
-    .scoreBox{
-      margin-left:auto; display:flex; align-items:center; gap:6px;
-      font-variant-numeric: tabular-nums; user-select:none;
-    }
-    .score{ min-width:36px; text-align:right; font-weight:800; padding:2px 6px;
-      border:1px solid rgba(255,255,255,.18); border-radius:8px; background:#0e1628;
-    }
-    .scoreBtn{
-      width:28px;height:28px;display:flex;align-items:center;justify-content:center;
-      border:1px solid rgba(255,255,255,.2); background:rgba(255,255,255,.06);
-      border-radius:8px; cursor:pointer; font-weight:900; font-size:14px;
-    }
-    .scoreBtn[disabled]{opacity:.35; cursor:not-allowed}
-
-    /* Enunciado por grupo (línea con badge de color) */
-    .lineGroup{ display:flex; align-items:center; gap:10px; margin:6px 0; }
-    .lineGroup .gBadge{
-      padding:2px 8px; border:1px solid rgba(255,255,255,.18); border-radius:8px; background:#0e1628; font-weight:800; font-size:12px; white-space:nowrap;
-    }
-    @media (max-width: 820px) {
-  header a[title="Ver instrucciones del juego"] {
-    /* mantener el botón arriba, un poco más abajo del borde */
-    top: 10px !important;       /* <- antes decía top:auto */
-    bottom: auto !important;    /* <- elimina el anclaje inferior */
-    right: 16px !important;     /* <- posición a la derecha */
-    z-index: 2000 !important;   /* <- para que quede encima del header */
-
-    width: 30px !important;     /* tamaño original */
-    height: 30px !important;
-    font-size: 18px !important;
-
-    opacity: 0.9 !important;
-    background: rgba(255,255,255,0.08) !important;
-    border-color: rgba(255,255,255,0.2) !important;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.35) !important;
-  }
-
-  header a[title="Ver instrucciones del juego"]:hover {
-    opacity: 1 !important;
-    background: rgba(255,255,255,0.16) !important;
-  }
+footer{
+  opacity:.8; padding:16px 12px; text-align:center; font-size:12px; position:relative;
 }
+.kbd{
+  font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;
+  font-size:12px; border:1px solid rgba(255,255,255,.2); padding:2px 6px; border-radius:6px; background:#0e1628;
+}
+#footerBtns{
+  position:absolute; right:12px; bottom:8px; opacity:0; transition:opacity .3s; display:flex; gap:6px;
+}
+footer:hover #footerBtns{ opacity:.5 }
+#footerBtns .btn{ font-size:10px; padding:4px 8px; border:1px solid rgba(255,255,255,.2); background:rgba(255,255,255,.05) }
+.btn span{ font-weight:bold }
+.letter-p{ color:#4cc9f0 } .letter-v{ color:#ff4d4d } .letter-a{ color:#7CFC00 } .letter-l{ color:#ffe066 }
+footer .copyright{ margin-top:8px; text-align:center; font-size:12px; opacity:.75 }
 
-    /* === Overlay de Filtros === */
-#filtersOverlay {
-  position: fixed;
-  inset: 0;
-  z-index: 1200;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(11,16,32,.92);
-  backdrop-filter: blur(8px);
-  padding: 16px;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity .25s ease;
-  overflow: auto; /* 👈 permite hacer scroll si no entra */
+/* ===============================
+   TEMPORIZADOR
+   (Consolidado respetando el cascade final)
+=================================*/
+/* Contenedor y select */
+#timerWrap{ justify-content:center !important; gap:6px } /* gap final */
+#timerSelect{
+  position:relative; left:-6px; /* ajuste de posición */
+  background:#0e1628; color:#fff;
+  border:1px solid rgba(255,255,255,.2);
+  border-radius:10px; padding:8px 12px;
+  font-size:15px; font-weight:600; cursor:pointer;
+  appearance:none; -webkit-appearance:none; -moz-appearance:none;
+  transition:background .2s, border-color .2s;
 }
+#timerSelect:hover{ background:rgba(255,255,255,.08); border-color:rgba(255,255,255,.3) }
+#timerSelect:disabled{ opacity:.5; cursor:not-allowed }
+#timerSelect option{ background:#0e1628; color:#fff }
 
-#filtersOverlay.open {
-  opacity: 1;
-  pointer-events: auto;
-}
-
-/* La tarjeta interior */
-#filtersOverlay .card {
-  background: rgba(20,25,40,0.98);
-  border-radius: 12px;
-  padding: 18px;
-  max-height: calc(100vh - 32px);
-  overflow: auto; /* 👈 scroll interno dentro del panel */
-  -webkit-overflow-scrolling: touch;
-}
-
-/* Mantén visible el título + botón cerrar */
-#filtersOverlay .card .title {
-  position: sticky;
-  top: 0;
-  z-index: 2;
-  background: rgba(20,25,40,0.98);
-  border-bottom: 1px solid rgba(255,255,255,0.08);
-  margin-top: -18px;
-  margin-left: -18px;
-  margin-right: -18px;
-  padding: 10px 18px;
-}
-
-    /* Ocultar botones Copiar y Test en móviles */
-@media (max-width: 820px) {
-  #btnCopiar, #btnTest {
-    display: none !important;
-  }
-}
-    /* Toast un poco más abajo en móviles */
-@media (max-width: 820px) {
-  #toast {
-    bottom: 14px !important; /* antes 24px */
-  }
-}
-    #timerDisplay {
-  font-size: 2.2rem;     /* tamaño grande */
-  font-weight: 900;      /* más grueso */
-  letter-spacing: 1px;
-  padding: 8px 16px;
-  border-radius: 10px;
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  min-width: 90px;
-  text-align: center;
-  display: inline-block;
-  transition: transform 0.25s ease, color 0.25s ease;
-}
-
-#timerDisplay.running {
-  transform: scale(1.1);
-  color: var(--accent2);
-}
-
-#timerDisplay.warning {
-  color: var(--verb); /* rojo cuando queda poco */
-  transform: scale(1.2);
-}
-    /* Reloj grande y centrado */
-#timerWrap { justify-content: center !important; }
-
+/* Display (base y estados) */
 #timerDisplay{
+  /* valores “finales” del cascade original */
   display:inline-flex; align-items:center; justify-content:center;
-  min-width:140px;
-  font-size:28px; line-height:1; font-variant-numeric: tabular-nums;
+  min-width:140px;  /* ganó sobre 90px */
+  font-size:16px !important; /* cuando NO está corriendo (ver override abajo) */
+  line-height:1; font-variant-numeric:tabular-nums;
   padding:12px 16px; border-radius:14px;
   background:#0e1628; border:1px solid rgba(255,255,255,.20);
   cursor:pointer; user-select:none;
-  transition: transform .08s ease, box-shadow .2s ease, border-color .2s ease;
+  color:#fff !important;              /* forzado blanco en todos los estados */
+  transition:transform .08s ease, box-shadow .2s ease, border-color .2s ease, color .25s ease;
 }
-    #timerDisplay {
-  color: #fff !important; /* 🔥 fuerza el texto blanco en todos los estados */
-}
+#timerDisplay:hover{ transform:translateY(-1px) }
+#timerDisplay:active{ transform:translateY(0) }
 
-/* Cuando el temporizador corre, el color se mantiene claro */
-#timerDisplay.running {
-  color: #fff !important;
-}
-
-/* Si quieres, puedes mantener el “warning” en rojo como ya lo tienes */
-#timerDisplay.warning {
-  color: #ff4d4d !important;
-}
-
-#timerDisplay:hover{ transform: translateY(-1px); }
-#timerDisplay:active{ transform: translateY(0); }
 #timerDisplay.running{
+  /* visual animado + realce */
   font-weight:800;
-  box-shadow: inset 0 0 0 1px rgba(255,255,255,.08), 0 8px 26px rgba(0,0,0,.35);
-  border-color: rgba(255,255,255,.28);
+  font-size:18px;                      /* override cuando corre */
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.08), 0 8px 26px rgba(0,0,0,.35);
+  border-color:rgba(255,255,255,.28);
+  /* nota: color queda blanco (forzado) */
 }
+
 #timerDisplay.warning{
-  color: var(--verb);
-  animation: timerPulse 1000ms ease-in-out infinite;
-}
-@keyframes timerPulse {
-  0% { transform: scale(1); }
-  50% { transform: scale(1.045); }
-  100% { transform: scale(1); }
-}
-    /* Mueve el selector de segundos un poco más a la izquierda */
-#timerSelect {
-  position: relative;
-  left: -6px; /* ajustá este valor según lo que quieras */
+  color:#ff4d4d !important;            /* rojo de alerta */
+  animation:timerPulse 1000ms ease-in-out infinite;
 }
 
-/* (opcional) reduce el gap entre el select y el botón del reloj */
-#timerWrap {
-  gap: 6px; /* antes 10px */
-}
-    /* 🔧 Estilo oscuro para el selector del temporizador */
-#timerSelect {
-  background: #0e1628; /* mismo fondo que los demás controles */
-  color: #fff; /* texto blanco */
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 10px;
-  padding: 8px 12px;
-  font-size: 15px;
-  font-weight: 600;
-  cursor: pointer;
-  appearance: none; /* quita el estilo nativo (Safari/Chrome) */
-  -webkit-appearance: none;
-  -moz-appearance: none;
-  transition: background 0.2s, border-color 0.2s;
+@keyframes timerPulse{
+  0%{ transform:scale(1) }
+  50%{ transform:scale(1.045) }
+  100%{ transform:scale(1) }
 }
 
-#timerSelect:hover {
-  background: rgba(255, 255, 255, 0.08);
-  border-color: rgba(255, 255, 255, 0.3);
+/* ===============================
+   AJUSTES MÓVILES ESPECÍFICOS
+=================================*/
+/* Ocultar Copiar/Test */
+@media (max-width:820px){
+  #btnCopiar, #btnTest{ display:none !important }
 }
-#timerSelect:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
- #timerSelect option {
- background: #0e1628;
- color: #fff;
-}
-    /* === Ajuste móvil: mover un poco "Sala: —" y el botón "Salir" hacia la izquierda === */
-@media (max-width: 820px) {
-  /* deja un colchón a la derecha, para que se vean más “metidos” a la izquierda */
-  #leaveRow {
-    margin-right: calc(env(safe-area-inset-right, 0px) + 48px) !important;
+/* Mover “Sala/Salir” un poco a la izquierda y respetar safe area */
+@media (max-width:820px){
+  #leaveRow{
+    margin-right:calc(env(safe-area-inset-right, 0px) + 48px) !important;
+    margin-left:6px !important;
   }
-
-  /* opcional: acércalos un poquito entre sí (sobre-escribe el inline de 8px) */
-  #leaveRow {
-    margin-left: 6px !important;
-  }
-}
-  /* ⬇️ Pega esto al final del <style> */
-  /* Texto más chico cuando está parado */
-  #timerDisplay:not(.running){
-    font-size: 16px !important;
-  }
-
-  /* Opcional: un poquito más grande al correr */
-  #timerDisplay.running{
-    font-size: 18px;              /* sin !important para que esta gane solo si existe */
-  }
-    footer .copyright{
-  margin-top: 8px;
-  text-align: center;
-  font-size: 12px;
-  opacity: .75;
-}
-    /* P y P+P en blanco */
-#btnP .letter-p,
-#btnFusion .letter-p{
-  color: var(--text) !important;
-}
-    /* === Botones secundarios: Más opciones y Filtros === */
-#btnToggleAdv,
-/* Igualar tamaño de Filtros con Más opciones (btn-chip) */
-#btnFilters{
-  padding: 8px 10px !important;
-  font-size: 12px !important;
-  line-height: 1 !important;   /* asegura misma altura visual */
-  opacity: .85;                /* match del chip */
-}
-
-/* Hover/active suaves */
-#btnToggleAdv:hover,
-#btnFilters:hover{
-  background: rgba(255,255,255,.10) !important;
-  opacity: 1;
-}
-#btnToggleAdv:active,
-#btnFilters:active{
-  transform: translateY(1px);
-}
-
-/* Separación visual del bloque de generadores */
-#btnToggleAdv{ margin-left: auto; }   /* empuja estos dos a la derecha */
-#btnFilters{ margin-left: 2px; }      /* pequeño espacio entre ellos */
-
-/* (opcional) que la flechita del chip siga viéndose bien */
-#btnToggleAdv .chev{ opacity:.9; }
-/* === Secundarios en gris: Más opciones + Filtros === */
-:is(#btnToggleAdv, #btnFilters){
-  background: linear-gradient(180deg, rgba(148,163,184,.16), rgba(148,163,184,.10)) !important; /* slate-300/gray */
-  border: 1px solid rgba(148,163,184,.45) !important;
-  color: #d9e1ee !important;
-  opacity: 1 !important;
-  box-shadow: inset 0 0 0 1px rgba(0,0,0,.08);
-}
-
-:is(#btnToggleAdv, #btnFilters):hover{
-  background: linear-gradient(180deg, rgba(148,163,184,.24), rgba(148,163,184,.16)) !important;
-  border-color: rgba(148,163,184,.60) !important;
-}
-
-:is(#btnToggleAdv, #btnFilters):active{
-  transform: translateY(1px);
-  background: rgba(148,163,184,.28) !important;
-  border-color: rgba(148,163,184,.70) !important;
-}
-
-/* Flechita del chip en gris claro */
-#btnToggleAdv .chev{ opacity:.95; }
-
-/* En móvil: mismas sensaciones pero un pelín más suaves */
-@media (max-width: 820px){
-  :is(#btnToggleAdv, #btnFilters){
-    background: linear-gradient(180deg, rgba(148,163,184,.14), rgba(148,163,184,.08)) !important;
-    border-color: rgba(148,163,184,.38) !important;
-  }
-}
-    /* Contenedor para acciones en el header (oculto por defecto) */
-.header-actions { display: none; }
-
-/* Solo desktop */
-@media (min-width: 1024px){
-  .header-actions{
-    display: flex;
-    gap: 8px;
-    align-items: center;
-  }
-}
-    /* Overlay de Confirmación Salir (cerrado por defecto) */
-#confirmExitOverlay {
-  opacity: 0;
-  pointer-events: none;
-}
-
-/* Overlay de Confirmación Salir (abre/cierra con clase .open) */
-#confirmExitOverlay.open {
-  opacity: 1;
-  pointer-events: auto;
-}
-#confirmExitOverlay.open .card {
-  transform: scale(1);
-}
-#confirmExitOverlay .card {
-  transform: scale(.98);
-  transition: transform .25s ease;
 }
 </style>
 </head>
