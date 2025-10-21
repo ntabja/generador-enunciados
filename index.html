@@ -548,7 +548,7 @@
 </div>
 
     <div class="inline" style="flex-direction:column; gap:14px; margin-top:16px">
-      <!-- anime -->
+            <!-- anime -->
       <label style="width:100%">
         <div class="inline" style="justify-content:space-between">
           <span class="muted">Anime</span>
@@ -575,6 +575,24 @@
         <input id="wPeliculas" type="range" min="0" max="5" step="1" value="1" />
       </label>
 
+      <!-- series -->
+      <label style="width:100%">
+        <div class="inline" style="justify-content:space-between">
+          <span class="muted">Series</span>
+          <span class="kbd" id="wSeriesVal">1</span>
+        </div>
+        <input id="wSeries" type="range" min="0" max="5" step="1" value="1" />
+      </label>
+
+      <!-- comics -->
+      <label style="width:100%">
+        <div class="inline" style="justify-content:space-between">
+          <span class="muted">Cómics</span>
+          <span class="kbd" id="wComicsVal">1</span>
+        </div>
+        <input id="wComics" type="range" min="0" max="5" step="1" value="1" />
+      </label>
+
       <!-- profesiones -->
       <label style="width:100%">
         <div class="inline" style="justify-content:space-between">
@@ -582,6 +600,33 @@
           <span class="kbd" id="wProfesionesVal">1</span>
         </div>
         <input id="wProfesiones" type="range" min="0" max="5" step="1" value="1" />
+      </label>
+
+      <!-- mitología -->
+      <label style="width:100%">
+        <div class="inline" style="justify-content:space-between">
+          <span class="muted">Mitología</span>
+          <span class="kbd" id="wMitologiaVal">1</span>
+        </div>
+        <input id="wMitologia" type="range" min="0" max="5" step="1" value="1" />
+      </label>
+
+      <!-- criaturas -->
+      <label style="width:100%">
+        <div class="inline" style="justify-content:space-between">
+          <span class="muted">Criaturas</span>
+          <span class="kbd" id="wCriaturasVal">1</span>
+        </div>
+        <input id="wCriaturas" type="range" min="0" max="5" step="1" value="1" />
+      </label>
+
+      <!-- animales -->
+      <label style="width:100%">
+        <div class="inline" style="justify-content:space-between">
+          <span class="muted">Animales</span>
+          <span class="kbd" id="wAnimalesVal">1</span>
+        </div>
+        <input id="wAnimales" type="range" min="0" max="5" step="1" value="1" />
       </label>
 
       <!-- otros -->
@@ -595,12 +640,12 @@
 
       <!-- Simulador -->
       <div class="inline" style="width:100%; justify-content:space-between; margin-top:10px">
-  <div class="inline" style="gap:8px">
-    <button class="btn" id="btnResetWeights" title="Restablecer a 1">Reset</button>
-    <button class="btn" id="btnSimDist" title="Simular 2,000 picks según los pesos">Test</button>
-  </div>
-  <span class="muted" id="simDistResult">—</span>
-</div>
+        <div class="inline" style="gap:8px">
+          <button class="btn" id="btnResetWeights" title="Restablecer a 1">Reset</button>
+          <button class="btn" id="btnSimDist" title="Simular 2,000 picks según los pesos">Test</button>
+        </div>
+        <span class="muted" id="simDistResult">—</span>
+      </div>
     </div>
   </section>
 </div>
@@ -738,12 +783,16 @@ const PERSONAJES = [
   "Danny Phantom","Groot","Knuckles","Ryu","Sephiroth","Cloud Strife","Steve","Nier","Bomberman","Diddy Kong",
   "Toad","Fox McCloud","Mewtwo","Cuphead","Agumon","Rayman","Hollow Knight","Wario","La Princesa Peach","2B"
 ];
-    // === Categorización y pesos ===
-/* Categorías principales:
+   /* Categorías principales (10):
    - anime
    - videojuegos
    - peliculas
+   - series
+   - comics
    - profesiones
+   - mitologia
+   - criaturas
+   - animales
    - otros (fallback)
 */
 
@@ -757,23 +806,37 @@ const CAT_ANIME = new Set([
 ]);
 
 const CAT_VIDEOJUEGOS = new Set([
-  "Pikachu","Mario","Bowser","Yoshi","Donkey Kong","Kirby","Link","Zelda","Samus Aran",
+  "Pikachu","Mewtwo","Mario","Bowser","Yoshi","Donkey Kong","Kirby","Link","Zelda","Samus Aran",
   "Sonic","Crash Bandicoot","Mega Man","Pac-Man","Leon S. Kennedy","Lara Croft",
   "El Amongus","Doomguy","Nier","Bomberman","Diddy Kong","Toad","Fox McCloud",
-  "Mewtwo","Cuphead","Rayman","Hollow Knight","Wario","La Princesa Peach","2B","Steve"
+  "Cuphead","Rayman","Hollow Knight","Wario","La Princesa Peach","2B","Steve"
 ]);
 
 const CAT_PELICULAS = new Set([
   "Shrek","Wall-E","Elsa","Simba","Luke Skywalker","Darth Vader","Yoda","E.T.",
   "John Wick","Neo","Indiana Jones","El Terminator","Jack Sparrow","Borat",
   "Charlie Chaplin","Jason Voorhees","Chucky","Freddy Krueger","Jigsaw","Pennywise",
-  "Edward Scissorhands","Jack Skellington","Godzilla","El Joker","Gandalf",
+  "Edward Scissorhands","Jack Skellington","Godzilla","Gandalf",
   "Frodo Baggins","Gollum","Harry Potter","Voldemort","Willy Wonka","Cenicienta",
   "Rapunzel","Aladino","Dracula","Frankenstein","Wednesday Addams","James Bond",
   "Quasimodo"
 ]);
 
-// Profesiones (tomadas de tu lista tal cual aparecen, sensitivo a mayúsculas)
+const CAT_SERIES = new Set([
+  "Bob Esponja","Patricio Estrella","Calamardo","Arnold Shortman","Aang",
+  "Timmy Turner","Jimmy Neutron","Johnny Bravo","Mojo Jojo","Perry El Ornitorrinco",
+  "Mickey Mouse","Bugs Bunny","El Pato Donald","Felix El Gato","Winnie-the-Pooh",
+  "Charlie Brown","Snoopy","Hello Kitty","Dora La Exploradora","Peppa Pig",
+  "Homero Simpson","Rick Sanchez","Morty Smith","Eric Cartman","Michael Scott",
+  "Peter Griffin","Danny Phantom"
+]);
+
+const CAT_COMICS = new Set([
+  "Superman","Spider-Man","Batman","Wolverine","Hulk","Venom","Thor","El Joker",
+  "El Capitán América","Iron Man","Deadpool"
+]);
+
+// Profesiones (sensitivo a mayúsculas, como en la lista)
 const CAT_PROFESIONES = new Set([
   "El Héroe","El Rey","El Caballero","Un Profeta","El Verdugo","Un Viajero","Un Gladiador",
   "Un Esclavo","Un Samurai","Un Ninja","Un Nómada","Un Vikingo","Un Soldado","Un Bufón",
@@ -781,50 +844,92 @@ const CAT_PROFESIONES = new Set([
   "Un Pintor","Un Carpinetro","Un Científico","Un Astronauta","Un Guerrero","Un Nigromante",
   "Una Druida","Un Mago"
 ]);
+
+const CAT_MITOLOGIA = new Set([
+  "Atlas","Zeus","Poseidón","Hércules","Pegaso","La Valquiria",
+  "El Kraken","El Cíclope","El Minotauro","El Cerbero","El Fénix",
+  "El Leviatán","El Fenrir","La Medusa"
+]);
+
+const CAT_CRIATURAS = new Set([
+  "Un Dragón","Un Vampiro","Un Zombie","Una Momia","Un Fantasma","Un Ogro",
+  "Un Gnomo","Un Duende","Un Hada","Una Quimera","Un Licántropo","Una Sirena",
+  "Una Arpía","Una Hidra","Un Basilisco","Un Grifo","Un Gólem",
+  "Un Ángel","Un Demonio","El Yeti","El Chupacabras"
+]);
+
+const CAT_ANIMALES = new Set([
+  "Un Perro","Un Gato","Un León","Un Mono","Una Vaca","Un Elefante","Un Caballo","Un Camello",
+  "Una Jirafa","Una Oveja","Un Cerdo","Un Oso","Un Canguro","Un Conejo","Una Ardilla","Un Ratón",
+  "Una Serpiente","Un Cocodrilo","Una Rana","Una Araña","Un Escorpión","Una Hormiga","Una Cucaracha",
+  "Un Caracol","Un Zancudo","Un Pez","Un Delfín","Un Tiburón","Una Ballena","Una Tortuga","Un Cangrejo",
+  "Una Langosta","Un Pulpo","Un Calamar","Una Malagua","Un Pingüino","Un Pato","Un Flamenco",
+  "Un Águila","Un Búho","Un Murciélago","Un Dinosaurio"
+]);
+
 // --- construir buckets una vez ---
-const BUCKETS = { anime:[], videojuegos:[], peliculas:[], profesiones:[], otros:[] };
+const BUCKETS = {
+  anime:[], videojuegos:[], peliculas:[], series:[], comics:[],
+  profesiones:[], mitologia:[], criaturas:[], animales:[], otros:[]
+};
+
 for (const name of PERSONAJES) {
   const cat =
     CAT_ANIME.has(name)        ? 'anime' :
     CAT_VIDEOJUEGOS.has(name)  ? 'videojuegos' :
     CAT_PELICULAS.has(name)    ? 'peliculas' :
-    CAT_PROFESIONES.has(name)  ? 'profesiones' : 'otros';
+    CAT_SERIES.has(name)       ? 'series' :
+    CAT_COMICS.has(name)       ? 'comics' :
+    CAT_PROFESIONES.has(name)  ? 'profesiones' :
+    CAT_MITOLOGIA.has(name)    ? 'mitologia' :
+    CAT_CRIATURAS.has(name)    ? 'criaturas' :
+    CAT_ANIMALES.has(name)     ? 'animales'  : 'otros';
   BUCKETS[cat].push(name);
 }
+
 function categoriaDe(nombre){
-  if (CAT_ANIME.has(nombre)) return 'anime';
-  if (CAT_VIDEOJUEGOS.has(nombre)) return 'videojuegos';
-  if (CAT_PELICULAS.has(nombre)) return 'peliculas';
-  if (CAT_PROFESIONES.has(nombre)) return 'profesiones';
+  if (CAT_ANIME.has(nombre))        return 'anime';
+  if (CAT_VIDEOJUEGOS.has(nombre))  return 'videojuegos';
+  if (CAT_PELICULAS.has(nombre))    return 'peliculas';
+  if (CAT_SERIES.has(nombre))       return 'series';
+  if (CAT_COMICS.has(nombre))       return 'comics';
+  if (CAT_PROFESIONES.has(nombre))  return 'profesiones';
+  if (CAT_MITOLOGIA.has(nombre))    return 'mitologia';
+  if (CAT_CRIATURAS.has(nombre))    return 'criaturas';
+  if (CAT_ANIMALES.has(nombre))     return 'animales';
   return 'otros';
 }
 
 // Pesos (persisten en localStorage). Por defecto todo en 1.
-const DEFAULT_WEIGHTS = { anime:1, videojuegos:1, peliculas:1, profesiones:1, otros:1 };
+const DEFAULT_WEIGHTS = {
+  anime:1, videojuegos:1, peliculas:1, series:1, comics:1,
+  profesiones:1, mitologia:1, criaturas:1, animales:1, otros:1
+};
+
 let WEIGHTS = (()=> {
-  try{ return JSON.parse(localStorage.getItem('am_weights')) || {...DEFAULT_WEIGHTS}; }
-  catch(e){ return {...DEFAULT_WEIGHTS}; }
+  try{
+    // merge para compatibilidad con guardados viejos (5 categorías)
+    const saved = JSON.parse(localStorage.getItem('am_weights')) || {};
+    return { ...DEFAULT_WEIGHTS, ...saved };
+  }catch(e){
+    return { ...DEFAULT_WEIGHTS };
+  }
 })();
 
 function setWeight(cat, val){
   WEIGHTS[cat] = Math.max(0, Number(val)||0);
   try{ localStorage.setItem('am_weights', JSON.stringify(WEIGHTS)); }catch(e){}
 }
+function getWeight(cat){ return Number(WEIGHTS[cat] ?? 1); }
 
-function getWeight(cat){
-  return Number(WEIGHTS[cat] ?? 1);
-}
-
-// --- elegir categoría SOLO por pesos (independiente del tamaño de la lista) ---
+// --- elegir categoría SOLO por pesos ---
 function pickCategoryByWeight(R){
-  const cats = ['anime','videojuegos','peliculas','profesiones','otros'];
-  // usar solo categorías que tengan al menos 1 elemento
+  const cats = ['anime','videojuegos','peliculas','series','comics','profesiones','mitologia','criaturas','animales','otros'];
   const alive = cats.filter(c => BUCKETS[c].length > 0);
   let total = 0;
   const cum = [];
   for (const c of alive){ total += Math.max(0, getWeight(c)); cum.push(total); }
   if (total <= 0){
-    // todos los pesos en 0 → uniforme entre categorías vivas
     return alive[Math.floor(R()*alive.length)];
   }
   const t = R()*total;
@@ -832,25 +937,20 @@ function pickCategoryByWeight(R){
   return alive[alive.length-1];
 }
 
-// --- nuevo picker 2-pasos ---
+// --- picker personaje ---
 function pickPersonaje(R){
   const cat = pickCategoryByWeight(R);
   const arr = BUCKETS[cat];
   if (!arr || arr.length === 0) {
-    // fallback improbable: uniforme entre todo
     return PERSONAJES[Math.floor(R()*PERSONAJES.length)];
   }
   return arr[Math.floor(R()*arr.length)];
 }
-
-// exporta como antes
-window.pickPersonaje = pickPersonaje;
-
-// Exponemos helpers por si quieres probar desde la consola
 window.pickPersonaje = pickPersonaje;
 window.setWeight = setWeight;
 window.getWeight = getWeight;
-    // === UI de pesos ===
+
+// === UI de pesos ===
 function setSliderVal(idSlider, idBadge, v){
   const s = document.getElementById(idSlider);
   const b = document.getElementById(idBadge);
@@ -859,8 +959,7 @@ function setSliderVal(idSlider, idBadge, v){
 }
 // === Control de visibilidad/habilitación de sliders según rol ===
 window.setWeightsEnabled = function onOff(on){
-  // si quisieras deshabilitar en vez de ocultar, lo dejo listo:
-  const ids = ['wAnime','wVideojuegos','wPeliculas','wProfesiones','wOtros'];
+  const ids = ['wAnime','wVideojuegos','wPeliculas','wSeries','wComics','wProfesiones','wMitologia','wCriaturas','wAnimales','wOtros'];
   ids.forEach(id=>{
     const el = document.getElementById(id);
     if(!el) return;
@@ -872,68 +971,76 @@ window.setWeightsEnabled = function onOff(on){
 
 function initWeightSliders(){
   // Carga valores actuales
-  setSliderVal('wAnime','wAnimeVal',        getWeight('anime'));
-  setSliderVal('wVideojuegos','wVideojuegosVal', getWeight('videojuegos'));
-  setSliderVal('wPeliculas','wPeliculasVal',     getWeight('peliculas'));
-  setSliderVal('wProfesiones','wProfesionesVal', getWeight('profesiones'));
-  setSliderVal('wOtros','wOtrosVal',             getWeight('otros'));
+  setSliderVal('wAnime','wAnimeVal',              getWeight('anime'));
+  setSliderVal('wVideojuegos','wVideojuegosVal',  getWeight('videojuegos'));
+  setSliderVal('wPeliculas','wPeliculasVal',      getWeight('peliculas'));
+  setSliderVal('wSeries','wSeriesVal',            getWeight('series'));
+  setSliderVal('wComics','wComicsVal',            getWeight('comics'));
+  setSliderVal('wProfesiones','wProfesionesVal',  getWeight('profesiones'));
+  setSliderVal('wMitologia','wMitologiaVal',      getWeight('mitologia'));
+  setSliderVal('wCriaturas','wCriaturasVal',      getWeight('criaturas'));
+  setSliderVal('wAnimales','wAnimalesVal',        getWeight('animales'));
+  setSliderVal('wOtros','wOtrosVal',              getWeight('otros'));
 
-  // Listeners
+  // Listeners helper
   const hook = (idSlider, idBadge, cat)=>{
-  const s = document.getElementById(idSlider);
-  if(!s) return;
-  s.addEventListener('input', async ()=>{
-    const v = parseInt(s.value,10);
-    setWeight(cat, v);
-    const b = document.getElementById(idBadge);
-    if(b) b.textContent = String(v);
+    const s = document.getElementById(idSlider);
+    if(!s) return;
+    s.addEventListener('input', async ()=>{
+      const v = parseInt(s.value,10);
+      setWeight(cat, v);
+      const b = document.getElementById(idBadge);
+      if(b) b.textContent = String(v);
 
-    // 👇 Publicar a Firebase solo si estás en sala y eres ADMIN
-    if (window.lobbyCode && window.isHost && window.db && window.fbRef && window.fbUpdate) {
-      try {
-        const path = `lobbies/${window.lobbyCode}/weights`;
-        await window.fbUpdate(window.fbRef(window.db, path), { ...WEIGHTS });
-        if (window.showToast) window.showToast('Pesos guardados');
-      } catch (e) {
-        console.warn('No se pudieron publicar los pesos:', e);
+      // Publicar a Firebase si corresponde
+      if (window.lobbyCode && window.isHost && window.db && window.fbRef && window.fbUpdate) {
+        try {
+          const path = `lobbies/${window.lobbyCode}/weights`;
+          await window.fbUpdate(window.fbRef(window.db, path), { ...WEIGHTS });
+          if (window.showToast) window.showToast('Pesos guardados');
+        } catch (e) { console.warn('No se pudieron publicar los pesos:', e); }
       }
-    }
-  });
-};
+    });
+  };
 
+  // Hooks por categoría
   hook('wAnime','wAnimeVal','anime');
   hook('wVideojuegos','wVideojuegosVal','videojuegos');
   hook('wPeliculas','wPeliculasVal','peliculas');
+  hook('wSeries','wSeriesVal','series');
+  hook('wComics','wComicsVal','comics');
   hook('wProfesiones','wProfesionesVal','profesiones');
+  hook('wMitologia','wMitologiaVal','mitologia');
+  hook('wCriaturas','wCriaturasVal','criaturas');
+  hook('wAnimales','wAnimalesVal','animales');
   hook('wOtros','wOtrosVal','otros');
 
   // Reset
-const btnReset = document.getElementById('btnResetWeights');
-if(btnReset){
-  btnReset.addEventListener('click', async ()=>{
-    ['anime','videojuegos','peliculas','profesiones','otros'].forEach(cat=> setWeight(cat,1));
-    initWeightSliders();
+  const btnReset = document.getElementById('btnResetWeights');
+  if(btnReset){
+    btnReset.addEventListener('click', async ()=>{
+      ['anime','videojuegos','peliculas','series','comics','profesiones','mitologia','criaturas','animales','otros'].forEach(cat=> setWeight(cat,1));
+      initWeightSliders();
 
-    // Publica a la sala si eres ADMIN
-    if (window.lobbyCode && window.isHost && window.db && window.fbRef && window.fbUpdate) {
-      try{
-        const path = `lobbies/${window.lobbyCode}/weights`;
-        await window.fbUpdate(window.fbRef(window.db, path), { ...WEIGHTS });
-        if (window.showToast) window.showToast('Pesos restablecidos (sala)');
-      }catch(e){ console.warn('No se pudieron publicar los pesos (reset):', e); }
-    } else {
-      if (window.showToast) window.showToast('Pesos restablecidos');
-    }
-  });
-}
+      if (window.lobbyCode && window.isHost && window.db && window.fbRef && window.fbUpdate) {
+        try{
+          const path = `lobbies/${window.lobbyCode}/weights`;
+          await window.fbUpdate(window.fbRef(window.db, path), { ...WEIGHTS });
+          if (window.showToast) window.showToast('Pesos restablecidos (sala)');
+        }catch(e){ console.warn('No se pudieron publicar los pesos (reset):', e); }
+      } else {
+        if (window.showToast) window.showToast('Pesos restablecidos');
+      }
+    });
   }
+}
 
 // Inicializa al cargar el DOM (el bloque está en el mismo script)
 document.addEventListener('DOMContentLoaded', initWeightSliders);
 initWeightSliders(); // por si el script se inyecta al final del body
 function simularDistribucion(n=2000){
   const R = rng('sim-'+Date.now());
-  const tally = { anime:0, videojuegos:0, peliculas:0, profesiones:0, otros:0 };
+  const tally = { anime:0, videojuegos:0, peliculas:0, series:0, comics:0, profesiones:0, mitologia:0, criaturas:0, animales:0, otros:0 };
   for(let i=0;i<n;i++){
     const p = pickPersonaje(R);
     tally[categoriaDe(p)]++;
@@ -948,7 +1055,9 @@ function attachSimBtn(){
   if(!btn || !out) return;
   btn.addEventListener('click', ()=>{
     const { pct, n } = simularDistribucion(2000);
-    out.textContent = `Anime ${pct.anime}% • Videojuegos ${pct.videojuegos}% • Películas ${pct.peliculas}% • Profesiones ${pct.profesiones}% • Otros ${pct.otros}% (n=${n})`;
+    out.textContent =
+      `Anime ${pct.anime}% • Videojuegos ${pct.videojuegos}% • Películas ${pct.peliculas}% • Series ${pct.series}% • Cómics ${pct.comics}% • ` +
+      `Profesiones ${pct.profesiones}% • Mitología ${pct.mitologia}% • Criaturas ${pct.criaturas}% • Animales ${pct.animales}% • Otros ${pct.otros}% (n=${n})`;
     if(window.showToast) window.showToast('Simulación lista');
   });
 }
