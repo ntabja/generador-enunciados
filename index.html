@@ -1641,33 +1641,28 @@ function handleTimerState(timer){
 
     timerActive = remain > 0 && !timer.canceled;
 
-    // sonidos
-try{
-  // Si saliste del rango 1..10s, o cancelado, corta cualquier beep activo
-  if (timer?.canceled || remain === 0 || remain > 10) {
+    // 🎵 Sonidos
+try {
+  // Reproducir el audio de 10 s una sola vez cuando queden exactamente 10 s
+  if (remain === 10 && lastBeepSecond !== 10) {
     stopBeep();
+    sndBeep.currentTime = 0;
+    sndBeep.play().catch(()=>{});
+    lastBeepSecond = 10;
   }
 
-  // Beeps 10..1 (una vez por segundo)
-  if (remain > 0 && remain <= 10) {
-    if (lastBeepSecond !== remain) {
-      stopBeep();                 // asegúrate de no solapar
-      sndBeep.currentTime = 0;
-      sndBeep.play().catch(()=>{});
-      lastBeepSecond = remain;
-    }
-  } else {
-    lastBeepSecond = null;
+  // Cortar el beep si se cancela o termina el tiempo
+  if (remain === 0 || timer?.canceled) {
+    stopBeep(); // Detiene el audio de los beeps si seguía sonando
   }
 
-  // Alarma en 0 (una sola vez por sesión)
+  // Alarma al llegar a 0 (solo una vez)
   if (remain === 0 && alarmPlayedForTimerId === startedAt) {
-    stopBeep();                   // 🔇 corta el beep antes de la alarma
     sndAlarm.currentTime = 0;
     sndAlarm.play().catch(()=>{});
     alarmPlayedForTimerId = null;
   }
-}catch(e){}
+} catch (e) {}
 
     if(remain<=0){
       clearTimerInterval();
