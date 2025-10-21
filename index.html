@@ -1598,92 +1598,82 @@ async function cancelTimer(){
 
 function handleTimerState(timer){
   clearTimerInterval();
-// reset de estado local del sonido en cada actualización de estado
-  lastBeepSecond = null;
-  // No tocamos alarmPlayedForTimerId aquí aún: se setea al ver 'startedAt' válido
+
+  // reset de estado local del sonido
+  lastBeepSecond = null;              // para no repetir beep por segundo
+  // NOTA: alarmPlayedForTimerId se setea cuando hay startedAt válido
 
   // estado base
   timerActive = false;
 
+  // Si no hay timer o está cancelado → UI base y parar sonidos
   if(!timer || timer.canceled){
     if(timerDisplay){
       timerDisplay.textContent='Iniciar';
       timerDisplay.classList.remove('running','warning');
       timerDisplay.style.color='';
     }
-        // 🛑 detener sonidos si se cancela
-    try{ sndBeep.pause(); sndBeep.currentTime = 0; }catch(e){}
+    try{ sndBeep.pause();  sndBeep.currentTime  = 0; }catch(e){}
     try{ sndAlarm.pause(); sndAlarm.currentTime = 0; }catch(e){}
     return;
   }
 
   const { startedAt, durationSec } = timer;
-  if(!startedAt||!durationSec) return;
+  if(!startedAt || !durationSec) return;
 
-  // Asociamos esta sesión de timer a su alarm-id (usamos startedAt como id único)
+  // Marcar esta sesión para la alarma (usamos startedAt como id único)
   alarmPlayedForTimerId = startedAt;
-  // estado base
-  timerActive = false;
 
-  if(!timer || timer.canceled){
-    if(timerDisplay){
-      timerDisplay.textContent='Iniciar';
-      timerDisplay.classList.remove('running','warning');
-      timerDisplay.style.color=''; // vuelve al color normal
-    }
-    return;
+  function fmt(t){
+    const m = Math.floor(t/60), s = t%60;
+    return `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
   }
-
-  const { startedAt, durationSec } = timer;
-  if(!startedAt||!durationSec) return;
 
   function tick(){
-  const elapsed = Math.floor((Date.now()-startedAt)/1000);
-  const remain  = Math.max(0, durationSec - elapsed);
+    const elapsed = Math.floor((Date.now()-startedAt)/1000);
+    const remain  = Math.max(0, durationSec - elapsed);
 
-  if(timerDisplay){
-    timerDisplay.textContent = fmt(remain);
-    // Estado visual
-    timerDisplay.classList.add('running');
-    if(remain <= 10){
-      timerDisplay.classList.add('warning');
-    }else{
-      timerDisplay.classList.remove('warning');
-    }
-  }
-
-  // Estado lógico
-  timerActive = remain > 0 && !timer.canceled;
-
-  // 🎵 --- BLOQUE NUEVO DE SONIDOS ---
-  try{
-    // Beep cada segundo en los últimos 10 segundos
-    if(remain > 0 && remain <= 10){
-      if(lastBeepSecond !== remain){
-        sndBeep.currentTime = 0;
-        sndBeep.play().catch(()=>{});
-        lastBeepSecond = remain;
+    // UI
+    if(timerDisplay){
+      timerDisplay.textContent = fmt(remain);
+      timerDisplay.classList.add('running');
+      if(remain <= 10){
+        timerDisplay.classList.add('warning');
+      }else{
+        timerDisplay.classList.remove('warning');
       }
-    }else{
-      // fuera de la ventana: resetea para una futura cuenta regresiva
-      lastBeepSecond = null;
     }
 
-    // Alarma al llegar a 0 (solo 1 vez por sesión de timer)
-    if(remain === 0 && alarmPlayedForTimerId === startedAt){
-      sndAlarm.currentTime = 0;
-      sndAlarm.play().catch(()=>{});
-      alarmPlayedForTimerId = null; // marca como usada
-    }
-  }catch(e){}
-  // 🎵 --- FIN BLOQUE NUEVO DE SONIDOS ---
+    // Estado lógico
+    timerActive = remain > 0 && !timer.canceled;
 
-  if(remain<=0){
-    clearTimerInterval();
-    if(timerDisplay) timerDisplay.classList.remove('running','warning');
-    if(window.showToast) window.showToast('⏰ ¡Tiempo!');
+    // 🎵 Sonidos
+    try{
+      // Beep cada segundo en los últimos 10s
+      if(remain > 0 && remain <= 10){
+        if(lastBeepSecond !== remain){
+          sndBeep.currentTime = 0;
+          sndBeep.play().catch(()=>{});
+          lastBeepSecond = remain;
+        }
+      }else{
+        lastBeepSecond = null;
+      }
+
+      // Alarma al llegar a 0 (una vez por sesión)
+      if(remain === 0 && alarmPlayedForTimerId === startedAt){
+        sndAlarm.currentTime = 0;
+        sndAlarm.play().catch(()=>{});
+        alarmPlayedForTimerId = null;
+      }
+    }catch(e){}
+
+    if(remain <= 0){
+      clearTimerInterval();
+      if(timerDisplay) timerDisplay.classList.remove('running','warning');
+      if(window.showToast) window.showToast('⏰ ¡Tiempo!');
+    }
   }
-}
 
   tick();
   timerInterval = setInterval(tick, 1000);
