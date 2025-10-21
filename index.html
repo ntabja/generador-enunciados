@@ -1862,46 +1862,52 @@ generarN('PVAL',1);
   window.buildGroupedOutputDouble = buildGroupedOutputDouble;
   window.buildGroupedOutputTriple = buildGroupedOutputTriple;
 
-    async function createLobby(name){
-      const code = makeCode();
-      const state = {
-        hostId: clientId,
-        currentOutputHtml: "",
-        currentOutputText: "",
-        currentChallengeHtml: "",
-        weights: { ...WEIGHTS }, 
-        players: { [clientId]: { name: name||"Host", score: 0, connected: true } },
-        createdAt: Date.now()
-      };
-      await set(ref(db, `lobbies/${code}`), state);
-      setLobbyCode(code);
-      watchLobby(code);
-      setupPresence(code);
-    }
+    /* ===========================
+   14) Crear / Unirse / Publicar
+===========================*/
+async function createLobby(name){
+  const code = makeCode();
+  const state = {
+    hostId: clientId,
+    currentOutputHtml: "",
+    currentOutputText: "",
+    currentChallengeHtml: "",
+    weights: { ...WEIGHTS },
+    players: { [clientId]: { name: name || "Host", score: 0, connected: true } },
+    createdAt: Date.now()
+  };
+  await set(ref(db, `lobbies/${code}`), state);
+  setLobbyCode(code);
+  watchLobby(code);
+  setupPresence(code);
+}
 
-    async function joinLobby(code, name){
-      code = (code||"").toUpperCase().trim();
-      if(!code) return alert("Escribe un código de sala");
-      const player = { name: name||"Jugador", score: 0, connected: true };
-      await update(ref(db, `lobbies/${code}/players/${clientId}`), player);
-      setLobbyCode(code);
-      watchLobby(code);
-      setupPresence(code);
-    }
+async function joinLobby(code, name){
+  code = (code || "").toUpperCase().trim();
+  if(!code) return alert("Escribe un código de sala");
+  const player = { name: name || "Jugador", score: 0, connected: true };
+  await update(ref(db, `lobbies/${code}/players/${clientId}`), player);
+  setLobbyCode(code);
+  watchLobby(code);
+  setupPresence(code);
+}
 
-    async function publishOutput(html, text){
-      const hostOrSolo = isHost || playersConnected <= 1;
-      if(!lobbyCode || !hostOrSolo) return;
-      await update(ref(db, `lobbies/${lobbyCode}`), {
-        currentOutputHtml: html,
-        currentOutputText: text
-      });
-    }
+async function publishOutput(html, text){
+  const hostOrSolo = isHost || playersConnected <= 1;
+  if(!lobbyCode || !hostOrSolo) return;
+  await update(ref(db, `lobbies/${lobbyCode}`), {
+    currentOutputHtml: html,
+    currentOutputText: text
+  });
+}
 
-    async function clearOutput(){
+/* ===========================
+   15) Limpiar enunciado
+===========================*/
+async function clearOutput(){
   const salidaEl = document.getElementById("salida");
 
-  // Modo sala: solo el ADMIN (o si estás solo) puede limpiar para todos
+  // En sala: solo ADMIN o solo
   if(lobbyCode){
     const hostOrSolo = isHost || playersConnected <= 1;
     if(!hostOrSolo){
@@ -1912,11 +1918,11 @@ generarN('PVAL',1);
       await update(ref(db, `lobbies/${lobbyCode}`), {
         currentOutputHtml: "",
         currentOutputText: "",
-        currentChallengeHtml: ""   // <-- limpiar también la nota del reto
+        currentChallengeHtml: "" // limpia también la nota del reto
       });
       if(salidaEl) salidaEl.innerHTML = "";
       if(typeof window.lastCopyText !== "undefined") window.lastCopyText = "";
-      setChallengeNote("");        // <-- borra la nota localmente
+      setChallengeNote("");
       if(window.showToast) window.showToast('Enunciado limpiado');
     }catch(e){
       console.warn('No se pudo limpiar el enunciado:', e);
@@ -1925,13 +1931,16 @@ generarN('PVAL',1);
     return;
   }
 
-  // Modo local (sin sala)
+  // Modo local
   if(salidaEl) salidaEl.innerHTML = "";
   if(typeof window.lastCopyText !== "undefined") window.lastCopyText = "";
-  setChallengeNote("");            // <-- también borra la nota en modo local
+  setChallengeNote("");
   if(window.showToast) window.showToast('Enunciado limpiado');
 }
 
+/* ===========================
+   16) Secretos (P+V+A+L)
+===========================*/
 function getActivePlayerIdsFromState(state){
   const playersObj = state?.players || {};
   return Object.entries(playersObj)
@@ -1939,15 +1948,15 @@ function getActivePlayerIdsFromState(state){
     .map(([pid]) => pid);
 }
 
-// Genera P+V+A+L SEMPRE en ese orden, con una semilla propia por jugador
+// Genera P+V+A+L (orden fijo) con semilla por jugador
 function genSecretForPlayer(pid){
-  const seed = `${lobbyCode||'local'}-${pid}-${Date.now()}`;
+  const seed = `${lobbyCode || 'local'}-${pid}-${Date.now()}`;
   const R = rng(seed);
-  const { html, text } = genPVAL(R); // ya respeta orden Personaje + Verbo + Adjetivo + Lugar
+  const { html, text } = genPVAL(R);
   return { html, text };
 }
 
-// Host dispara secretos a todos los conectados
+// Host → secretos individuales
 async function sendSecretsToAll(){
   if(!lobbyCode) return;
   const hostOrSolo = isHost || playersConnected <= 1;
@@ -1964,28 +1973,30 @@ async function sendSecretsToAll(){
   for(const pid of pids){
     const { html, text } = genSecretForPlayer(pid);
     updates[`lobbies/${lobbyCode}/secrets/${pid}`] = {
-  html, text, ts, ack:false,
-  title: '🕵️ Enunciado secreto'
-};
+      html, text, ts, ack:false, title: '🕵️ Enunciado secreto'
+    };
   }
   await update(ref(db), updates);
   if(window.showToast) window.showToast(`Se enviaron ${pids.length} secretos`);
 }
 
-// Solo para modo sin lobby: muestra uno al dispositivo actual
+// Local → overlay en dispositivo
 function sendLocalSecret(){
   const { html } = genPVAL(rng());
   showSecretOverlay(html, '🕵️ Enunciado secreto');
 }
-// Genera un único P+V+A+L para toda la sala (misma semilla para todos)
+
+/* ===========================
+   17) Obra maestra (compartido)
+===========================*/
 function genSharedSecret(){
-  const seed = `${lobbyCode||'local'}-MASTERPIECE-${Date.now()}`;
+  const seed = `${lobbyCode || 'local'}-MASTERPIECE-${Date.now()}`;
   const R = rng(seed);
   const { html, text } = genPVAL(R);
   return { html, text };
 }
 
-// Host: envía el MISMO secreto a todos los conectados
+// Host → mismo secreto para todos
 async function sendMasterpieceToAll(){
   if(!lobbyCode) return;
   const hostOrSolo = isHost || playersConnected <= 1;
@@ -1998,254 +2009,223 @@ async function sendMasterpieceToAll(){
   if(pids.length === 0) return;
 
   const ts = Date.now();
-  const shared = genSharedSecret(); // <- único enunciado para todos
+  const shared = genSharedSecret();
   const updates = {};
   for(const pid of pids){
-  updates[`lobbies/${lobbyCode}/secrets/${pid}`] = {
-    html: shared.html,
-    text: shared.text,
-    ts,
-    ack: false,
-    title: '🎨 Dibuja tu Obra Maestra con este enunciado'
-  };
-}
+    updates[`lobbies/${lobbyCode}/secrets/${pid}`] = {
+      html: shared.html,
+      text: shared.text,
+      ts,
+      ack: false,
+      title: '🎨 Dibuja tu Obra Maestra con este enunciado'
+    };
+  }
   await update(ref(db), updates);
   if(window.showToast) window.showToast(`OBRA MAESTRA enviada a ${pids.length} jugadores`);
 }
 
-// Modo local: muestra uno en el dispositivo actual
+// Local → overlay en dispositivo
 function sendLocalMasterpiece(){
   const { html } = genPVAL(rng());
   showSecretOverlay(html, '🎨 Dibuja tu Obra Maestra con este enunciado');
 }
 
-    async function generarGrupos(){
-      if (!lobbyCode) return;
-      const hostOrSolo = isHost || playersConnected <= 1;
-      if (!hostOrSolo) return;
+/* ===========================
+   18) Grupos (parejas A, B, C…)
+===========================*/
+async function generarGrupos(){
+  if (!lobbyCode) return;
+  const hostOrSolo = isHost || playersConnected <= 1;
+  if (!hostOrSolo) return;
 
-      const snap = await get(ref(db, `lobbies/${lobbyCode}/players`));
-      const playersObj = snap.val() || {};
+  const snap = await get(ref(db, `lobbies/${lobbyCode}/players`));
+  const playersObj = snap.val() || {};
 
-      const activos = Object.entries(playersObj)
-        .filter(([,p]) => p && p.name && p.connections && Object.keys(p.connections).length > 0)
-        .map(([pid,p]) => ({ pid, name: p.name }));
+  const activos = Object.entries(playersObj)
+    .filter(([,p]) => p && p.name && p.connections && Object.keys(p.connections).length > 0)
+    .map(([pid,p]) => ({ pid, name: p.name }));
 
-      if (activos.length < 2 || activos.length % 2 !== 0) {
-        alert("Agrega o quita un jugador para formar grupos parejos");
-        return;
-      }
+  if (activos.length < 2 || activos.length % 2 !== 0) {
+    alert("Agrega o quita un jugador para formar grupos parejos");
+    return;
+  }
 
-      for (let i = activos.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [activos[i], activos[j]] = [activos[j], activos[i]];
-      }
+  // shuffle
+  for (let i = activos.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [activos[i], activos[j]] = [activos[j], activos[i]];
+  }
 
-      const letras = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-const updates = {};
-for (let i = 0; i < activos.length; i += 2) {
-  const groupIndex = Math.floor(i / 2);
-  const letter = letras[groupIndex] || letras[letras.length - 1]; // usa Z si se pasa
-  const a = activos[i], b = activos[i+1];
-  updates[`lobbies/${lobbyCode}/players/${a.pid}/group`] = letter;
-  updates[`lobbies/${lobbyCode}/players/${b.pid}/group`] = letter;
+  const letras = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+  const updates = {};
+  for (let i = 0; i < activos.length; i += 2) {
+    const groupIndex = Math.floor(i / 2);
+    const letter = letras[groupIndex] || letras[letras.length - 1]; // usa Z si se pasa
+    const a = activos[i], b = activos[i+1];
+    updates[`lobbies/${lobbyCode}/players/${a.pid}/group`] = letter;
+    updates[`lobbies/${lobbyCode}/players/${b.pid}/group`] = letter;
+  }
+  await update(ref(db), updates);
 }
 
-      await update(ref(db), updates);
-    }
-
-    // ====== Botones de generación ======
-    const MAP = {
+/* ===========================
+   19) Generación / Botones
+===========================*/
+const MAP = {
   btnPVAL:'PVAL', btnPV:'PV', btnPA:'PA', btnPL:'PL',
   btnPVA:'PVA', btnPAL:'PAL', btnPVL:'PVL',
   btnFusion:'FUSION', btnP:'P', btnEvento:'EVENTO', btnEscena:'ESCENA',
   btnDoble:'DOBLE', btnTriple:'TRIPLE',
   btnSecreto:'SECRETO', btnMasterpiece:'MASTERPIECE',
-  btnReto: 'RETO',
-  
+  btnReto:'RETO'
 };
 
-    function genOne(mode){
-      const R = (window.rng ? window.rng() : Math.random);
-      const gens = {
-        PVAL: window.genPVAL, PV: window.genPV, PA: window.genPA, PL: window.genPL,
-        PAL: window.genPAL, PVA: window.genPVA, PVL: window.genPVL,
-        FUSION: window.genFusion, P: window.genP, EVENTO: window.genEvento, ESCENA: window.genEscena
-      };
-      const fn = gens[mode] || gens["PVAL"];
-      return fn(R);
-    }
+function genOne(mode){
+  const R = (window.rng ? window.rng() : Math.random);
+  const gens = {
+    PVAL: window.genPVAL, PV: window.genPV, PA: window.genPA, PL: window.genPL,
+    PAL: window.genPAL, PVA: window.genPVA, PVL: window.genPVL,
+    FUSION: window.genFusion, P: window.genP, EVENTO: window.genEvento, ESCENA: window.genEscena
+  };
+  const fn = gens[mode] || gens.PVAL;
+  return fn(R);
+}
 
-    async function handleGenerate(mode){
-  // Si NO es RETO, borra cualquier reto anterior
+// Helpers de render/publish para reducir repetición
+function renderLocal(html, text){
+  const out = document.getElementById("salida");
+  if(out) out.innerHTML = html || "";
+  if(typeof window.lastCopyText !== "undefined") window.lastCopyText = text || "";
+}
+
+async function handleGenerate(mode){
+  // Si no es RETO, borra nota previa
   if(mode !== 'RETO'){
     await clearChallengeForAll();
   }
-  // Nuevo modo: DOBLE (por grupo PV/PA/PL aleatorio)
+
+  // DOBLE: por grupo PV/PA/PL aleatorio
   if(mode === 'DOBLE'){
     if(lobbyCode){
       const hostOrSolo = isHost || playersConnected <= 1;
       if(!hostOrSolo) return;
-
       const grouped = buildGroupedOutputDouble();
-      if(grouped){
-        publishOutput(grouped.html, grouped.text);
-      }else{
-        // Sin grupos activos: un enunciado aleatorio PV/PA/PL
-        const R = rng();
-        const { html, text } = genRandPVPAorPL(R);
+      if(grouped) publishOutput(grouped.html, grouped.text);
+      else {
+        const R = rng(); const { html, text } = genRandPVPAorPL(R);
         publishOutput(html, text || '');
       }
     }else{
       const grouped = buildGroupedOutputDouble();
-      if(grouped){
-        document.getElementById("salida").innerHTML = grouped.html;
-        window.lastCopyText = grouped.text;
-      }else{
-        const R = rng();
-        const { html, text } = genRandPVPAorPL(R);
-        document.getElementById("salida").innerHTML = html;
-        window.lastCopyText = text;
+      if(grouped) renderLocal(grouped.html, grouped.text);
+      else {
+        const R = rng(); const { html, text } = genRandPVPAorPL(R);
+        renderLocal(html, text || '');
       }
     }
-    return; // Importante: no sigas con el flujo estándar
+    return;
   }
-// Nuevo modo: TRIPLE (por grupo PVA/PAL/PVL aleatorio)
-if(mode === 'TRIPLE'){
-  if(lobbyCode){
-    const hostOrSolo = isHost || playersConnected <= 1;
-    if(!hostOrSolo){
-      if(window.showToast) window.showToast('Solo el ADMIN puede generar enunciados en sala');
-      return;
-    }
 
-    const grouped = buildGroupedOutputTriple();
-    if(grouped){
-      publishOutput(grouped.html, grouped.text);
+  // TRIPLE: por grupo PVA/PAL/PVL aleatorio
+  if(mode === 'TRIPLE'){
+    if(lobbyCode){
+      const hostOrSolo = isHost || playersConnected <= 1;
+      if(!hostOrSolo){ if(window.showToast) window.showToast('Solo el ADMIN puede generar enunciados en sala'); return; }
+      const grouped = buildGroupedOutputTriple();
+      if(grouped) publishOutput(grouped.html, grouped.text);
+      else {
+        const R = rng(); const { html, text } = genRandTriple(R);
+        publishOutput(html, text || '');
+      }
     }else{
-      // Sin grupos activos: un enunciado aleatorio PVA/PAL/PVL
-      const R = rng();
-      const { html, text } = genRandTriple(R);
+      const grouped = buildGroupedOutputTriple();
+      if(grouped) renderLocal(grouped.html, grouped.text);
+      else {
+        const R = rng(); const { html, text } = genRandTriple(R);
+        renderLocal(html, text || '');
+      }
+    }
+    return;
+  }
+
+  // RETO: igual que TRIPLE + nota
+  if(mode === 'RETO'){
+    let html, text;
+    if(lobbyCode){
+      const hostOrSolo = isHost || playersConnected <= 1;
+      if(!hostOrSolo){ if(window.showToast) window.showToast('Solo el ADMIN puede generar enunciados en sala'); return; }
+      const grouped = buildGroupedOutputTriple();
+      if(grouped){ html = grouped.html; text = grouped.text; }
+      else{ const R = rng(); ({ html, text } = genRandTriple(R)); }
       publishOutput(html, text || '');
-    }
-  }else{
-    const grouped = buildGroupedOutputTriple();
-    if(grouped){
-      document.getElementById("salida").innerHTML = grouped.html;
-      window.lastCopyText = grouped.text;
     }else{
-      const R = rng();
-      const { html, text } = genRandTriple(R);
-      document.getElementById("salida").innerHTML = html;
-      window.lastCopyText = text;
+      const grouped = buildGroupedOutputTriple();
+      if(grouped){ renderLocal(grouped.html, grouped.text); }
+      else{ const R = rng(); const res = genRandTriple(R); renderLocal(res.html, res.text || ''); }
     }
-  }
-  return; // Importante
-}
-      // Nuevo modo: RETO (igual que TRIPLE pero mostrando una nota)
-if(mode === 'RETO'){
-  let html, text;
-
-  if(lobbyCode){
-    const hostOrSolo = isHost || playersConnected <= 1;
-    if(!hostOrSolo){
-      if(window.showToast) window.showToast('Solo el ADMIN puede generar enunciados en sala');
-      return;
-    }
-    const grouped = buildGroupedOutputTriple();
-    if(grouped){ html = grouped.html; text = grouped.text; }
-    else{
-      const R = rng();
-      const res = genRandTriple(R);
-      html = res.html; text = res.text || '';
-    }
-    // Publica el enunciado
-    publishOutput(html, text || '');
-  }else{
-    const grouped = buildGroupedOutputTriple();
-    if(grouped){
-      document.getElementById("salida").innerHTML = grouped.html;
-      window.lastCopyText = grouped.text;
-    }else{
-      const R = rng();
-      const res = genRandTriple(R);
-      document.getElementById("salida").innerHTML = res.html;
-      window.lastCopyText = res.text || '';
-    }
+    const note = pickChallenge();
+    const noteHtml = `📝 <strong>RETO:</strong> ${note}`;
+    if(lobbyCode){ await update(ref(db, `lobbies/${lobbyCode}`), { currentChallengeHtml: noteHtml }); }
+    setChallengeNote(noteHtml);
+    return;
   }
 
-  // 👉 publicar/mostrar el desafío
-  const note = pickChallenge();
-  const noteHtml = `📝 <strong>RETO:</strong> ${note}`;
-  if(lobbyCode){
-    await update(ref(db, `lobbies/${lobbyCode}`), { currentChallengeHtml: noteHtml });
+  // SECRETO
+  if(mode === 'SECRETO'){
+    if(lobbyCode) sendSecretsToAll(); else sendLocalSecret();
+    return;
   }
-  setChallengeNote(noteHtml);
-  return;
-}
 
-// Nuevo modo: SECRETO (overlay P+V+A+L a cada jugador)
-if(mode === 'SECRETO'){
-  if(lobbyCode){
-    sendSecretsToAll();
-  }else{
-    sendLocalSecret();
+  // OBRA MAESTRA
+  if(mode === 'MASTERPIECE'){
+    if(lobbyCode) sendMasterpieceToAll(); else sendLocalMasterpiece();
+    return;
   }
-  return;
-}
-      // Nuevo modo: OBRA MAESTRA (un mismo P+V+A+L para todos)
-if(mode === 'MASTERPIECE'){
-  if(lobbyCode){
-    sendMasterpieceToAll();
-  }else{
-    sendLocalMasterpiece();
-  }
-  return;
-}
 
-  // Flujo estándar (lo que ya tenías)
+  // Flujo estándar
   if(lobbyCode){
     const hostOrSolo = isHost || playersConnected <= 1;
     if(!hostOrSolo) return;
-
     const grouped = buildGroupedOutput(mode);
-    if (grouped){
-      publishOutput(grouped.html, grouped.text);
-    }else{
+    if (grouped) publishOutput(grouped.html, grouped.text);
+    else {
       const { html, text } = genOne(mode);
       publishOutput(html, text || '');
     }
   }else{
     const grouped = buildGroupedOutput(mode);
-    if (grouped){
-      document.getElementById("salida").innerHTML = grouped.html;
-    }else{
-      const { html } = genOne(mode);
-      document.getElementById("salida").innerHTML = html;
+    if (grouped) renderLocal(grouped.html, grouped.text);
+    else {
+      const { html, text } = genOne(mode);
+      renderLocal(html, text || '');
     }
   }
 }
 
-    Object.entries(MAP).forEach(([id,mode])=>{
-      const btn = $(id);
-      if(btn){ btn.onclick = ()=> handleGenerate(mode); }
-    });
+// Enlazar botones
+Object.entries(MAP).forEach(([id,mode])=>{
+  const btn = $(id);
+  if(btn){ btn.onclick = ()=> handleGenerate(mode); }
+});
 
-    // Botón de grupos en la tarjeta de jugadores
-    btnGrupos?.addEventListener('click', generarGrupos);
-    document.getElementById('btnClearOutput')?.addEventListener('click', clearOutput);
+// Botón de grupos y limpiar
+btnGrupos?.addEventListener('click', generarGrupos);
+document.getElementById('btnClearOutput')?.addEventListener('click', clearOutput);
 
-    // Atajos de teclado (bloquea si no eres host en lobby)
-    document.addEventListener('keydown', (e)=>{
-      if ((e.metaKey || e.ctrlKey) && ['1','2','3','4','5','6'].includes(e.key)) {
-        if (lobbyCode){
-          const hostOrSolo = isHost || playersConnected <= 1;
-          if (!hostOrSolo) { e.preventDefault(); e.stopPropagation(); }
-        }
-      }
-    }, true);
+/* ===========================
+   20) Atajos y timer sin sala
+===========================*/
+// Bloquea atajos si no eres host en lobby
+document.addEventListener('keydown', (e)=>{
+  if ((e.metaKey || e.ctrlKey) && ['1','2','3','4','5','6'].includes(e.key)) {
+    if (lobbyCode){
+      const hostOrSolo = isHost || playersConnected <= 1;
+      if (!hostOrSolo) { e.preventDefault(); e.stopPropagation(); }
+    }
+  }
+}, true);
 
-    // Deshabilitar timer si no hay lobby
+// Deshabilitar timer si no hay lobby
 if(!lobbyCode){
   if(timerSelect){
     timerSelect.disabled = true;
@@ -2257,79 +2237,82 @@ if(!lobbyCode){
   }
 }
 
-    // ====== Init ======
-    (function initLobbyOnce(){
-      const saved = localStorage.getItem(LS_CODE_KEY);
-      if(saved){
-        overlayEl.style.display = 'none';
-        badgeEl.style.display='inline-block'; badgeEl.textContent = `Sala: ${saved}`;
-        leaveRow.style.display='flex';
-        lobbyCode = saved;
-        playersCard.style.display='block';
-        watchLobby(saved);
-        setupPresence(saved);
-      }else{
-        overlayEl.style.display = 'flex';
-        playersCard.style.display='none';
-        setJoinMode(false); // 👈 arranca mostrando Crear/Unirse
+/* ===========================
+   21) Init / Leave / Confirm
+===========================*/
+(function initLobbyOnce(){
+  const saved = localStorage.getItem(LS_CODE_KEY);
+  if(saved){
+    overlayEl.style.display = 'none';
+    badgeEl.style.display='inline-block'; badgeEl.textContent = `Sala: ${saved}`;
+    leaveRow.style.display='flex';
+    lobbyCode = saved;
+    playersCard.style.display='block';
+    watchLobby(saved);
+    setupPresence(saved);
+  }else{
+    overlayEl.style.display = 'flex';
+    playersCard.style.display='none';
+    setJoinMode(false); // muestra Crear / Unirse
+  }
+})();
+
+async function leaveLobby(){
+  if (!lobbyCode) return;
+  const code = lobbyCode;
+
+  try{
+    // Transferir host o borrar sala
+    if (isHost) {
+      const playersSnap = await get(ref(db, `lobbies/${code}/players`));
+      const playersObj = playersSnap.val() || {};
+      const candidatos = Object.entries(playersObj)
+        .filter(([pid, p]) => pid !== clientId && p && p.connections && Object.keys(p.connections).length > 0)
+        .map(([pid]) => pid);
+      if (candidatos.length > 0) {
+        const nuevoHostId = candidatos[0];
+        await update(ref(db, `lobbies/${code}`), { hostId: nuevoHostId });
+      } else {
+        try { await remove(ref(db, `lobbies/${code}`)); } catch(e){}
       }
-    })();
-
-    // Salir
-    async function leaveLobby(){
-      if (!lobbyCode) return;
-      const code = lobbyCode;
-
-      try{
-        if (isHost) {
-          const playersSnap = await get(ref(db, `lobbies/${code}/players`));
-          const playersObj = playersSnap.val() || {};
-          const candidatos = Object.entries(playersObj)
-            .filter(([pid, p]) => pid !== clientId && p && p.connections && Object.keys(p.connections).length > 0)
-            .map(([pid]) => pid);
-          if (candidatos.length > 0) {
-            const nuevoHostId = candidatos[0];
-            await update(ref(db, `lobbies/${code}`), { hostId: nuevoHostId });
-          } else {
-            try { await remove(ref(db, `lobbies/${code}`)); } catch(e){}
-          }
-        }
-
-        if (lobbyRef && lobbyCallback){
-          off(lobbyRef, 'value', lobbyCallback);
-          lobbyRef = null; lobbyCallback = null;
-        }
-
-        if (currentConnRef){
-          try{ onDisconnect(currentConnRef).cancel(); }catch(e){}
-          try{ await remove(currentConnRef); }catch(e){}
-          currentConnRef = null;
-        }
-
-        try{ await remove(ref(db, `lobbies/${code}/players/${clientId}`)); }catch(e){}
-      }catch(e){
-        console.warn('Error al salir de la sala:', e);
-      }
-
-      lobbyCode = null;
-      lastLobbyState = null;
-      badgeEl.style.display='none'; badgeEl.textContent = 'Sala: -----';
-      leaveRow.style.display='none';
-      overlayEl.style.display='flex';
-      playersCard.style.display='none';
-      const s = document.getElementById("salida"); if (s) s.innerHTML = "";
-      if (statusEl) statusEl.textContent = "";
-      if (playersList) playersList.innerHTML = "";
-      isHost = false; prevIsHost = false; playersConnected = 0;
-      updateHostUI();
     }
 
-    document.getElementById("btnLeave")?.addEventListener("click", (e)=>{
+    if (lobbyRef && lobbyCallback){
+      off(lobbyRef, 'value', lobbyCallback);
+      lobbyRef = null; lobbyCallback = null;
+    }
+
+    if (currentConnRef){
+      try{ onDisconnect(currentConnRef).cancel(); }catch(e){}
+      try{ await remove(currentConnRef); }catch(e){}
+      currentConnRef = null;
+    }
+
+    try{ await remove(ref(db, `lobbies/${code}/players/${clientId}`)); }catch(e){}
+  }catch(e){
+    console.warn('Error al salir de la sala:', e);
+  }
+
+  // Reset UI
+  lobbyCode = null;
+  lastLobbyState = null;
+  badgeEl.style.display='none'; badgeEl.textContent = 'Sala: -----';
+  leaveRow.style.display='none';
+  overlayEl.style.display='flex';
+  playersCard.style.display='none';
+  const s = document.getElementById("salida"); if (s) s.innerHTML = "";
+  if (statusEl) statusEl.textContent = "";
+  if (playersList) playersList.innerHTML = "";
+  isHost = false; prevIsHost = false; playersConnected = 0;
+  updateHostUI();
+}
+
+// Confirmación de salida
+document.getElementById("btnLeave")?.addEventListener("click", (e)=>{
   e.preventDefault();
   openConfirmExit();
 });
 
-// === Confirmación de salida ===
 const confirmExitOverlay = document.getElementById('confirmExitOverlay');
 const btnExitYes = document.getElementById('btnConfirmExitYes');
 const btnExitNo  = document.getElementById('btnConfirmExitNo');
@@ -2338,61 +2321,57 @@ function openConfirmExit(){
   if(!confirmExitOverlay) return;
   confirmExitOverlay.classList.add('open');
   confirmExitOverlay.style.opacity = '1';
-  confirmExitOverlay.style.pointerEvents = 'auto';   // ← ESTA LÍNEA
+  confirmExitOverlay.style.pointerEvents = 'auto';
   btnExitYes?.focus();
 }
-
 function closeConfirmExit(){
   if(!confirmExitOverlay) return;
   confirmExitOverlay.classList.remove('open');
   confirmExitOverlay.style.opacity = '0';
-  confirmExitOverlay.style.pointerEvents = 'none';   // ← Y ESTA
+  confirmExitOverlay.style.pointerEvents = 'none';
 }
 
-// Cerrar al hacer clic fuera de la tarjeta
 confirmExitOverlay?.addEventListener('click', (e)=>{
-  if(e.target === confirmExitOverlay){
-    closeConfirmExit();
-  }
+  if(e.target === confirmExitOverlay) closeConfirmExit();
 });
-
-// Cerrar con la tecla ESC
 document.addEventListener('keydown', (e)=>{
-  if(e.key === 'Escape' && confirmExitOverlay?.classList.contains('open')){
-    closeConfirmExit();
-  }
+  if(e.key === 'Escape' && confirmExitOverlay?.classList.contains('open')) closeConfirmExit();
 });
-
 btnExitYes?.addEventListener('click', async ()=>{
   closeConfirmExit();
   await leaveLobby();
 });
+btnExitNo?.addEventListener('click', closeConfirmExit);
 
-btnExitNo?.addEventListener('click', ()=>{
-  closeConfirmExit();
-});
-    window.showToast = (msg)=>{ const el=document.getElementById('toast'); if(!el) return; el.textContent=msg; el.classList.add('show'); clearTimeout(window.__tT); window.__tT=setTimeout(()=>el.classList.remove('show'),2200); };
+// Toast util
+window.showToast = (msg)=>{
+  const el = document.getElementById('toast');
+  if(!el) return;
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(window.__tT);
+  window.__tT = setTimeout(()=> el.classList.remove('show'), 2200);
+};
 
-// Overlay actions (flujo por pasos)
+/* ===========================
+   22) Overlay inicio (Crear/Unirse)
+===========================*/
 $("btnCreateLobby")?.addEventListener("click", ()=>{
   const name = $("playerName")?.value?.trim() || "";
   const err = $("nameError");
   const errLen = $("nameLengthError");
 
-  // Validación 1: vacío
+  // Reglas: no vacío, máximo 10 chars
   if (!name.length) {
     if (err) err.style.display = "block";
     if (errLen) errLen.style.display = "none";
     return;
   }
-  // Validación 2: más de 12 caracteres
   if (name.length > 10) {
     if (err) err.style.display = "none";
     if (errLen) errLen.style.display = "block";
     return;
   }
-
-  // OK
   if (err) err.style.display = "none";
   if (errLen) errLen.style.display = "none";
   createLobby(name);
@@ -2402,10 +2381,7 @@ btnChooseJoin?.addEventListener("click", ()=>{
   setJoinMode(true);
   $("lobbyCodeInput")?.focus();
 });
-
-btnBackJoin?.addEventListener("click", ()=>{
-  setJoinMode(false);
-});
+btnBackJoin?.addEventListener("click", ()=> setJoinMode(false));
 
 $("btnJoinLobby")?.addEventListener("click", ()=>{
   const name = $("playerName")?.value?.trim() || "";
@@ -2414,56 +2390,49 @@ $("btnJoinLobby")?.addEventListener("click", ()=>{
   const errLen = $("nameLengthError");
   const errCode = $("codeError");
 
-  // Validación 1: vacío
   if (!name.length) {
     if (err) err.style.display = "block";
     if (errLen) errLen.style.display = "none";
     if (errCode) errCode.style.display = "none";
     return;
   }
-  // Validación 2: más de 10 caracteres
   if (name.length > 10) {
     if (err) err.style.display = "none";
     if (errLen) errLen.style.display = "block";
     if (errCode) errCode.style.display = "none";
     return;
   }
-
-  // OK
   if (err) err.style.display = "none";
   if (errLen) errLen.style.display = "none";
 
-  // Validación del código
   if(!code){
     if (errCode) errCode.style.display = "block";
     return;
   }
-
   if (errCode) errCode.style.display = "none";
   joinLobby(code, name);
 });
 
-    $("playerName")?.addEventListener("input", ()=>{
+// Oculta errores mientras tipeas
+$("playerName")?.addEventListener("input", ()=>{
   const val = $("playerName")?.value?.trim() || "";
   const err = $("nameError");
   const errLen = $("nameLengthError");
-
   if (val.length && err) err.style.display = "none";
-  if (val.length <= 12 && errLen) errLen.style.display = "none";
+  if (val.length <= 10 && errLen) errLen.style.display = "none";
 });
-  </script>
-<script>
+
+/* ===========================
+   23) Reubicar chips (desktop header)
+===========================*/
 (function(){
   const btnAdv     = document.getElementById('btnToggleAdv');
   const btnFilters = document.getElementById('btnFilters');
   if(!btnAdv || !btnFilters) return;
 
-  // El contenedor original donde viven hoy
-  // (es el primer .inline dentro de #adminControls con todos los botones principales)
   const originalRow = document.querySelector('#adminControls .inline');
   if(!originalRow) return;
 
-  // Creamos un contenedor en el header (una sola vez)
   const appbar = document.querySelector('header .appbar');
   if(!appbar) return;
 
@@ -2473,17 +2442,11 @@ $("btnJoinLobby")?.addEventListener("click", ()=>{
     headerActions.id = 'headerActions';
     headerActions.className = 'header-actions';
 
-    // Lo insertamos antes del badge de sala, para que quede a la derecha
     const roomBadge = document.getElementById('roomBadge');
-    if(roomBadge){
-      appbar.insertBefore(headerActions, roomBadge);
-    }else{
-      // fallback: al final de la appbar
-      appbar.appendChild(headerActions);
-    }
+    if(roomBadge){ appbar.insertBefore(headerActions, roomBadge); }
+    else{ appbar.appendChild(headerActions); }
   }
 
-  // Guardamos orden para reinsertar en móvil
   const mobileAnchor = document.createComment('mobile-anchor-btns');
   originalRow.appendChild(mobileAnchor);
 
@@ -2491,15 +2454,12 @@ $("btnJoinLobby")?.addEventListener("click", ()=>{
 
   function placeButtons(e){
     const isDesktop = e ? e.matches : mq.matches;
-
     if(isDesktop){
-      // Mover al header
       if(btnAdv.parentElement !== headerActions){
         headerActions.appendChild(btnAdv);
         headerActions.appendChild(btnFilters);
       }
     }else{
-      // Devolver a su fila original (después del anchor)
       if(btnAdv.parentElement !== originalRow){
         originalRow.insertBefore(btnAdv, mobileAnchor.nextSibling);
         originalRow.insertBefore(btnFilters, btnAdv.nextSibling);
@@ -2507,16 +2467,13 @@ $("btnJoinLobby")?.addEventListener("click", ()=>{
     }
   }
 
-  // Ejecuta ahora y en cambios de tamaño
   placeButtons();
   mq.addEventListener('change', placeButtons);
 
-  // Si tu lógica de permisos cambia display (updateHostUI), recolocamos igual
-  // sin romper nada visual.
   const ro = new ResizeObserver(()=> placeButtons());
   ro.observe(document.body);
 })();
-</script>
 
+</script>
 </body>
 </html>
