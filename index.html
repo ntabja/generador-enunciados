@@ -392,6 +392,17 @@
     border-color: rgba(148,163,184,.38) !important;
   }
 }
+    /* Contenedor para acciones en el header (oculto por defecto) */
+.header-actions { display: none; }
+
+/* Solo desktop */
+@media (min-width: 1024px){
+  .header-actions{
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+}
 </style>
 </head>
 <body>
@@ -2486,6 +2497,71 @@ $("btnJoinLobby")?.addEventListener("click", ()=>{
   if (val.length <= 12 && errLen) errLen.style.display = "none";
 });
   </script>
+<script>
+(function(){
+  const btnAdv     = document.getElementById('btnToggleAdv');
+  const btnFilters = document.getElementById('btnFilters');
+  if(!btnAdv || !btnFilters) return;
+
+  // El contenedor original donde viven hoy
+  // (es el primer .inline dentro de #adminControls con todos los botones principales)
+  const originalRow = document.querySelector('#adminControls .inline');
+  if(!originalRow) return;
+
+  // Creamos un contenedor en el header (una sola vez)
+  const appbar = document.querySelector('header .appbar');
+  if(!appbar) return;
+
+  let headerActions = document.getElementById('headerActions');
+  if(!headerActions){
+    headerActions = document.createElement('div');
+    headerActions.id = 'headerActions';
+    headerActions.className = 'header-actions';
+
+    // Lo insertamos antes del badge de sala, para que quede a la derecha
+    const roomBadge = document.getElementById('roomBadge');
+    if(roomBadge){
+      appbar.insertBefore(headerActions, roomBadge);
+    }else{
+      // fallback: al final de la appbar
+      appbar.appendChild(headerActions);
+    }
+  }
+
+  // Guardamos orden para reinsertar en móvil
+  const mobileAnchor = document.createComment('mobile-anchor-btns');
+  originalRow.appendChild(mobileAnchor);
+
+  const mq = window.matchMedia('(min-width: 1024px)');
+
+  function placeButtons(e){
+    const isDesktop = e ? e.matches : mq.matches;
+
+    if(isDesktop){
+      // Mover al header
+      if(btnAdv.parentElement !== headerActions){
+        headerActions.appendChild(btnAdv);
+        headerActions.appendChild(btnFilters);
+      }
+    }else{
+      // Devolver a su fila original (después del anchor)
+      if(btnAdv.parentElement !== originalRow){
+        originalRow.insertBefore(btnAdv, mobileAnchor.nextSibling);
+        originalRow.insertBefore(btnFilters, btnAdv.nextSibling);
+      }
+    }
+  }
+
+  // Ejecuta ahora y en cambios de tamaño
+  placeButtons();
+  mq.addEventListener('change', placeButtons);
+
+  // Si tu lógica de permisos cambia display (updateHostUI), recolocamos igual
+  // sin romper nada visual.
+  const ro = new ResizeObserver(()=> placeButtons());
+  ro.observe(document.body);
+})();
+</script>
 
 </body>
 </html>
