@@ -1615,23 +1615,19 @@ function handleTimerState(timer){
     return;
   }
 
-  const { startedAt, durationSec } = timer;   // ← única vez
+  // ← única vez
+  const { startedAt, durationSec } = timer;
   if(!startedAt || !durationSec) return;
 
   // id de esta sesión para tocar la alarma una sola vez
   alarmPlayedForTimerId = startedAt;
-
-  function fmt(t){
-    const m = Math.floor(t/60), s = t%60;
-    return `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
-  }
 
   function tick(){
     const elapsed = Math.floor((Date.now()-startedAt)/1000);
     const remain  = Math.max(0, durationSec - elapsed);
 
     if(timerDisplay){
-      timerDisplay.textContent = fmt(remain);
+      timerDisplay.textContent = fmt(remain); // usa la fmt global
       timerDisplay.classList.add('running');
       if(remain <= 10){ timerDisplay.classList.add('warning'); }
       else{ timerDisplay.classList.remove('warning'); }
