@@ -693,7 +693,9 @@ footer .copyright{ margin-top:8px; text-align:center; font-size:12px; opacity:.7
   <div id="toast"></div>
 
   <script>
-    /* === Generadores locales === */
+    /* === Generadores locales (refactor sin cambios de lógica/UX) === */
+
+/* ---------- 1) Datos base ---------- */
 const PERSONAJES = [
   // ==== Originales ====
   "Goku","Vegeta","Piccolo","Freezer","Monkey D. Luffy","Roronoa Zoro","Sanji","Nami",
@@ -737,33 +739,12 @@ const PERSONAJES = [
   "Danny Phantom","Groot","Knuckles","Ryu","Sephiroth","Cloud Strife","Steve","Nier","Bomberman","Diddy Kong",
   "Toad","Fox McCloud","Mewtwo","Cuphead","Agumon","Rayman","Hollow Knight","Wario","Waluigi","La Princesa Peach","2B"
 ];
-   /* Categorías principales (10):
-   - anime
-   - videojuegos
-   - peliculas
-   - series
-   - comics
-   - profesiones
-   - mitologia
-   - criaturas
-   - animales
-   - otros (fallback)
-*/
 
-/* Categorías principales (10) según tu lista:
-   - Anime
-   - Caricaturas
-   - Cine
-   - Literatura
-   - Videojuegos
-   - Mitología & Folclore
-   - Animales
-   - Arquetipos
-   - Famosos
-   - Otros (fallback)
-*/
+/* ---------- 2) Categorías (misma taxonomía) ---------- */
+// Nombres canónicos reutilizables
+const CATS = ['anime','caricaturas','cine','literatura','videojuegos','mito','animales','arquetipos','famosos','otros'];
 
-// === Sets con tus personajes EXACTOS ===
+// === Sets exactos ===
 const CAT_ANIME = new Set([
   "Goku","Vegeta","Piccolo","Freezer","Monkey D. Luffy","Roronoa Zoro","Sanji","Nami",
   "Naruto Uzumaki","Sasuke Uchiha","Kakashi Hatake","Ichigo Kurusaki","Satoru Gojo",
@@ -772,7 +753,6 @@ const CAT_ANIME = new Set([
   "Ash Ketchum","Yugi Muto","Agumon","Sailor Moon","Astroboy",
   "Izuku Midoriya","Itachi Uchiha","Frieren","Fern","Yor Forger"
 ]);
-
 const CAT_CARICATURAS = new Set([
   "Bob Esponja","Patricio Estrella","Calamardo","Arnold Shortman","Aang","Timmy Turner","Jimmy Neutron",
   "Johnny Bravo","Mojo Jojo","Perry El Ornitorrinco","Optimus Prime","Mickey Mouse",
@@ -781,7 +761,6 @@ const CAT_CARICATURAS = new Set([
   "Morty Smith","Eric Cartman","Buzz Lightyear","Popeye","El Pato Lucas","Betty Boop",
   "Danny Phantom"
 ]);
-
 const CAT_CINE = new Set([
   "Mike Wazowski","Shrek","Wall-E","Stitch","Nemo","Elsa","Simba","Luke Skywalker",
   "Darth Vader","Yoda","E.T.","John Wick","Neo","Indiana Jones","El Terminator",
@@ -792,14 +771,12 @@ const CAT_CINE = new Set([
   "El Capitán América","Peter Pan","Blancanieves","Barbie","Iron Man","Maléfica",
   "Peter Griffin","El Grinch","Michael Scott","Michael Myers","Groot","Deadpool"
 ]);
-
 const CAT_LITERATURA = new Set([
   "Gandalf","Frodo Baggins","Gollum","Harry Potter","Voldemort","Willy Wonka","Dracula",
   "Frankenstein","James Bond","El Gato con Botas","Robin Hood","Pinnochio","Tarzán",
   "Pennywise","Jon Snow","Severus Snape","Sherlock Holmes","Quasimodo",
   "Don Quijote de la Mancha","Tom Sawyer","El Jinete sin Cabeza"
 ]);
-
 const CAT_VIDEOJUEGOS = new Set([
   "Pikachu","Mewtwo","Mario","Bowser","Yoshi","Donkey Kong","Kirby","Link","Zelda",
   "Samus Aran","Sonic","Crash Bandicoot","Mega Man","Pac-Man","Leon S. Kennedy",
@@ -807,7 +784,6 @@ const CAT_VIDEOJUEGOS = new Set([
   "Diddy Kong","Toad","Fox McCloud","Cuphead","Rayman","Hollow Knight","Wario","Waluigi",
   "Luigi","La Princesa Peach","2B","Doomguy","El Amongus"
 ]);
-
 const CAT_MITO = new Set([
   "Santa Claus","Dios","Atlas","Zeus","Poseidón","Hércules","Pegaso",
   "El Kraken","El Cíclope","El Minotauro","El Cerbero","El Fénix","El Leviatán",
@@ -817,7 +793,6 @@ const CAT_MITO = new Set([
   "Una Valquiria","Un Elfo","Un Gnomo","Un Duende","Un Hada","Un Fantasma","Un Vampiro",
   "Un Zombie","Una Momia","Un Esqueleto","Un Mago","Un Marciano"
 ]);
-
 const CAT_ANIMALES = new Set([
   "Una Mujer","Un Hombre","Un Perro","Un Gato","Un León","Un Mono","Una Vaca",
   "Un Elefante","Un Caballo","Un Camello","Una Jirafa","Una Oveja","Un Cerdo","Un Oso",
@@ -827,7 +802,6 @@ const CAT_ANIMALES = new Set([
   "Una Langosta","Un Pulpo","Un Calamar","Una Malagua","Un Pingüino","Un Pato",
   "Un Flamenco","Un Águila","Un Búho","Un Murciélago","Un Virus","Un Dinosaurio"
 ]);
-
 const CAT_ARQUETIPOS = new Set([
   "El Héroe","El Rey","El Caballero","Un Profeta","El Verdugo","Un Viajero","Un Gladiador",
   "Un Esclavo","Un Samurai","Un Ninja","Un Nómada","Un Vikingo","Un Soldado","Un Bufón",
@@ -835,71 +809,88 @@ const CAT_ARQUETIPOS = new Set([
   "Un Payaso","Un Chef","Un Músico","Un Pintor","Una Prostituta","Un Monje",
   "Un Científico","Un Astronauta","Un Guerrero","Yo"
 ]);
-
 const CAT_FAMOSOS = new Set([
   "Albert Einstein","Messi","Napoleón Bonaparte","Atahualpa","Hitler","Michael Jackson",
   "Freddie Mercury","Beethoven","Pedro Castillo","Donald Trump","Ronald McDonald",
   "Charlie Chaplin"
 ]);
 
-// --- BUCKETS (claves cortas) ---
-const BUCKETS = {
-  anime:[], caricaturas:[], cine:[], literatura:[], videojuegos:[],
-  mito:[], animales:[], arquetipos:[], famosos:[], otros:[]
+// Mapa categoría → Set (reduce repetición)
+const CAT_MAP = {
+  anime: CAT_ANIME,
+  caricaturas: CAT_CARICATURAS,
+  cine: CAT_CINE,
+  literatura: CAT_LITERATURA,
+  videojuegos: CAT_VIDEOJUEGOS,
+  mito: CAT_MITO,
+  animales: CAT_ANIMALES,
+  arquetipos: CAT_ARQUETIPOS,
+  famosos: CAT_FAMOSOS
 };
 
-// Construcción de buckets usando los sets
+/* ---------- 3) Buckets y utilidades de categoría ---------- */
+const BUCKETS = Object.fromEntries(CATS.map(c => [c, []]));
+
 for (const name of PERSONAJES) {
-  const cat =
-    CAT_ANIME.has(name)        ? 'anime' :
-    CAT_CARICATURAS.has(name)  ? 'caricaturas' :
-    CAT_CINE.has(name)         ? 'cine' :
-    CAT_LITERATURA.has(name)   ? 'literatura' :
-    CAT_VIDEOJUEGOS.has(name)  ? 'videojuegos' :
-    CAT_MITO.has(name)         ? 'mito' :
-    CAT_ANIMALES.has(name)     ? 'animales' :
-    CAT_ARQUETIPOS.has(name)   ? 'arquetipos' :
-    CAT_FAMOSOS.has(name)      ? 'famosos' : 'otros';
+  let cat = 'otros';
+  for (const [key, set] of Object.entries(CAT_MAP)) {
+    if (set.has(name)) { cat = key; break; }
+  }
   BUCKETS[cat].push(name);
 }
 
 function categoriaDe(nombre){
-  if (CAT_ANIME.has(nombre))        return 'anime';
-  if (CAT_CARICATURAS.has(nombre))  return 'caricaturas';
-  if (CAT_CINE.has(nombre))         return 'cine';
-  if (CAT_LITERATURA.has(nombre))   return 'literatura';
-  if (CAT_VIDEOJUEGOS.has(nombre))  return 'videojuegos';
-  if (CAT_MITO.has(nombre))         return 'mito';
-  if (CAT_ANIMALES.has(nombre))     return 'animales';
-  if (CAT_ARQUETIPOS.has(nombre))   return 'arquetipos';
-  if (CAT_FAMOSOS.has(nombre))      return 'famosos';
+  for (const [key, set] of Object.entries(CAT_MAP)) {
+    if (set.has(nombre)) return key;
+  }
   return 'otros';
 }
 
-// Pesos por categoría (persisten en localStorage)
-// Nota: merge con guardados viejos para compatibilidad
-const DEFAULT_WEIGHTS = {
-  anime:1, caricaturas:1, cine:1, literatura:1, videojuegos:1,
-  mito:1, animales:1, arquetipos:1, famosos:1, otros:1
-};
+/* ---------- 4) Pesos con persistencia ---------- */
+const DEFAULT_WEIGHTS = Object.fromEntries(CATS.map(c => [c, 1]));
 
-let WEIGHTS = (()=> {
-  try{
+let WEIGHTS = (() => {
+  try {
     const saved = JSON.parse(localStorage.getItem('am_weights')) || {};
     return { ...DEFAULT_WEIGHTS, ...saved };
-  }catch(e){ return { ...DEFAULT_WEIGHTS }; }
+  } catch { return { ...DEFAULT_WEIGHTS }; }
 })();
 
 function setWeight(cat, val){
-  WEIGHTS[cat] = Math.max(0, Number(val)||0);
-  try{ localStorage.setItem('am_weights', JSON.stringify(WEIGHTS)); }catch(e){}
+  WEIGHTS[cat] = Math.max(0, Number(val) || 0);
+  try { localStorage.setItem('am_weights', JSON.stringify(WEIGHTS)); } catch {}
 }
 function getWeight(cat){ return Number(WEIGHTS[cat] ?? 1); }
 
-// Elección de categoría solo por pesos
+/* ---------- 5) RNG / helpers ---------- */
+const byId = id => document.getElementById(id);
+function mulberry32(a){
+  return function(){
+    let t = a += 0x6D2B79F5;
+    t = Math.imul(t ^ (t>>>15), t|1);
+    t ^= t + Math.imul(t ^ (t>>>7), t|61);
+    return ((t ^ (t>>>14)) >>> 0) / 4294967296;
+  };
+}
+function rng(seed){
+  if (!seed) return Math.random;
+  let n = 0;
+  for (let i=0;i<seed.length;i++) n = (n*31 + seed.charCodeAt(i)) >>> 0;
+  return mulberry32(n);
+}
+const pick = (arr, R) => arr[Math.floor(R() * arr.length)];
+const esc = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+
+const wrapChar  = name => `<span class="char">${esc(name)}</span>`;
+const wrapVerb  = v    => `<span class="verb">${esc(v)}</span>`;
+const wrapAdj   = a    => `<span class="adj">${esc(a)}</span>`;
+const wrapPlace = l    => `<span class="place">${esc(l)}</span>`;
+const wrapEvent = e    => `<span class="event">${esc(e)}</span>`;
+const wrapScene = s    => `<span class="scene">${esc(s)}</span>`;
+
+/* ---------- 6) Elección ponderada ---------- */
 function pickCategoryByWeight(R){
-  const cats = ['anime','caricaturas','cine','literatura','videojuegos','mito','animales','arquetipos','famosos','otros'];
-  const alive = cats.filter(c => BUCKETS[c].length > 0);
+  const alive = CATS.filter(c => BUCKETS[c].length > 0);
   let total = 0;
   const cum = [];
   for (const c of alive){ total += Math.max(0, getWeight(c)); cum.push(total); }
@@ -912,31 +903,28 @@ function pickCategoryByWeight(R){
 function pickPersonaje(R){
   const cat = pickCategoryByWeight(R);
   const arr = BUCKETS[cat];
-  if (!arr || arr.length === 0) {
-    return PERSONAJES[Math.floor(R()*PERSONAJES.length)];
-  }
+  if (!arr || arr.length === 0) return PERSONAJES[Math.floor(R()*PERSONAJES.length)];
   return arr[Math.floor(R()*arr.length)];
 }
 
 // export helpers
 window.pickPersonaje = pickPersonaje;
-window.setWeight = setWeight;
-window.getWeight = getWeight;
+window.setWeight     = setWeight;
+window.getWeight     = getWeight;
 
-// === UI de pesos ===
+/* ---------- 7) UI de pesos ---------- */
 function setSliderVal(idSlider, idBadge, v){
-  const s = document.getElementById(idSlider);
-  const b = document.getElementById(idBadge);
-  if(s) s.value = v;
-  if(b) b.textContent = String(v);
+  const s = byId(idSlider), b = byId(idBadge);
+  if (s) s.value = v;
+  if (b) b.textContent = String(v);
 }
 
 // Habilitar/deshabilitar sliders (según rol)
-window.setWeightsEnabled = function onOff(on){
+window.setWeightsEnabled = function setWeightsEnabled(on){
   const ids = ['wAnime','wCaricaturas','wCine','wLiteratura','wVideojuegos','wMito','wAnimales','wArquetipos','wFamosos','wOtros'];
   ids.forEach(id=>{
-    const el = document.getElementById(id);
-    if(!el) return;
+    const el = byId(id);
+    if (!el) return;
     el.disabled = !on;
     el.style.opacity = on ? '' : '0.6';
     el.style.pointerEvents = on ? '' : 'none';
@@ -956,15 +944,15 @@ function initWeightSliders(){
   setSliderVal('wFamosos','wFamososVal',          getWeight('famosos'));
   setSliderVal('wOtros','wOtrosVal',              getWeight('otros'));
 
-  // Hook helper
+  // Helper para “input”
   const hook = (idSlider, idBadge, cat)=>{
-    const s = document.getElementById(idSlider);
+    const s = byId(idSlider);
     if(!s) return;
     s.addEventListener('input', async ()=>{
       const v = parseInt(s.value,10);
       setWeight(cat, v);
-      const b = document.getElementById(idBadge);
-      if(b) b.textContent = String(v);
+      const b = byId(idBadge);
+      if (b) b.textContent = String(v);
 
       // Publicar a Firebase si corresponde
       if (window.lobbyCode && window.isHost && window.db && window.fbRef && window.fbUpdate) {
@@ -990,10 +978,10 @@ function initWeightSliders(){
   hook('wOtros','wOtrosVal','otros');
 
   // Reset
-  const btnReset = document.getElementById('btnResetWeights');
+  const btnReset = byId('btnResetWeights');
   if(btnReset){
     btnReset.addEventListener('click', async ()=>{
-      ['anime','caricaturas','cine','literatura','videojuegos','mito','animales','arquetipos','famosos','otros'].forEach(cat=> setWeight(cat,1));
+      CATS.forEach(cat => setWeight(cat, 1));
       initWeightSliders();
 
       if (window.lobbyCode && window.isHost && window.db && window.fbRef && window.fbUpdate) {
@@ -1009,13 +997,13 @@ function initWeightSliders(){
   }
 }
 
+// Inicialización (una sola vez)
 document.addEventListener('DOMContentLoaded', initWeightSliders);
-initWeightSliders();
 
-// Simulador de distribución
+/* ---------- 8) Simulador de distribución ---------- */
 function simularDistribucion(n=2000){
   const R = rng('sim-'+Date.now());
-  const tally = { anime:0, caricaturas:0, cine:0, literatura:0, videojuegos:0, mito:0, animales:0, arquetipos:0, famosos:0, otros:0 };
+  const tally = Object.fromEntries(CATS.map(c => [c, 0]));
   for(let i=0;i<n;i++){
     const p = pickPersonaje(R);
     tally[categoriaDe(p)]++;
@@ -1024,8 +1012,8 @@ function simularDistribucion(n=2000){
   return { tally, pct, n };
 }
 function attachSimBtn(){
-  const btn = document.getElementById('btnSimDist');
-  const out = document.getElementById('simDistResult');
+  const btn = byId('btnSimDist');
+  const out = byId('simDistResult');
   if(!btn || !out) return;
   btn.addEventListener('click', ()=>{
     const { pct, n } = simularDistribucion(2000);
@@ -1038,121 +1026,115 @@ function attachSimBtn(){
 }
 attachSimBtn();
 
-    const VERBOS=['leyendo','patinando','esquiando','surfeando','navegando','cabalgando','pedaleando','nadando','bailando','pescando','regando','componiendo','escribiendo','cocinando','conduciendo','cenando','trabajando','jugando','barriendo','corriendo','caminando','saltando','trepando','luchando','descansando','durmiendo','marchando','volando','bebiendo','fumando','vomitando','masturbando','orinando','cagando','copulando','muriendo','naciendo','pariendo','gritando','llorando','cantando','pensando','rezando','vendiendo','saludando','boxeando'];
-    const ADJETIVOS=['content@','enojad@','asustad@','preocupad@','desnud@','cansad@','confundid@','excitad@','aburrid@','sorprendid@','doblad@','sentad@','parad@','arrodillad@','echad@','suspendid@','tembland@','derretid@','herid@','atad@','enamorad@','relajad@','borrach@','nervios@','enferm@','descalz@','tens@'];
-    const LUGARES=['bajo el agua','bajo el sol','bajo la luna','bajo la lluvia','bajo la tierra','bajo las estrellas','bajo un árbol','bajo un puente','sobre un tren','sobre una torre','sobre una cama','sobre una mesa','sobre un techo','sobre las nubes','tras los arbustos','tras una roca','tras la ventana','tras las rejas','en el campo','en el mar','en el espacio','en el futuro','en el pasado','en el infierno','en el cielo','en la ciudad','en la montaña','en la playa','en la selva','en el Valhalla','en el Olimpo','en la corte','en el fin del mundo','en la prehistoria','en un baño','en un bosque','en un colegio','en un desierto','en un gimnasio','en un zoológico','en un pantano','en una tormenta','en una oficina','en un bar','en un hospital','en un cementerio','en un parque','en un balcón','en una granja','en un teatro','en una biblioteca','en un cine','en un avión','en un helicóptero','en un cohete','en un castillo','en un mercado','en una pradera','en un globo','en un burdel','en un laboratorio','en una prisión','en un jardín','en Egipto','en Francia','en Japón','en Perú','en Australia','en la Antártida','en su casa','en su habitación'];
-    const EVENTOS=['El nacimiento de','La muerte de','La creación de','La destrucción de','La victoria de','La derrota de','El sacrificio de','La furia de','La caída de','El sueño de','El regreso de','La invasión de','El ritual de','La persecución de','La evolución de','Los ojos de','El beso de','El rapto de','La danza de','La casa de','La habitación de','El baño de','Retrato de','La venganza de','La tortura de','El castigo de','La traición de','La ejecución de','El asesinato de','La rebelión de','El entierro de','La confesión de','El cumpleaños de','El concierto de','El bautizo de','El Baby Shower de','La aventura de'];
-    const ESCENAS=['Guerra','Paz','Caos','Orden','Odio','Amor','Soledad','Invierno','Verano','Otoño','Primavera','Amanecer','Atardecer','Anochecer','Terror','Incendio','Duelo','Batalla','Matrimonio','Despedida','Bienvenida','Encuentro','Apocalipsis','Tragedia','Desastre','Catástrofe','Exterminio','Masacre','Tratado','Barbacoa','Picnic','Banquete','Fiesta','Excursión','Olimpiadas','Carnaval','Desfile','Venganza','Tortura','Castigo','Traición','Ejecución','Asesinato','Revolución','Funeral','Confesión','Cumpleaños','Concierto','Bautizo','Baby Shower','Aventura'];
+/* ---------- 9) Generadores de enunciados ---------- */
+const VERBOS=['leyendo','patinando','esquiando','surfeando','navegando','cabalgando','pedaleando','nadando','bailando','pescando','regando','componiendo','escribiendo','cocinando','conduciendo','cenando','trabajando','jugando','barriendo','corriendo','caminando','saltando','trepando','luchando','descansando','durmiendo','marchando','volando','bebiendo','fumando','vomitando','masturbando','orinando','cagando','copulando','muriendo','naciendo','pariendo','gritando','llorando','cantando','pensando','rezando','vendiendo','saludando','boxeando'];
+const ADJETIVOS=['content@','enojad@','asustad@','preocupad@','desnud@','cansad@','confundid@','excitad@','aburrid@','sorprendid@','doblad@','sentad@','parad@','arrodillad@','echad@','suspendid@','tembland@','derretid@','herid@','atad@','enamorad@','relajad@','borrach@','nervios@','enferm@','descalz@','tens@'];
+const LUGARES=['bajo el agua','bajo el sol','bajo la luna','bajo la lluvia','bajo la tierra','bajo las estrellas','bajo un árbol','bajo un puente','sobre un tren','sobre una torre','sobre una cama','sobre una mesa','sobre un techo','sobre las nubes','tras los arbustos','tras una roca','tras la ventana','tras las rejas','en el campo','en el mar','en el espacio','en el futuro','en el pasado','en el infierno','en el cielo','en la ciudad','en la montaña','en la playa','en la selva','en el Valhalla','en el Olimpo','en la corte','en el fin del mundo','en la prehistoria','en un baño','en un bosque','en un colegio','en un desierto','en un gimnasio','en un zoológico','en un pantano','en una tormenta','en una oficina','en un bar','en un hospital','en un cementerio','en un parque','en un balcón','en una granja','en un teatro','en una biblioteca','en un cine','en un avión','en un helicóptero','en un cohete','en un castillo','en un mercado','en una pradera','en un globo','en un burdel','en un laboratorio','en una prisión','en un jardín','en Egipto','en Francia','en Japón','en Perú','en Australia','en la Antártida','en su casa','en su habitación'];
+const EVENTOS=['El nacimiento de','La muerte de','La creación de','La destrucción de','La victoria de','La derrota de','El sacrificio de','La furia de','La caída de','El sueño de','El regreso de','La invasión de','El ritual de','La persecución de','La evolución de','Los ojos de','El beso de','El rapto de','La danza de','La casa de','La habitación de','El baño de','Retrato de','La venganza de','La tortura de','El castigo de','La traición de','La ejecución de','El asesinato de','La rebelión de','El entierro de','La confesión de','El cumpleaños de','El concierto de','El bautizo de','El Baby Shower de','La aventura de'];
+const ESCENAS=['Guerra','Paz','Caos','Orden','Odio','Amor','Soledad','Invierno','Verano','Otoño','Primavera','Amanecer','Atardecer','Anochecer','Terror','Incendio','Duelo','Batalla','Matrimonio','Despedida','Bienvenida','Encuentro','Apocalipsis','Tragedia','Desastre','Catástrofe','Exterminio','Masacre','Tratado','Barbacoa','Picnic','Banquete','Fiesta','Excursión','Olimpiadas','Carnaval','Desfile','Venganza','Tortura','Castigo','Traición','Ejecución','Asesinato','Revolución','Funeral','Confesión','Cumpleaños','Concierto','Bautizo','Baby Shower','Aventura'];
 
-    const byId=id=>document.getElementById(id);
-    function mulberry32(a){return function(){let t=a+=0x6D2B79F5;t=Math.imul(t^t>>>15,t|1);t^=t+Math.imul(t^t>>>7,t|61);return((t^t>>>14)>>>0)/4294967296}}
-    function rng(seed){if(!seed)return Math.random;let n=0;for(let i=0;i<seed.length;i++)n=(n*31+seed.charCodeAt(i))>>>0;return mulberry32(n)}
-    const pick=(arr,R)=>arr[Math.floor(R()*arr.length)];
-    const esc=s=>s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-
-    const wrapChar=name=>`<span class="char">${esc(name)}</span>`;
-    const wrapVerb=v=>`<span class="verb">${esc(v)}</span>`;
-    const wrapAdj=a=>`<span class="adj">${esc(a)}</span>`;
-    const wrapPlace=l=>`<span class="place">${esc(l)}</span>`;
-    const wrapEvent=e=>`<span class="event">${esc(e)}</span>`;
-    const wrapScene=s=>`<span class="scene">${esc(s)}</span>`;
-
-    function genPVAL(R){const p=pickPersonaje(R),v=pick(VERBOS,R),a=pick(ADJETIVOS,R),l=pick(LUGARES,R);return{ text:`${p} ${v} ${a} ${l}`, html:`${wrapChar(p)} ${wrapVerb(v)} ${wrapAdj(a)} ${wrapPlace(l)}` }}
-    function genPV(R){const p=pickPersonaje(R),v=pick(VERBOS,R);return{ text:`${p} ${v}`, html:`${wrapChar(p)} ${wrapVerb(v)}` }}
-    function genPA(R){const p=pickPersonaje(R),a=pick(ADJETIVOS,R);return{ text:`${p} ${a}`, html:`${wrapChar(p)} ${wrapAdj(a)}` }}
-    function genPL(R){const p=pickPersonaje(R),l=pick(LUGARES,R);return{ text:`${p} ${l}`, html:`${wrapChar(p)} ${wrapPlace(l)}` }}
-    function genPAL(R){const p=pickPersonaje(R),a=pick(ADJETIVOS,R),l=pick(LUGARES,R);return{ text:`${p} ${a} ${l}`, html:`${wrapChar(p)} ${wrapAdj(a)} ${wrapPlace(l)}` }}
-    function genPVA(R){const p=pickPersonaje(R),v=pick(VERBOS,R),a=pick(ADJETIVOS,R);return{ text:`${p} ${v} ${a}`, html:`${wrapChar(p)} ${wrapVerb(v)} ${wrapAdj(a)}` }}
-    function genPVL(R){const p=pickPersonaje(R),v=pick(VERBOS,R),l=pick(LUGARES,R);return{ text:`${p} ${v} ${l}`, html:`${wrapChar(p)} ${wrapVerb(v)} ${wrapPlace(l)}` }}
+function genPVAL(R){const p=pickPersonaje(R),v=pick(VERBOS,R),a=pick(ADJETIVOS,R),l=pick(LUGARES,R);return{ text:`${p} ${v} ${a} ${l}`, html:`${wrapChar(p)} ${wrapVerb(v)} ${wrapAdj(a)} ${wrapPlace(l)}` }}
+function genPV(R){const p=pickPersonaje(R),v=pick(VERBOS,R);return{ text:`${p} ${v}`, html:`${wrapChar(p)} ${wrapVerb(v)}` }}
+function genPA(R){const p=pickPersonaje(R),a=pick(ADJETIVOS,R);return{ text:`${p} ${a}`, html:`${wrapChar(p)} ${wrapAdj(a)}` }}
+function genPL(R){const p=pickPersonaje(R),l=pick(LUGARES,R);return{ text:`${p} ${l}`, html:`${wrapChar(p)} ${wrapPlace(l)}` }}
+function genPAL(R){const p=pickPersonaje(R),a=pick(ADJETIVOS,R),l=pick(LUGARES,R);return{ text:`${p} ${a} ${l}`, html:`${wrapChar(p)} ${wrapAdj(a)} ${wrapPlace(l)}` }}
+function genPVA(R){const p=pickPersonaje(R),v=pick(VERBOS,R),a=pick(ADJETIVOS,R);return{ text:`${p} ${v} ${a}`, html:`${wrapChar(p)} ${wrapVerb(v)} ${wrapAdj(a)}` }}
+function genPVL(R){const p=pickPersonaje(R),v=pick(VERBOS,R),l=pick(LUGARES,R);return{ text:`${p} ${v} ${l}`, html:`${wrapChar(p)} ${wrapVerb(v)} ${wrapPlace(l)}` }}
 function genFusion(R){
-  let p1 = pickPersonaje(R);
-  let p2;
+  let p1 = pickPersonaje(R), p2;
   do{ p2 = pickPersonaje(R); }while(p2 === p1);
   return { text:`${p1} + ${p2}`, html:`${wrapChar(p1)} + ${wrapChar(p2)}` }
 }
-    function genP(R){const p=pickPersonaje(R);return{ text:`${p}`, html:`${wrapChar(p)}` }}
-    function genEvento(R){const e=pick(EVENTOS,R),p=pickPersonaje(R);return{ text:`${e} ${p}`, html:`${wrapEvent(e)} ${wrapChar(p)}` }}
-    function genEscena(R){const s=pick(ESCENAS,R),l=pick(LUGARES,R);return{ text:`${s} ${l}`, html:`${wrapScene(s)} ${wrapPlace(l)}` }}
+function genP(R){const p=pickPersonaje(R);return{ text:`${p}`, html:`${wrapChar(p)}` }}
+function genEvento(R){const e=pick(EVENTOS,R),p=pickPersonaje(R);return{ text:`${e} ${p}`, html:`${wrapEvent(e)} ${wrapChar(p)}` }}
+function genEscena(R){const s=pick(ESCENAS,R),l=pick(LUGARES,R);return{ text:`${s} ${l}`, html:`${wrapScene(s)} ${wrapPlace(l)}` }}
 
-    let lastCopyText='';
+/* ---------- 10) Interacción UI básica ---------- */
+let lastCopyText = '';
 
-    function generarUno(mode){
-      const R=rng();
-      switch(mode){
-        case'PV':return genPV(R);
-        case'PA':return genPA(R);
-        case'PL':return genPL(R);
-        case'PAL':return genPAL(R);
-        case'PVA':return genPVA(R);
-        case'PVL':return genPVL(R);
-        case'FUSION':return genFusion(R);
-        case'P':return genP(R);
-        case'EVENTO':return genEvento(R);
-        case'ESCENA':return genEscena(R);
-        default:return genPVAL(R);
-      }
-    }
-
-    function generarN(mode,n){
-      const R=rng();
-      const gens={PVAL:genPVAL,PV:genPV,PA:genPA,PL:genPL,PAL:genPAL,PVA:genPVA,PVL:genPVL,FUSION:genFusion,P:genP,EVENTO:genEvento,ESCENA:genEscena};
-      const fn=gens[mode]||genPVAL;
-      const out=Array.from({length:n},()=>fn(R));
-      document.getElementById('salida').innerHTML=out.map(o=>o.html).join('<br>');
-      lastCopyText=out.map(o=>o.text).join('\n');
-    }
-
-    // Toast + sonidos
-    const toastEl = document.getElementById('toast');
-    let toastTimer=null, __uiAudioCtx;
-    function showToast(msg){
-      if(!toastEl) return;
-      toastEl.textContent = msg;
-      toastEl.classList.add('show');
-      clearTimeout(toastTimer);
-      toastTimer = setTimeout(()=> toastEl.classList.remove('show'), 2200);
-    }
-   function playClick(){
-  try{
-    const a = window.sndButton || new Audio('sfx/button_press.mp3'); // fallback por si acaso
-    a.currentTime = 0;  // evita solaparse si haces clics seguidos
-    const p = a.play();
-    if (p && p.catch) p.catch(()=>{ /* autoplay blocked, no pasa nada */ });
-  }catch(e){}
+function generarUno(mode){
+  const R = rng();
+  switch(mode){
+    case 'PV':     return genPV(R);
+    case 'PA':     return genPA(R);
+    case 'PL':     return genPL(R);
+    case 'PAL':    return genPAL(R);
+    case 'PVA':    return genPVA(R);
+    case 'PVL':    return genPVL(R);
+    case 'FUSION': return genFusion(R);
+    case 'P':      return genP(R);
+    case 'EVENTO': return genEvento(R);
+    case 'ESCENA': return genEscena(R);
+    default:       return genPVAL(R);
+  }
 }
-    (function(){ document.querySelectorAll('button').forEach(b=> b.addEventListener('click', playClick, {capture:true})); })();
 
-    document.getElementById('btnCopiar').onclick=async()=>{
-      if(!lastCopyText) return;
-      await navigator.clipboard.writeText(lastCopyText);
-    };
+function generarN(mode,n){
+  const R = rng();
+  const gens = { PVAL:genPVAL, PV:genPV, PA:genPA, PL:genPL, PAL:genPAL, PVA:genPVA, PVL:genPVL, FUSION:genFusion, P:genP, EVENTO:genEvento, ESCENA:genEscena };
+  const fn = gens[mode] || genPVAL;
+  const out = Array.from({length:n}, () => fn(R));
+  byId('salida').innerHTML = out.map(o => o.html).join('<br>');
+  lastCopyText = out.map(o => o.text).join('\n');
+}
 
-    document.getElementById('btnTest').onclick=()=>{
-      const modes=['PVAL','PV','PA','PL','PAL','PVA','PVL','FUSION','P','EVENTO','ESCENA'];
-      let report='Pruebas:';
-      for(const m of modes){
-        let ok=0,total=100;
-        for(let i=0;i<total;i++){
-          const {text,html}=generarUno(m);
-          if(typeof text==='string'&&text.length>0&&typeof html==='string'&&html.length>0) ok++;
-        }
-        report+=`\n• ${m}: ${ok}/${total} generados correctamente`;
-      }
-      document.getElementById('testlog').textContent=report;
-    };
+// Toast + sonidos (misma mecánica)
+const toastEl = byId('toast');
+let toastTimer = null, __uiAudioCtx; // __uiAudioCtx reservado (compatibilidad)
+function showToast(msg){
+  if(!toastEl) return;
+  toastEl.textContent = msg;
+  toastEl.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=> toastEl.classList.remove('show'), 2200);
+}
+function playClick(){
+  try{
+    const a = window.sndButton || new Audio('sfx/button_press.mp3');
+    a.currentTime = 0;
+    const p = a.play();
+    if (p && p.catch) p.catch(()=>{});
+  }catch{}
+}
+// captura en fase de captura para que siempre suene
+(()=>{ document.querySelectorAll('button').forEach(b => b.addEventListener('click', playClick, {capture:true})); })();
 
-    document.addEventListener('keydown',e=>{
-      if((e.metaKey||e.ctrlKey)){
-        if(e.key==='1'){e.preventDefault();generarN('PVAL',1);} 
-        if(e.key==='2'){e.preventDefault();generarN('PV',1);}   
-        if(e.key==='3'){e.preventDefault();generarN('PA',1);}   
-        if(e.key==='4'){e.preventDefault();generarN('PL',1);}   
-        if(e.key==='5'){e.preventDefault();generarN('FUSION',1);} 
-        if(e.key==='6'){e.preventDefault();generarN('P',1);}    
-      }
-    });
+// Botón Copiar
+byId('btnCopiar').onclick = async ()=>{
+  if(!lastCopyText) return;
+  await navigator.clipboard.writeText(lastCopyText);
+};
 
-    generarN('PVAL',1);
+// Botón Test
+byId('btnTest').onclick = ()=>{
+  const modes=['PVAL','PV','PA','PL','PAL','PVA','PVL','FUSION','P','EVENTO','ESCENA'];
+  let report='Pruebas:';
+  for(const m of modes){
+    let ok=0,total=100;
+    for(let i=0;i<total;i++){
+      const {text,html}=generarUno(m);
+      if(typeof text==='string'&&text.length>0&&typeof html==='string'&&html.length>0) ok++;
+    }
+    report+=`\n• ${m}: ${ok}/${total} generados correctamente`;
+  }
+  byId('testlog').textContent = report;
+};
+
+// Atajos de teclado (igual que antes)
+document.addEventListener('keydown',e=>{
+  if((e.metaKey||e.ctrlKey)){
+    if(e.key==='1'){e.preventDefault();generarN('PVAL',1);} 
+    if(e.key==='2'){e.preventDefault();generarN('PV',1);}   
+    if(e.key==='3'){e.preventDefault();generarN('PA',1);}   
+    if(e.key==='4'){e.preventDefault();generarN('PL',1);}   
+    if(e.key==='5'){e.preventDefault();generarN('FUSION',1);} 
+    if(e.key==='6'){e.preventDefault();generarN('P',1);}    
+  }
+});
+
+// Primer enunciado
+generarN('PVAL',1);
+
   </script>
 
   <!-- 🔥 Firebase Realtime (grupos, colores, score y generación por grupo) -->
