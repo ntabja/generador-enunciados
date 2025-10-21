@@ -790,7 +790,7 @@ const PERSONAJES = [
   "Mike Wazowski","Shrek","Wall-E","Stitch","Nemo","Elsa","Simba","Luke Skywalker","Darth Vader","Yoda","E.T.",
   "John Wick","Neo","Indiana Jones","El Terminator","Jack Sparrow","Borat","Charlie Chaplin","Jason Voorhees",
   "Chucky","Freddy Krueger","Jigsaw","Pennywise","Edward Scissorhands","Jack Skellington","Godzilla","El Xenomorfo",
-  "Superman","Spider-Man","Batman","Wolverine","Hulk","Venom","Thor","El Joker","Albert Einstein","Leo Messi",
+  "Superman","Spider-Man","Batman","Wolverine","Hulk","Venom","Thor","El Joker","Albert Einstein","Messi",
   "Napoleón Bonaparte","Atahualpa","Hitler","Michael Jackson","Freddie Mercury","Beethoven","Pedro Castillo",
   "Donald Trump","Gandalf","Frodo Baggins","Gollum","Harry Potter","Voldemort","Willy Wonka","Cenicienta","Rapunzel",
   "Aladino","Dracula","Frankenstein","Wednesday Addams","El Jorobado de Notre Dame","James Bond",
@@ -2447,11 +2447,6 @@ if(!lobbyCode){
   e.preventDefault();
   openConfirmExit();
 });
-    document.getElementById("btnLeave")?.addEventListener("click", (e)=>{
-  e.preventDefault();
-  openConfirmExit();
-});
-
 
 // === Confirmación de salida ===
 const confirmExitOverlay = document.getElementById('confirmExitOverlay');
@@ -2542,8 +2537,8 @@ $("btnJoinLobby")?.addEventListener("click", ()=>{
     if (errCode) errCode.style.display = "none";
     return;
   }
-  // Validación 2: más de 12 caracteres
-  if (name.length > 12) {
+  // Validación 2: más de 10 caracteres
+  if (name.length > 10) {
     if (err) err.style.display = "none";
     if (errLen) errLen.style.display = "block";
     if (errCode) errCode.style.display = "none";
