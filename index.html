@@ -1865,8 +1865,19 @@ generarN('PVAL',1);
     /* ===========================
    14) Crear / Unirse / Publicar
 ===========================*/
+function makeCode(){
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  return Array.from({length:5}, () => chars[Math.floor(Math.random()*chars.length)]).join("");
+}
 async function createLobby(name){
   const code = makeCode();
+  const safeWeights =
+    (typeof window.WEIGHTS === 'object' && window.WEIGHTS) ||
+    (typeof window.DEFAULT_WEIGHTS === 'object' && window.DEFAULT_WEIGHTS) || {
+      anime:1, caricaturas:1, cine:1, literatura:1, videojuegos:1,
+      mito:1, animales:1, arquetipos:1, famosos:1, otros:1
+    };
+
   const state = {
     hostId: clientId,
     currentOutputHtml: "",
