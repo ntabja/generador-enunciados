@@ -2250,42 +2250,33 @@ async function startGroupRoundP(){
   const hostOrSolo = isHost || playersConnected <= 1;
 
   // Determinar grupos activos
-  const state  = lastLobbyState;
-  const groups = getActiveGroupsFromState(state);
-  if (!groups || groups.length === 0){
-    // Si no hay grupos, cae a un P simple
-    const { html, text } = window.genP(window.rng ? window.rng() : Math.random);
-    if (lobbyCode && hostOrSolo){
-      await publishOutput(html, text || '');
-      await window.fbUpdate(window.fbRef(window.db, `lobbies/${lobbyCode}`), { round: null });
-    } else {
-      renderLocal(html, text || '');
-    }
-    return;
-  }
+const state  = lastLobbyState;
+const groups = getActiveGroupsFromState(state);
 
-  // Nueva ronda
-  const round = {
-    id: Date.now(),
-    mode: 'P',
-    rerolls: {},                  // { 'A': 0, 'B': 1, ... }
-    maxRerollsPerGroup: MAX_REROLLS_PER_GROUP
-  };
+// ✅ Si no hay grupos, usamos uno sintético para que exista la ronda y salga “↻ Cambiar”
+const groupsEff = (groups && groups.length) ? groups : ['A'];
 
-  const { html, text } = renderRoundHTML(round, groups);
+// Nueva ronda
+const round = {
+  id: Date.now(),
+  mode: 'P',
+  rerolls: {},                  // { 'A': 0, 'B': 1, ... }
+  maxRerollsPerGroup: MAX_REROLLS_PER_GROUP
+};
 
-  if (lobbyCode && hostOrSolo){
-    // Publica salida + estado de ronda
-    await window.fbUpdate(window.fbRef(window.db, `lobbies/${lobbyCode}`), {
-      currentOutputHtml: html,
-      currentOutputText: text,
-      round
-    });
-  } else {
-    // Local
-    window.__localRound = round;
-    renderLocal(html, text);
-  }
+const { html, text } = renderRoundHTML(round, groupsEff);
+
+if (lobbyCode && hostOrSolo){
+  // Publica salida + estado de ronda
+  await window.fbUpdate(window.fbRef(window.db, `lobbies/${lobbyCode}`), {
+    currentOutputHtml: html,
+    currentOutputText: text,
+    round
+  });
+} else {
+  // Local
+  window.__localRound = round;
+  renderLocal(html, text);
 }
 
 // Dibuja el HTML/texto de la ronda completa, calculando el personaje por grupo
@@ -2366,7 +2357,7 @@ function renderRoundHTML(round, groups){
 
 // Reroll (↻) para un grupo específico (solo ADMIN en sala; en local cualquiera)
 async function rerollGroupOnce(groupLetter){
-  // Leer ronda
+  // Leer ronda actual (local o desde lobby)
   const round = lobbyCode ? (lastLobbyState && lastLobbyState.round) : window.__localRound;
   if (!round || round.mode !== 'P') return;
 
@@ -2376,6 +2367,41 @@ async function rerollGroupOnce(groupLetter){
     if (window.showToast) window.showToast(`Grupo ${groupLetter} ya usó su cambio`);
     return;
   }
+
+  // Clona la ronda y marca un uso de reroll
+  const next = {
+    ...round,
+    rerolls: { ...round.rerolls, [groupLetter]: used + 1 }
+  };
+
+  // ✅ Obtener grupos actuales desde el estado o, si no hay, desde el DOM (soporta el grupo sintético)
+  const state  = lastLobbyState;
+  const groupsState = lobbyCode ? (getActiveGroupsFromState(state) || []) : [];
+
+  const groupsFromDOM = Array
+    .from(document.querySelectorAll('#salida .lineGroup'))
+    .map(el => el.getAttribute('data-line-group'))
+    .filter(Boolean);
+
+  // ✅ Si no hay grupos reales, usa los del DOM; si tampoco, usa ['A']
+  const groupsEff = (groupsState.length ? groupsState : (groupsFromDOM.length ? groupsFromDOM : ['A']));
+
+  const { html, text } = renderRoundHTML(next, groupsEff);
+
+  // Publicar cambios
+  if (lobbyCode){
+    const hostOrSolo = isHost || playersConnected <= 1;
+    if (!hostOrSolo) return;
+    await window.fbUpdate(window.fbRef(window.db, `lobbies/${lobbyCode}`), {
+      currentOutputHtml: html,
+      currentOutputText: text,
+      round: next
+    });
+  } else {
+    window.__localRound = next;
+    renderLocal(html, text);
+  }
+}
 
   // Seguridad: solo ADMIN (o solo) en sala
   const hostOrSolo = isHost || playersConnected <= 1;
