@@ -1385,8 +1385,19 @@ document.addEventListener('keydown', (e)=>{
 });
 
 // Cerrar al hacer click fuera de la tarjeta
-filtersOverlay?.addEventListener('click', (e)=>{
-  if(e.target === filtersOverlay) closeFilters();
+let mouseDownInside = false;
+
+filtersOverlay?.addEventListener('mousedown', (e)=>{
+  // detecta si el clic inicial fue dentro de la tarjeta
+  mouseDownInside = !e.target.classList.contains('card') && e.target === filtersOverlay;
+});
+
+filtersOverlay?.addEventListener('mouseup', (e)=>{
+  // cierra solo si presionaste y soltaste en el fondo (sin arrastrar fuera)
+  if(mouseDownInside && e.target === filtersOverlay){
+    closeFilters();
+  }
+  mouseDownInside = false;
 });
 
     const choiceRow     = $("choiceRow");
