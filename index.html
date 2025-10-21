@@ -403,6 +403,18 @@
     align-items: center;
   }
 }
+    /* Overlay de Confirmación Salir (abre/cierra con clase .open) */
+#confirmExitOverlay.open{
+  opacity: 1;
+  pointer-events: auto;
+}
+#confirmExitOverlay.open .card{
+  transform: scale(1);
+}
+#confirmExitOverlay .card{
+  transform: scale(.98);
+  transition: transform .25s ease;
+}
 </style>
 </head>
 <body>
@@ -540,6 +552,22 @@
          style="margin-top:10px; white-space:pre-wrap"></div>
     <div class="inline" style="justify-content:center; margin-top:14px;">
       <button class="btn" id="btnSecretOK">Entendido</button>
+    </div>
+  </section>
+</div>
+  <!-- Overlay Confirmar Salida -->
+<div id="confirmExitOverlay"
+     style="position:fixed; inset:0; z-index:1300; display:flex; align-items:center; justify-content:center; background:rgba(11,16,32,.92); backdrop-filter:blur(8px); padding:16px; opacity:0; pointer-events:none; transition:opacity .25s ease;">
+  <section class="card" style="max-width:520px; width:92%; padding:20px; text-align:center">
+    <div style="font-weight:900; font-size:18px; margin-bottom:10px;">
+      ¿Estás seguro de salir?
+    </div>
+    <div class="muted" style="margin-bottom:16px;">
+      Perderás todo tu puntaje acumulado.
+    </div>
+    <div class="inline" style="justify-content:center; gap:10px;">
+      <button class="btn" id="btnConfirmExitYes">Sí</button>
+      <button class="btn" id="btnConfirmExitNo">No</button>
     </div>
   </section>
 </div>
@@ -2415,7 +2443,55 @@ if(!lobbyCode){
       updateHostUI();
     }
 
-    document.getElementById("btnLeave")?.addEventListener("click", leaveLobby);
+    document.getElementById("btnLeave")?.addEventListener("click", (e)=>{
+  e.preventDefault();
+  openConfirmExit();
+});
+    document.getElementById("btnLeave")?.addEventListener("click", (e)=>{
+  e.preventDefault();
+  openConfirmExit();
+});
+
+
+// === Confirmación de salida ===
+const confirmExitOverlay = document.getElementById('confirmExitOverlay');
+const btnExitYes = document.getElementById('btnConfirmExitYes');
+const btnExitNo  = document.getElementById('btnConfirmExitNo');
+
+function openConfirmExit(){
+  if(!confirmExitOverlay) return;
+  confirmExitOverlay.classList.add('open');
+  btnExitYes?.focus();
+}
+
+function closeConfirmExit(){
+  if(!confirmExitOverlay) return;
+  confirmExitOverlay.classList.remove('open');
+}
+
+// Cerrar al hacer clic fuera de la tarjeta
+confirmExitOverlay?.addEventListener('click', (e)=>{
+  if(e.target === confirmExitOverlay){
+    closeConfirmExit();
+  }
+});
+
+// Cerrar con la tecla ESC
+document.addEventListener('keydown', (e)=>{
+  if(e.key === 'Escape' && confirmExitOverlay?.classList.contains('open')){
+    closeConfirmExit();
+  }
+});
+
+// Botones Sí / No
+btnExitYes?.addEventListener('click', async ()=>{
+  await leaveLobby(); // ejecuta tu función existente
+  closeConfirmExit();
+});
+
+btnExitNo?.addEventListener('click', ()=>{
+  closeConfirmExit();
+});
     window.showToast = (msg)=>{ const el=document.getElementById('toast'); if(!el) return; el.textContent=msg; el.classList.add('show'); clearTimeout(window.__tT); window.__tT=setTimeout(()=>el.classList.remove('show'),2200); };
 
 // Overlay actions (flujo por pasos)
