@@ -2456,12 +2456,16 @@ const btnExitNo  = document.getElementById('btnConfirmExitNo');
 function openConfirmExit(){
   if(!confirmExitOverlay) return;
   confirmExitOverlay.classList.add('open');
+  confirmExitOverlay.style.opacity = '1';
+  confirmExitOverlay.style.pointerEvents = 'auto';   // ← ESTA LÍNEA
   btnExitYes?.focus();
 }
 
 function closeConfirmExit(){
   if(!confirmExitOverlay) return;
   confirmExitOverlay.classList.remove('open');
+  confirmExitOverlay.style.opacity = '0';
+  confirmExitOverlay.style.pointerEvents = 'none';   // ← Y ESTA
 }
 
 // Cerrar al hacer clic fuera de la tarjeta
@@ -2478,10 +2482,9 @@ document.addEventListener('keydown', (e)=>{
   }
 });
 
-// Botones Sí / No
 btnExitYes?.addEventListener('click', async ()=>{
-  await leaveLobby(); // ejecuta tu función existente
   closeConfirmExit();
+  await leaveLobby();
 });
 
 btnExitNo?.addEventListener('click', ()=>{
