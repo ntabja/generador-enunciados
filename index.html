@@ -349,328 +349,317 @@ footer .copyright{ margin-top:8px; text-align:center; font-size:12px; opacity:.7
       <div class="brand">🎨 ARTE MODERNO</div>
       <div class="spacer"></div>
       <span id="roomBadge">Sala: -----</span>
-      <div id="leaveRow" class="inline" style="margin-left:8px;">
+      <div id="leaveRow" class="inline" style="margin-left:8px">
         <button class="btn" id="btnLeave">Salir</button>
       </div>
     </div>
 
-    <!-- Botón de ayuda -->
-<a href="https://docs.google.com/document/d/1Y5aZf2fiynNV-wOyLERSH7mDVyFipPWosW3VVZwmEYE/edit?tab=t.0"
-   target="_blank"
-   title="Ver instrucciones del juego"
-   style="
-     position:fixed;
-     top:12px;
-     right:16px;
-     font-size:18px;
-     font-weight:600;
-     color:#cbd5e1;
-     text-decoration:none;
-     background:rgba(255,255,255,0.05);
-     border:1px solid rgba(255,255,255,0.15);
-     border-radius:50%;
-     width:30px;
-     height:30px;
-     display:flex;
-     align-items:center;
-     justify-content:center;
-     backdrop-filter:blur(6px);
-     z-index:2000;
-     transition:background .2s, border-color .2s, color .2s, transform .15s;
-     box-shadow:0 2px 6px rgba(0,0,0,0.4);
-   "
-   onmouseover="
-     this.style.background='rgba(255,255,255,0.15)';
-     this.style.borderColor='rgba(255,255,255,0.25)';
-     this.style.color='#e2e8f0';
-     this.style.transform='scale(1.08)';
-   "
-   onmouseout="
-     this.style.background='rgba(255,255,255,0.05)';
-     this.style.borderColor='rgba(255,255,255,0.15)';
-     this.style.color='#cbd5e1';
-     this.style.transform='scale(1)';
-   ">
-  ?
-</a>
+    <!-- Botón de ayuda (posicionado fijo) -->
+    <a
+      href="https://docs.google.com/document/d/1Y5aZf2fiynNV-wOyLERSH7mDVyFipPWosW3VVZwmEYE/edit?tab=t.0"
+      target="_blank"
+      title="Ver instrucciones del juego"
+      style="
+        position:fixed; top:12px; right:16px; z-index:2000;
+        display:flex; align-items:center; justify-content:center;
+        width:30px; height:30px; border-radius:50%;
+        font-size:18px; font-weight:600; text-decoration:none;
+        color:#cbd5e1; background:rgba(255,255,255,0.05);
+        border:1px solid rgba(255,255,255,0.15);
+        backdrop-filter:blur(6px);
+        transition:background .2s, border-color .2s, color .2s, transform .15s;
+        box-shadow:0 2px 6px rgba(0,0,0,0.4);
+      "
+      onmouseover="
+        this.style.background='rgba(255,255,255,0.15)';
+        this.style.borderColor='rgba(255,255,255,0.25)';
+        this.style.color='#e2e8f0';
+        this.style.transform='scale(1.08)';
+      "
+      onmouseout="
+        this.style.background='rgba(255,255,255,0.05)';
+        this.style.borderColor='rgba(255,255,255,0.15)';
+        this.style.color='#cbd5e1';
+        this.style.transform='scale(1)';
+      "
+    >?</a>
   </header>
 
-<!-- Overlay de inicio -->
-<div id="lobbyOverlay">
-  <section class="card" style="max-width:520px; width:92%; padding:20px">
-<!-- Título principal del menú -->
-<div style="
-  margin-bottom:20px;
-  text-align:center;
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  justify-content:center;
-">
-  <div style="
-    font-size:26px;
-    font-weight:900;
-    letter-spacing:.3px;
-    color:#ffffff;
-    margin-bottom:6px;
-  ">
-    ¡Bienvenidos a <span style="color:#0ea5e9;">Arte Moderno 🎨</span>!
-  </div>
-  <div style="
-    font-size:13px;
-    opacity:0.75;
-    color:#94a3b8;
-  ">
-    © 2025 Tabja Games
-  </div>
-  <div style="
-    height:2px;
-    width:80%;
-    background:linear-gradient(90deg, transparent, #0ea5e9, transparent);
-    margin-top:10px;
-    border-radius:2px;
-    opacity:.6;
-  "></div>
-</div>
-
-   <!-- Nombre (siempre visible) -->
-<div class="inline" style="align-items:flex-end; gap:10px; flex-wrap:wrap; margin-bottom:10px">
-  <div style="min-width:180px; flex:1">
-<input id="playerName" placeholder="Tu nombre" aria-label="Tu nombre" style="max-width:100%">
-<small id="nameError" style="color:#dc2626; display:none;">Por favor coloca tu nombre.</small>
-<small id="nameLengthError" style="color:#dc2626; display:none;">Máximo 10 caracteres permitidos.</small>
-  </div>
-</div>
-
-    <!-- Paso 1: elegir acción -->
-    <div id="choiceRow" class="inline" style="gap:10px; flex-wrap:wrap; margin-bottom:6px">
-      <button class="btn" id="btnCreateLobby">Crear sala</button>
-      <button class="btn" id="btnChooseJoin">Unirse a una sala</button>
-    </div>
-
-    <!-- Paso 2 (solo si eligen Unirse): ingresar código -->
-    <div id="joinRow" class="inline" style="align-items:flex-end; gap:10px; flex-wrap:wrap; display:none">
-  <div style="flex:1; min-width:200px;">
-    <input id="lobbyCodeInput" placeholder="Código de sala" aria-label="Código de sala" style="width:100%; text-transform:uppercase">
-    <small id="codeError" style="color:#dc2626; display:none;">Escribe un código de sala.</small>
-  </div>
-  <button class="btn" id="btnJoinLobby">Entrar</button>
-  <button class="btn" id="btnBackJoin">← Atrás</button>
-</div>
-
-    <div class="muted" id="lobbyStatus" style="margin-top:10px; min-height:20px"></div>
-  </section>
-</div>
-
-<!-- Overlay Enunciado Secreto -->
-<div id="secretOverlay"
-     style="display:none; position:fixed; inset:0; z-index:1200;
-            align-items:center; justify-content:center;
-            background:rgba(11,16,32,.92); backdrop-filter:blur(8px);
-            padding:16px;">
-  <section class="card" style="max-width:520px; width:92%; padding:20px; text-align:center">
-    <div id="secretTitle" style="font-weight:900; font-size:20px; margin-bottom:8px;">
-  🕵️ Enunciado secreto
-</div>
-    <div id="secretContent"
-         class="out"
-         style="margin-top:10px; white-space:pre-wrap"></div>
-    <div class="inline" style="justify-content:center; margin-top:14px;">
-      <button class="btn" id="btnSecretOK">Entendido</button>
-    </div>
-  </section>
-</div>
-  <!-- Overlay Confirmar Salida -->
-<div id="confirmExitOverlay"
-     style="position:fixed; inset:0; z-index:1300; display:flex; align-items:center; justify-content:center; background:rgba(11,16,32,.92); backdrop-filter:blur(8px); padding:16px; transition:opacity .25s ease; opacity:0; pointer-events:none;">
-  <section class="card" style="max-width:520px; width:92%; padding:20px; text-align:center">
-    <div style="font-weight:900; font-size:18px; margin-bottom:10px;">
-      ¿Estás seguro de salir?
-    </div>
-    <div class="muted" style="margin-bottom:16px;">
-      Perderás todo tu puntaje acumulado.
-    </div>
-    <div class="inline" style="justify-content:center; gap:10px;">
-      <button class="btn" id="btnConfirmExitYes">Sí</button>
-      <button class="btn" id="btnConfirmExitNo">No</button>
-    </div>
-  </section>
-</div>
-<!-- Overlay Filtros (solo admin en sala; cualquiera en modo local) -->
-<div id="filtersOverlay"
-     style="position:fixed; inset:0; z-index:1200; display:flex;
-            align-items:center; justify-content:center;
-            background:rgba(11,16,32,.92); backdrop-filter:blur(8px);
-            padding:16px;">
-  <section class="card" style="max-width:520px; width:92%; padding:18px;">
-    <div class="title" style="align-items:center">
-  <span>Frecuencia de Personajes</span>
-  <div class="inline" style="gap:8px">
-    <button class="btn" id="btnCloseFilters" aria-label="Cerrar">✕</button>
-  </div>
-</div>
-
-    <div class="inline" style="flex-direction:column; gap:14px; margin-top:16px">
-      <!-- Anime -->
-      <label style="width:100%">
-        <div class="inline" style="justify-content:space-between">
-          <span class="muted">Anime</span>
-          <span class="kbd" id="wAnimeVal">1</span>
+  <!-- Overlay de inicio -->
+  <div id="lobbyOverlay">
+    <section class="card" style="max-width:520px; width:92%; padding:20px">
+      <!-- Título principal del menú -->
+      <div
+        style="
+          margin-bottom:20px; text-align:center;
+          display:flex; flex-direction:column; align-items:center; justify-content:center;
+        "
+      >
+        <div
+          style="
+            font-size:26px; font-weight:900; letter-spacing:.3px;
+            color:#ffffff; margin-bottom:6px;
+          "
+        >
+          ¡Bienvenidos a <span style="color:#0ea5e9">Arte Moderno 🎨</span>!
         </div>
-        <input id="wAnime" type="range" min="0" max="5" step="1" value="1" />
-      </label>
-
-      <!-- Caricaturas -->
-      <label style="width:100%">
-        <div class="inline" style="justify-content:space-between">
-          <span class="muted">Caricaturas</span>
-          <span class="kbd" id="wCaricaturasVal">1</span>
-        </div>
-        <input id="wCaricaturas" type="range" min="0" max="5" step="1" value="1" />
-      </label>
-
-      <!-- Cine -->
-      <label style="width:100%">
-        <div class="inline" style="justify-content:space-between">
-          <span class="muted">Cine</span>
-          <span class="kbd" id="wCineVal">1</span>
-        </div>
-        <input id="wCine" type="range" min="0" max="5" step="1" value="1" />
-      </label>
-
-      <!-- Literatura -->
-      <label style="width:100%">
-        <div class="inline" style="justify-content:space-between">
-          <span class="muted">Literatura</span>
-          <span class="kbd" id="wLiteraturaVal">1</span>
-        </div>
-        <input id="wLiteratura" type="range" min="0" max="5" step="1" value="1" />
-      </label>
-
-      <!-- Videojuegos -->
-      <label style="width:100%">
-        <div class="inline" style="justify-content:space-between">
-          <span class="muted">Videojuegos</span>
-          <span class="kbd" id="wVideojuegosVal">1</span>
-        </div>
-        <input id="wVideojuegos" type="range" min="0" max="5" step="1" value="1" />
-      </label>
-
-      <!-- Mitología & Folclore -->
-      <label style="width:100%">
-        <div class="inline" style="justify-content:space-between">
-          <span class="muted">Mitología & Folclore</span>
-          <span class="kbd" id="wMitoVal">1</span>
-        </div>
-        <input id="wMito" type="range" min="0" max="5" step="1" value="1" />
-      </label>
-
-      <!-- Animales -->
-      <label style="width:100%">
-        <div class="inline" style="justify-content:space-between">
-          <span class="muted">Animales</span>
-          <span class="kbd" id="wAnimalesVal">1</span>
-        </div>
-        <input id="wAnimales" type="range" min="0" max="5" step="1" value="1" />
-      </label>
-
-      <!-- Arquetipos -->
-      <label style="width:100%">
-        <div class="inline" style="justify-content:space-between">
-          <span class="muted">Arquetipos</span>
-          <span class="kbd" id="wArquetiposVal">1</span>
-        </div>
-        <input id="wArquetipos" type="range" min="0" max="5" step="1" value="1" />
-      </label>
-
-      <!-- Famosos -->
-      <label style="width:100%">
-        <div class="inline" style="justify-content:space-between">
-          <span class="muted">Famosos</span>
-          <span class="kbd" id="wFamososVal">1</span>
-        </div>
-        <input id="wFamosos" type="range" min="0" max="5" step="1" value="1" />
-      </label>
-
-      <!-- Otros -->
-      <label style="width:100%">
-        <div class="inline" style="justify-content:space-between">
-          <span class="muted">Otros</span>
-          <span class="kbd" id="wOtrosVal">1</span>
-        </div>
-        <input id="wOtros" type="range" min="0" max="5" step="1" value="1" />
-      </label>
-
-      <!-- Simulador -->
-      <div class="inline" style="width:100%; justify-content:space-between; margin-top:10px">
-        <div class="inline" style="gap:8px">
-          <button class="btn" id="btnResetWeights" title="Restablecer a 1">Reset</button>
-          <button class="btn" id="btnSimDist" title="Simular 2,000 picks según los pesos">Test</button>
-        </div>
-        <span class="muted" id="simDistResult">—</span>
+        <div style="font-size:13px; opacity:.75; color:#94a3b8">© 2025 Tabja Games</div>
+        <div
+          style="
+            height:2px; width:80%;
+            background:linear-gradient(90deg, transparent, #0ea5e9, transparent);
+            margin-top:10px; border-radius:2px; opacity:.6;
+          "
+        ></div>
       </div>
-    </div>
-  </section>
-</div>
+
+      <!-- Nombre (siempre visible) -->
+      <div class="inline" style="align-items:flex-end; gap:10px; flex-wrap:wrap; margin-bottom:10px">
+        <div style="min-width:180px; flex:1">
+          <input id="playerName" placeholder="Tu nombre" aria-label="Tu nombre" style="max-width:100%">
+          <small id="nameError" style="color:#dc2626; display:none">Por favor coloca tu nombre.</small>
+          <small id="nameLengthError" style="color:#dc2626; display:none">Máximo 10 caracteres permitidos.</small>
+        </div>
+      </div>
+
+      <!-- Paso 1: elegir acción -->
+      <div id="choiceRow" class="inline" style="gap:10px; flex-wrap:wrap; margin-bottom:6px">
+        <button class="btn" id="btnCreateLobby">Crear sala</button>
+        <button class="btn" id="btnChooseJoin">Unirse a una sala</button>
+      </div>
+
+      <!-- Paso 2 (solo si eligen Unirse): ingresar código -->
+      <div id="joinRow" class="inline" style="align-items:flex-end; gap:10px; flex-wrap:wrap; display:none">
+        <div style="flex:1; min-width:200px">
+          <input id="lobbyCodeInput" placeholder="Código de sala" aria-label="Código de sala" style="width:100%; text-transform:uppercase">
+          <small id="codeError" style="color:#dc2626; display:none">Escribe un código de sala.</small>
+        </div>
+        <button class="btn" id="btnJoinLobby">Entrar</button>
+        <button class="btn" id="btnBackJoin">← Atrás</button>
+      </div>
+
+      <div class="muted" id="lobbyStatus" style="margin-top:10px; min-height:20px"></div>
+    </section>
+  </div>
+
+  <!-- Overlay Enunciado Secreto -->
+  <div
+    id="secretOverlay"
+    style="
+      display:none; position:fixed; inset:0; z-index:1200;
+      align-items:center; justify-content:center;
+      background:rgba(11,16,32,.92); backdrop-filter:blur(8px); padding:16px;
+    "
+  >
+    <section class="card" style="max-width:520px; width:92%; padding:20px; text-align:center">
+      <div id="secretTitle" style="font-weight:900; font-size:20px; margin-bottom:8px">🕵️ Enunciado secreto</div>
+      <div id="secretContent" class="out" style="margin-top:10px; white-space:pre-wrap"></div>
+      <div class="inline" style="justify-content:center; margin-top:14px">
+        <button class="btn" id="btnSecretOK">Entendido</button>
+      </div>
+    </section>
+  </div>
+
+  <!-- Overlay Confirmar Salida -->
+  <div
+    id="confirmExitOverlay"
+    style="
+      position:fixed; inset:0; z-index:1300; display:flex; align-items:center; justify-content:center;
+      background:rgba(11,16,32,.92); backdrop-filter:blur(8px); padding:16px;
+      transition:opacity .25s ease; opacity:0; pointer-events:none;
+    "
+  >
+    <section class="card" style="max-width:520px; width:92%; padding:20px; text-align:center">
+      <div style="font-weight:900; font-size:18px; margin-bottom:10px">¿Estás seguro de salir?</div>
+      <div class="muted" style="margin-bottom:16px">Perderás todo tu puntaje acumulado.</div>
+      <div class="inline" style="justify-content:center; gap:10px">
+        <button class="btn" id="btnConfirmExitYes">Sí</button>
+        <button class="btn" id="btnConfirmExitNo">No</button>
+      </div>
+    </section>
+  </div>
+
+  <!-- Overlay Filtros (solo admin en sala; cualquiera en modo local) -->
+  <div
+    id="filtersOverlay"
+    style="
+      position:fixed; inset:0; z-index:1200; display:flex; align-items:center; justify-content:center;
+      background:rgba(11,16,32,.92); backdrop-filter:blur(8px); padding:16px;
+    "
+  >
+    <section class="card" style="max-width:520px; width:92%; padding:18px">
+      <div class="title" style="align-items:center">
+        <span>Frecuencia de Personajes</span>
+        <div class="inline">
+          <button class="btn" id="btnCloseFilters" aria-label="Cerrar">✕</button>
+        </div>
+      </div>
+
+      <div class="inline" style="flex-direction:column; gap:14px; margin-top:16px">
+        <!-- Anime -->
+        <label style="width:100%">
+          <div class="inline" style="justify-content:space-between">
+            <span class="muted">Anime</span>
+            <span class="kbd" id="wAnimeVal">1</span>
+          </div>
+          <input id="wAnime" type="range" min="0" max="5" step="1" value="1">
+        </label>
+
+        <!-- Caricaturas -->
+        <label style="width:100%">
+          <div class="inline" style="justify-content:space-between">
+            <span class="muted">Caricaturas</span>
+            <span class="kbd" id="wCaricaturasVal">1</span>
+          </div>
+          <input id="wCaricaturas" type="range" min="0" max="5" step="1" value="1">
+        </label>
+
+        <!-- Cine -->
+        <label style="width:100%">
+          <div class="inline" style="justify-content:space-between">
+            <span class="muted">Cine</span>
+            <span class="kbd" id="wCineVal">1</span>
+          </div>
+          <input id="wCine" type="range" min="0" max="5" step="1" value="1">
+        </label>
+
+        <!-- Literatura -->
+        <label style="width:100%">
+          <div class="inline" style="justify-content:space-between">
+            <span class="muted">Literatura</span>
+            <span class="kbd" id="wLiteraturaVal">1</span>
+          </div>
+          <input id="wLiteratura" type="range" min="0" max="5" step="1" value="1">
+        </label>
+
+        <!-- Videojuegos -->
+        <label style="width:100%">
+          <div class="inline" style="justify-content:space-between">
+            <span class="muted">Videojuegos</span>
+            <span class="kbd" id="wVideojuegosVal">1</span>
+          </div>
+          <input id="wVideojuegos" type="range" min="0" max="5" step="1" value="1">
+        </label>
+
+        <!-- Mitología & Folclore -->
+        <label style="width:100%">
+          <div class="inline" style="justify-content:space-between">
+            <span class="muted">Mitología & Folclore</span>
+            <span class="kbd" id="wMitoVal">1</span>
+          </div>
+          <input id="wMito" type="range" min="0" max="5" step="1" value="1">
+        </label>
+
+        <!-- Animales -->
+        <label style="width:100%">
+          <div class="inline" style="justify-content:space-between">
+            <span class="muted">Animales</span>
+            <span class="kbd" id="wAnimalesVal">1</span>
+          </div>
+          <input id="wAnimales" type="range" min="0" max="5" step="1" value="1">
+        </label>
+
+        <!-- Arquetipos -->
+        <label style="width:100%">
+          <div class="inline" style="justify-content:space-between">
+            <span class="muted">Arquetipos</span>
+            <span class="kbd" id="wArquetiposVal">1</span>
+          </div>
+          <input id="wArquetipos" type="range" min="0" max="5" step="1" value="1">
+        </label>
+
+        <!-- Famosos -->
+        <label style="width:100%">
+          <div class="inline" style="justify-content:space-between">
+            <span class="muted">Famosos</span>
+            <span class="kbd" id="wFamososVal">1</span>
+          </div>
+          <input id="wFamosos" type="range" min="0" max="5" step="1" value="1">
+        </label>
+
+        <!-- Otros -->
+        <label style="width:100%">
+          <div class="inline" style="justify-content:space-between">
+            <span class="muted">Otros</span>
+            <span class="kbd" id="wOtrosVal">1</span>
+          </div>
+          <input id="wOtros" type="range" min="0" max="5" step="1" value="1">
+        </label>
+
+        <!-- Simulador -->
+        <div class="inline" style="width:100%; justify-content:space-between; margin-top:10px">
+          <div class="inline">
+            <button class="btn" id="btnResetWeights" title="Restablecer a 1">Reset</button>
+            <button class="btn" id="btnSimDist" title="Simular 2,000 picks según los pesos">Test</button>
+          </div>
+          <span class="muted" id="simDistResult">—</span>
+        </div>
+      </div>
+    </section>
+  </div>
 
   <main class="container" style="padding-top:18px">
+    <!-- Controles admin -->
     <section class="card" id="adminControls">
-  <div class="controlsGrid" style="display:grid;gap:10px">
-    <!-- Fila 1: botones principales -->
-    <div class="inline">
-      <button class="btn" id="btnP"><span class="letter-p">P</span></button>
-      <button class="btn" id="btnFusion"><span class="letter-p">P</span> + <span class="letter-p">P</span></button>
-      <button class="btn" id="btnDoble">x2</button>
-      <button class="btn" id="btnTriple">x3</button>
-      <button class="btn" id="btnReto">RETO</button>
-      <button class="btn" id="btnEvento">EVENTO</button>
-      <button class="btn" id="btnEscena">ESCENA</button>
-      <button class="btn" id="btnSecreto">SECRETO</button>
-      <button class="btn" id="btnMasterpiece">OBRA MAESTRA</button>
-      <button class="btn btn-chip" id="btnToggleAdv" aria-expanded="false" title="Mostrar/ocultar opciones avanzadas">
-  Más opciones <span class="chev">▾</span>
-</button>
-      <button class="btn" id="btnFilters" title="Ajustar pesos por categoría">Filtros</button>
-</div>
-    </div>
+      <div class="controlsGrid" style="display:grid; gap:10px">
+        <!-- Fila 1: botones principales -->
+        <div class="inline">
+          <button class="btn" id="btnP"><span class="letter-p">P</span></button>
+          <button class="btn" id="btnFusion"><span class="letter-p">P</span> + <span class="letter-p">P</span></button>
+          <button class="btn" id="btnDoble">x2</button>
+          <button class="btn" id="btnTriple">x3</button>
+          <button class="btn" id="btnReto">RETO</button>
+          <button class="btn" id="btnEvento">EVENTO</button>
+          <button class="btn" id="btnEscena">ESCENA</button>
+          <button class="btn" id="btnSecreto">SECRETO</button>
+          <button class="btn" id="btnMasterpiece">OBRA MAESTRA</button>
+          <button
+            class="btn btn-chip"
+            id="btnToggleAdv"
+            aria-expanded="false"
+            title="Mostrar/ocultar opciones avanzadas"
+          >
+            Más opciones <span class="chev">▾</span>
+          </button>
+          <button class="btn" id="btnFilters" title="Ajustar pesos por categoría">Filtros</button>
+        </div>
 
-    <!-- Fila 2 (plegable): opciones avanzadas -->
-    <div class="inline" id="advRow" style="display:none; margin-top:6px">
-      <button class="btn" id="btnPV"><span class="letter-p">P</span> + <span class="letter-v">V</span></button>
-      <button class="btn" id="btnPA"><span class="letter-p">P</span> + <span class="letter-a">A</span></button>
-      <button class="btn" id="btnPL"><span class="letter-p">P</span> + <span class="letter-l">L</span></button>
-      <button class="btn" id="btnPVA"><span class="letter-p">P</span> + <span class="letter-v">V</span> + <span class="letter-a">A</span></button>
-      <button class="btn" id="btnPAL"><span class="letter-p">P</span> + <span class="letter-a">A</span> + <span class="letter-l">L</span></button>
-      <button class="btn" id="btnPVL"><span class="letter-p">P</span> + <span class="letter-v">V</span> + <span class="letter-l">L</span></button>
-      <button class="btn" id="btnPVAL"><span class="letter-p">P</span> + <span class="letter-v">V</span> + <span class="letter-a">A</span> + <span class="letter-l">L</span></button>
-    </div>
-  </div>
-</section>
+        <!-- Fila 2 (plegable): opciones avanzadas -->
+        <div class="inline" id="advRow" style="display:none; margin-top:6px">
+          <button class="btn" id="btnPV"><span class="letter-p">P</span> + <span class="letter-v">V</span></button>
+          <button class="btn" id="btnPA"><span class="letter-p">P</span> + <span class="letter-a">A</span></button>
+          <button class="btn" id="btnPL"><span class="letter-p">P</span> + <span class="letter-l">L</span></button>
+          <button class="btn" id="btnPVA"><span class="letter-p">P</span> + <span class="letter-v">V</span> + <span class="letter-a">A</span></button>
+          <button class="btn" id="btnPAL"><span class="letter-p">P</span> + <span class="letter-a">A</span> + <span class="letter-l">L</span></button>
+          <button class="btn" id="btnPVL"><span class="letter-p">P</span> + <span class="letter-v">V</span> + <span class="letter-l">L</span></button>
+          <button class="btn" id="btnPVAL"><span class="letter-p">P</span> + <span class="letter-v">V</span> + <span class="letter-a">A</span> + <span class="letter-l">L</span></button>
+        </div>
+      </div>
+    </section>
 
+    <!-- Enunciado -->
     <section class="card" style="margin-top:14px">
-  <div class="title" style="align-items:center">
-    <span>Enunciado a dibujar</span>
-    <div class="inline">
-      <button class="btn" id="btnClearOutput" title="Limpiar enunciado mostrado">Limpiar</button>
-    </div>
-  </div>
-  <div id="salida" class="out" style="margin-top:10px;white-space:pre-wrap"></div>
-  <div id="challengeNote" class="challengeNote" style="margin-top:8px;"></div>
-  <div id="testlog" class="muted" style="margin-top:10px"></div>
-</section>
+      <div class="title" style="align-items:center">
+        <span>Enunciado a dibujar</span>
+        <div class="inline">
+          <button class="btn" id="btnClearOutput" title="Limpiar enunciado mostrado">Limpiar</button>
+        </div>
+      </div>
+      <div id="salida" class="out" style="margin-top:10px; white-space:pre-wrap"></div>
+      <div id="challengeNote" class="challengeNote" style="margin-top:8px"></div>
+      <div id="testlog" class="muted" style="margin-top:10px"></div>
+    </section>
 
- <!-- Jugadores conectados -->
-<section class="card" id="playersCard" style="margin-top:10px; display:none">
-  <div class="players-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-    <span id="playersTitle" style="font-size:1rem; font-weight:500; color:#9ca3af;">
-      Jugadores conectados
-    </span>
-    <div class="players-title-actions">
-      <button class="btn" id="btnGrupos" title="Formar parejas asignando Grupo A, B, C…">Generar grupos</button>
-    </div>
-  </div>
-  <div id="playersList" class="players-wrap" style="margin-top:6px"></div>
-</section>
+    <!-- Jugadores conectados -->
+    <section class="card" id="playersCard" style="margin-top:10px; display:none">
+      <div class="players-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px">
+        <span id="playersTitle" style="font-size:1rem; font-weight:500; color:#9ca3af">Jugadores conectados</span>
+        <div class="players-title-actions">
+          <button class="btn" id="btnGrupos" title="Formar parejas asignando Grupo A, B, C…">Generar grupos</button>
+        </div>
+      </div>
+      <div id="playersList" class="players-wrap" style="margin-top:6px"></div>
+    </section>
   </main>
 
   <footer>
@@ -678,27 +667,29 @@ footer .copyright{ margin-top:8px; text-align:center; font-size:12px; opacity:.7
       <button class="btn" id="btnCopiar">Copiar</button>
       <button class="btn" id="btnTest">Test</button>
     </div>
-    <div id="timerWrap" class="inline" style="margin-top:10px;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap">
-  <select id="timerSelect" class="btn" style="padding:8px 10px">
-    <option value="30">30s</option>
-    <option value="60">60s</option>
-    <option value="90">90s</option>
-    <option value="120">120s</option>
-  </select>
 
-  <!-- El reloj AHORA es el botón -->
-  <button id="timerDisplay"
+    <div id="timerWrap" class="inline" style="margin-top:10px; align-items:center; justify-content:center; gap:10px; flex-wrap:wrap">
+      <select id="timerSelect" class="btn" style="padding:8px 10px">
+        <option value="30">30s</option>
+        <option value="60">60s</option>
+        <option value="90">90s</option>
+        <option value="120">120s</option>
+      </select>
+
+      <!-- El reloj AHORA es el botón -->
+      <button
+        id="timerDisplay"
         class="kbd"
         type="button"
         aria-label="Iniciar o cancelar temporizador"
-        title="Iniciar / Cancelar">
-  Iniciar
-</button>
-</div>
+        title="Iniciar / Cancelar"
+      >Iniciar</button>
+    </div>
+
     <div class="copyright">© 2025 Tabja Games</div>
   </footer>
 
-  <!-- Toast element -->
+  <!-- Toast -->
   <div id="toast"></div>
 
   <script>
