@@ -548,7 +548,7 @@
 </div>
 
     <div class="inline" style="flex-direction:column; gap:14px; margin-top:16px">
-            <!-- anime -->
+                  <!-- Anime -->
       <label style="width:100%">
         <div class="inline" style="justify-content:space-between">
           <span class="muted">Anime</span>
@@ -557,7 +557,34 @@
         <input id="wAnime" type="range" min="0" max="5" step="1" value="1" />
       </label>
 
-      <!-- videojuegos -->
+      <!-- Caricaturas -->
+      <label style="width:100%">
+        <div class="inline" style="justify-content:space-between">
+          <span class="muted">Caricaturas</span>
+          <span class="kbd" id="wCaricaturasVal">1</span>
+        </div>
+        <input id="wCaricaturas" type="range" min="0" max="5" step="1" value="1" />
+      </label>
+
+      <!-- Cine -->
+      <label style="width:100%">
+        <div class="inline" style="justify-content:space-between">
+          <span class="muted">Cine</span>
+          <span class="kbd" id="wCineVal">1</span>
+        </div>
+        <input id="wCine" type="range" min="0" max="5" step="1" value="1" />
+      </label>
+
+      <!-- Literatura -->
+      <label style="width:100%">
+        <div class="inline" style="justify-content:space-between">
+          <span class="muted">Literatura</span>
+          <span class="kbd" id="wLiteraturaVal">1</span>
+        </div>
+        <input id="wLiteratura" type="range" min="0" max="5" step="1" value="1" />
+      </label>
+
+      <!-- Videojuegos -->
       <label style="width:100%">
         <div class="inline" style="justify-content:space-between">
           <span class="muted">Videojuegos</span>
@@ -566,61 +593,16 @@
         <input id="wVideojuegos" type="range" min="0" max="5" step="1" value="1" />
       </label>
 
-      <!-- películas -->
+      <!-- Mitología & Folclore -->
       <label style="width:100%">
         <div class="inline" style="justify-content:space-between">
-          <span class="muted">Películas</span>
-          <span class="kbd" id="wPeliculasVal">1</span>
+          <span class="muted">Mitología & Folclore</span>
+          <span class="kbd" id="wMitoVal">1</span>
         </div>
-        <input id="wPeliculas" type="range" min="0" max="5" step="1" value="1" />
+        <input id="wMito" type="range" min="0" max="5" step="1" value="1" />
       </label>
 
-      <!-- series -->
-      <label style="width:100%">
-        <div class="inline" style="justify-content:space-between">
-          <span class="muted">Series</span>
-          <span class="kbd" id="wSeriesVal">1</span>
-        </div>
-        <input id="wSeries" type="range" min="0" max="5" step="1" value="1" />
-      </label>
-
-      <!-- comics -->
-      <label style="width:100%">
-        <div class="inline" style="justify-content:space-between">
-          <span class="muted">Cómics</span>
-          <span class="kbd" id="wComicsVal">1</span>
-        </div>
-        <input id="wComics" type="range" min="0" max="5" step="1" value="1" />
-      </label>
-
-      <!-- profesiones -->
-      <label style="width:100%">
-        <div class="inline" style="justify-content:space-between">
-          <span class="muted">Profesiones</span>
-          <span class="kbd" id="wProfesionesVal">1</span>
-        </div>
-        <input id="wProfesiones" type="range" min="0" max="5" step="1" value="1" />
-      </label>
-
-      <!-- mitología -->
-      <label style="width:100%">
-        <div class="inline" style="justify-content:space-between">
-          <span class="muted">Mitología</span>
-          <span class="kbd" id="wMitologiaVal">1</span>
-        </div>
-        <input id="wMitologia" type="range" min="0" max="5" step="1" value="1" />
-      </label>
-
-      <!-- criaturas -->
-      <label style="width:100%">
-        <div class="inline" style="justify-content:space-between">
-          <span class="muted">Criaturas</span>
-          <span class="kbd" id="wCriaturasVal">1</span>
-        </div>
-        <input id="wCriaturas" type="range" min="0" max="5" step="1" value="1" />
-      </label>
-
-      <!-- animales -->
+      <!-- Animales -->
       <label style="width:100%">
         <div class="inline" style="justify-content:space-between">
           <span class="muted">Animales</span>
@@ -629,7 +611,25 @@
         <input id="wAnimales" type="range" min="0" max="5" step="1" value="1" />
       </label>
 
-      <!-- otros -->
+      <!-- Arquetipos -->
+      <label style="width:100%">
+        <div class="inline" style="justify-content:space-between">
+          <span class="muted">Arquetipos</span>
+          <span class="kbd" id="wArquetiposVal">1</span>
+        </div>
+        <input id="wArquetipos" type="range" min="0" max="5" step="1" value="1" />
+      </label>
+
+      <!-- Famosos -->
+      <label style="width:100%">
+        <div class="inline" style="justify-content:space-between">
+          <span class="muted">Famosos</span>
+          <span class="kbd" id="wFamososVal">1</span>
+        </div>
+        <input id="wFamosos" type="range" min="0" max="5" step="1" value="1" />
+      </label>
+
+      <!-- Otros -->
       <label style="width:100%">
         <div class="inline" style="justify-content:space-between">
           <span class="muted">Otros</span>
@@ -796,124 +796,145 @@ const PERSONAJES = [
    - otros (fallback)
 */
 
+/* Categorías principales (10) según tu lista:
+   - Anime
+   - Caricaturas
+   - Cine
+   - Literatura
+   - Videojuegos
+   - Mitología & Folclore
+   - Animales
+   - Arquetipos
+   - Famosos
+   - Otros (fallback)
+*/
+
+// === Sets con tus personajes EXACTOS ===
 const CAT_ANIME = new Set([
   "Goku","Vegeta","Piccolo","Freezer","Monkey D. Luffy","Roronoa Zoro","Sanji","Nami",
   "Naruto Uzumaki","Sasuke Uchiha","Kakashi Hatake","Ichigo Kurusaki","Satoru Gojo",
   "Eren Yeager","Levi Ackerman","Shigeo Kageyama","Saitama","Edward Elric",
   "Tanjiro Kamado","Nezuko Kamado","Kenshin Himura","Joseph Joestar","Guts",
-  "Ash Ketchum","Yugi Muto","Sailor Moon","Astroboy","Izuku Midoriya","Itachi Uchiha",
-  "Frieren","Fern","Yor Forger","Agumon"
+  "Ash Ketchum","Yugi Muto","Bob Esponja","Agumon","Sailor Moon","Astroboy",
+  "Izuku Midoriya","Itachi Uchiha","Frieren","Fern","Yor Forger"
+]);
+
+const CAT_CARICATURAS = new Set([
+  "Patricio Estrella","Calamardo","Arnold Shortman","Aang","Timmy Turner","Jimmy Neutron",
+  "Johnny Bravo","Mojo Jojo","Perry El Ornitorrinco","Optimus Prime","Mickey Mouse",
+  "Bugs Bunny","El Pato Donald","Felix El Gato","Winnie-the-Pooh","Charlie Brown",
+  "Snoopy","Hello Kitty","Dora La Exploradora","Peppa Pig","Homero Simpson","Rick Sanchez",
+  "Morty Smith","Eric Cartman","Buzz Lightyear","Popeye","El Pato Lucas","Betty Boop",
+  "Danny Phantom"
+]);
+
+const CAT_CINE = new Set([
+  "Mike Wazowski","Shrek","Wall-E","Stitch","Nemo","Elsa","Simba","Luke Skywalker",
+  "Darth Vader","Yoda","E.T.","John Wick","Neo","Indiana Jones","El Terminator",
+  "Jack Sparrow","Borat","Jason Voorhees","Chucky","Freddy Krueger","Jigsaw",
+  "Edward Scissorhands","Jack Skellington","Godzilla","El Xenomorfo","El Chavo del Ocho",
+  "Walter White","La Rana René","Cenicienta","Rapunzel","Aladino","Wednesday Addams",
+  "Superman","Spider-Man","Batman","Wolverine","Hulk","Venom","Thor","El Joker",
+  "El Capitán América","Peter Pan","Blancanieves","Barbie","Iron Man","Maléfica",
+  "Peter Griffin","El Grinch","Michael Scott","Michael Myers","Groot","Deadpool"
+]);
+
+const CAT_LITERATURA = new Set([
+  "Gandalf","Frodo Baggins","Gollum","Harry Potter","Voldemort","Willy Wonka","Dracula",
+  "Frankenstein","James Bond","El Gato con Botas","Robin Hood","Pinnochio","Tarzán",
+  "Pennywise","Jon Snow","Severus Snape","Sherlock Holmes","Quasimodo",
+  "Don Quijote de la Mancha","Tom Sawyer","El Jinete sin Cabeza"
 ]);
 
 const CAT_VIDEOJUEGOS = new Set([
-  "Pikachu","Mewtwo","Mario","Bowser","Yoshi","Donkey Kong","Kirby","Link","Zelda","Samus Aran",
-  "Sonic","Crash Bandicoot","Mega Man","Pac-Man","Leon S. Kennedy","Lara Croft",
-  "El Amongus","Doomguy","Nier","Bomberman","Diddy Kong","Toad","Fox McCloud",
-  "Cuphead","Rayman","Hollow Knight","Wario","La Princesa Peach","2B","Steve"
+  "Pikachu","Mewtwo","Mario","Bowser","Yoshi","Donkey Kong","Kirby","Link","Zelda",
+  "Samus Aran","Sonic","Crash Bandicoot","Mega Man","Pac-Man","Leon S. Kennedy",
+  "Lara Croft","Knuckles","Ryu","Sephiroth","Cloud Strife","Steve","Nier","Bomberman",
+  "Diddy Kong","Toad","Fox McCloud","Cuphead","Rayman","Hollow Knight","Wario",
+  "Luigi","La Princesa Peach","2B","Doomguy"
+  // Nota: "Luigi" aparece duplicado en tu lista; aquí lo declaramos una vez
 ]);
 
-const CAT_PELICULAS = new Set([
-  "Shrek","Wall-E","Elsa","Simba","Luke Skywalker","Darth Vader","Yoda","E.T.",
-  "John Wick","Neo","Indiana Jones","El Terminator","Jack Sparrow","Borat",
-  "Charlie Chaplin","Jason Voorhees","Chucky","Freddy Krueger","Jigsaw","Pennywise",
-  "Edward Scissorhands","Jack Skellington","Godzilla","Gandalf",
-  "Frodo Baggins","Gollum","Harry Potter","Voldemort","Willy Wonka","Cenicienta",
-  "Rapunzel","Aladino","Dracula","Frankenstein","Wednesday Addams","James Bond",
-  "Quasimodo"
-]);
-
-const CAT_SERIES = new Set([
-  "Bob Esponja","Patricio Estrella","Calamardo","Arnold Shortman","Aang",
-  "Timmy Turner","Jimmy Neutron","Johnny Bravo","Mojo Jojo","Perry El Ornitorrinco",
-  "Mickey Mouse","Bugs Bunny","El Pato Donald","Felix El Gato","Winnie-the-Pooh",
-  "Charlie Brown","Snoopy","Hello Kitty","Dora La Exploradora","Peppa Pig",
-  "Homero Simpson","Rick Sanchez","Morty Smith","Eric Cartman","Michael Scott",
-  "Peter Griffin","Danny Phantom"
-]);
-
-const CAT_COMICS = new Set([
-  "Superman","Spider-Man","Batman","Wolverine","Hulk","Venom","Thor","El Joker",
-  "El Capitán América","Iron Man","Deadpool"
-]);
-
-// Profesiones (sensitivo a mayúsculas, como en la lista)
-const CAT_PROFESIONES = new Set([
-  "El Héroe","El Rey","El Caballero","Un Profeta","El Verdugo","Un Viajero","Un Gladiador",
-  "Un Esclavo","Un Samurai","Un Ninja","Un Nómada","Un Vikingo","Un Soldado","Un Bufón",
-  "Un Pirata","Un Vaquero","Un Leñador","Un Detective","Un Payaso","Un Chef","Un Músico",
-  "Un Pintor","Un Carpinetro","Un Científico","Un Astronauta","Un Guerrero","Un Nigromante",
-  "Una Druida","Un Mago"
-]);
-
-const CAT_MITOLOGIA = new Set([
-  "Atlas","Zeus","Poseidón","Hércules","Pegaso","La Valquiria",
-  "El Kraken","El Cíclope","El Minotauro","El Cerbero","El Fénix",
-  "El Leviatán","El Fenrir","La Medusa"
-]);
-
-const CAT_CRIATURAS = new Set([
-  "Un Dragón","Un Vampiro","Un Zombie","Una Momia","Un Fantasma","Un Ogro",
-  "Un Gnomo","Un Duende","Un Hada","Una Quimera","Un Licántropo","Una Sirena",
-  "Una Arpía","Una Hidra","Un Basilisco","Un Grifo","Un Gólem",
-  "Un Ángel","Un Demonio","El Yeti","El Chupacabras"
+const CAT_MITO = new Set([
+  "El Amongus","Santa Claus","Dios","Atlas","Zeus","Poseidón","Hércules","Pegaso",
+  "El Kraken","El Cíclope","El Minotauro","El Cerbero","El Fénix","El Leviatán",
+  "El Fenrir","La Medusa","La Muerte","El Yeti","El Chupacabras","Un Ángel","Un Demonio",
+  "Un Centauro","Un Gólem","Un Basilisco","Un Grifo","Un Ogro","Una Sirena","Una Arpía",
+  "Una Hidra","Una Quimera","Un Licántropo","Un Unicornio","Una Bruja","Un Dragón",
+  "Una Valquiria","Un Elfo","Un Gnomo","Un Duende","Un Hada","Un Fantasma","Un Vampiro",
+  "Un Zombie","Una Momia","Un Esqueleto","Un Mago","Un Marciano"
 ]);
 
 const CAT_ANIMALES = new Set([
-  "Un Perro","Un Gato","Un León","Un Mono","Una Vaca","Un Elefante","Un Caballo","Un Camello",
-  "Una Jirafa","Una Oveja","Un Cerdo","Un Oso","Un Canguro","Un Conejo","Una Ardilla","Un Ratón",
-  "Una Serpiente","Un Cocodrilo","Una Rana","Una Araña","Un Escorpión","Una Hormiga","Una Cucaracha",
-  "Un Caracol","Un Zancudo","Un Pez","Un Delfín","Un Tiburón","Una Ballena","Una Tortuga","Un Cangrejo",
-  "Una Langosta","Un Pulpo","Un Calamar","Una Malagua","Un Pingüino","Un Pato","Un Flamenco",
-  "Un Águila","Un Búho","Un Murciélago","Un Dinosaurio"
+  "Una Mujer","Un Hombre","Un Perro","Un Gato","Un León","Un Mono","Una Vaca",
+  "Un Elefante","Un Caballo","Un Camello","Una Jirafa","Una Oveja","Un Cerdo","Un Oso",
+  "Un Canguro","Un Conejo","Una Ardilla","Un Ratón","Una Serpiente","Un Cocodrilo",
+  "Una Rana","Una Araña","Un Escorpión","Una Hormiga","Una Cucaracha","Un Caracol",
+  "Un Zancudo","Un Pez","Un Delfín","Un Tiburón","Una Ballena","Una Tortuga","Un Cangrejo",
+  "Una Langosta","Un Pulpo","Un Calamar","Una Malagua","Un Pingüino","Un Pato",
+  "Un Flamenco","Un Águila","Un Búho","Un Murciélago","Un Virus","Un Dinosaurio"
 ]);
 
-// --- construir buckets una vez ---
+const CAT_ARQUETIPOS = new Set([
+  "El Héroe","El Rey","El Caballero","Un Profeta","El Verdugo","Un Viajero","Un Gladiador",
+  "Un Esclavo","Un Samurai","Un Ninja","Un Nómada","Un Vikingo","Un Soldado","Un Bufón",
+  "Un Pirata","Un Vaquero","Un Leñador","Un Detective","Un Carpintero","Un Robot",
+  "Un Payaso","Un Chef","Un Músico","Un Pintor","Una Prostituta","Un Monje",
+  "Un Científico","Un Astronauta","Un Guerrero","Yo"
+]);
+
+const CAT_FAMOSOS = new Set([
+  "Albert Einstein","Messi","Napoleón Bonaparte","Atahualpa","Hitler","Michael Jackson",
+  "Freddie Mercury","Beethoven","Pedro Castillo","Donald Trump","Ronald McDonald",
+  "Charlie Chaplin"
+]);
+
+// --- BUCKETS (claves cortas) ---
 const BUCKETS = {
-  anime:[], videojuegos:[], peliculas:[], series:[], comics:[],
-  profesiones:[], mitologia:[], criaturas:[], animales:[], otros:[]
+  anime:[], caricaturas:[], cine:[], literatura:[], videojuegos:[],
+  mito:[], animales:[], arquetipos:[], famosos:[], otros:[]
 };
 
+// Construcción de buckets usando los sets
 for (const name of PERSONAJES) {
   const cat =
     CAT_ANIME.has(name)        ? 'anime' :
+    CAT_CARICATURAS.has(name)  ? 'caricaturas' :
+    CAT_CINE.has(name)         ? 'cine' :
+    CAT_LITERATURA.has(name)   ? 'literatura' :
     CAT_VIDEOJUEGOS.has(name)  ? 'videojuegos' :
-    CAT_PELICULAS.has(name)    ? 'peliculas' :
-    CAT_SERIES.has(name)       ? 'series' :
-    CAT_COMICS.has(name)       ? 'comics' :
-    CAT_PROFESIONES.has(name)  ? 'profesiones' :
-    CAT_MITOLOGIA.has(name)    ? 'mitologia' :
-    CAT_CRIATURAS.has(name)    ? 'criaturas' :
-    CAT_ANIMALES.has(name)     ? 'animales'  : 'otros';
+    CAT_MITO.has(name)         ? 'mito' :
+    CAT_ANIMALES.has(name)     ? 'animales' :
+    CAT_ARQUETIPOS.has(name)   ? 'arquetipos' :
+    CAT_FAMOSOS.has(name)      ? 'famosos' : 'otros';
   BUCKETS[cat].push(name);
 }
 
 function categoriaDe(nombre){
   if (CAT_ANIME.has(nombre))        return 'anime';
+  if (CAT_CARICATURAS.has(nombre))  return 'caricaturas';
+  if (CAT_CINE.has(nombre))         return 'cine';
+  if (CAT_LITERATURA.has(nombre))   return 'literatura';
   if (CAT_VIDEOJUEGOS.has(nombre))  return 'videojuegos';
-  if (CAT_PELICULAS.has(nombre))    return 'peliculas';
-  if (CAT_SERIES.has(nombre))       return 'series';
-  if (CAT_COMICS.has(nombre))       return 'comics';
-  if (CAT_PROFESIONES.has(nombre))  return 'profesiones';
-  if (CAT_MITOLOGIA.has(nombre))    return 'mitologia';
-  if (CAT_CRIATURAS.has(nombre))    return 'criaturas';
+  if (CAT_MITO.has(nombre))         return 'mito';
   if (CAT_ANIMALES.has(nombre))     return 'animales';
+  if (CAT_ARQUETIPOS.has(nombre))   return 'arquetipos';
+  if (CAT_FAMOSOS.has(nombre))      return 'famosos';
   return 'otros';
 }
 
-// Pesos (persisten en localStorage). Por defecto todo en 1.
+// Pesos por categoría (persisten en localStorage)
+// Nota: merge con guardados viejos para compatibilidad
 const DEFAULT_WEIGHTS = {
-  anime:1, videojuegos:1, peliculas:1, series:1, comics:1,
-  profesiones:1, mitologia:1, criaturas:1, animales:1, otros:1
+  anime:1, caricaturas:1, cine:1, literatura:1, videojuegos:1,
+  mito:1, animales:1, arquetipos:1, famosos:1, otros:1
 };
 
 let WEIGHTS = (()=> {
   try{
-    // merge para compatibilidad con guardados viejos (5 categorías)
     const saved = JSON.parse(localStorage.getItem('am_weights')) || {};
     return { ...DEFAULT_WEIGHTS, ...saved };
-  }catch(e){
-    return { ...DEFAULT_WEIGHTS };
-  }
+  }catch(e){ return { ...DEFAULT_WEIGHTS }; }
 })();
 
 function setWeight(cat, val){
@@ -922,22 +943,19 @@ function setWeight(cat, val){
 }
 function getWeight(cat){ return Number(WEIGHTS[cat] ?? 1); }
 
-// --- elegir categoría SOLO por pesos ---
+// Elección de categoría solo por pesos
 function pickCategoryByWeight(R){
-  const cats = ['anime','videojuegos','peliculas','series','comics','profesiones','mitologia','criaturas','animales','otros'];
+  const cats = ['anime','caricaturas','cine','literatura','videojuegos','mito','animales','arquetipos','famosos','otros'];
   const alive = cats.filter(c => BUCKETS[c].length > 0);
   let total = 0;
   const cum = [];
   for (const c of alive){ total += Math.max(0, getWeight(c)); cum.push(total); }
-  if (total <= 0){
-    return alive[Math.floor(R()*alive.length)];
-  }
+  if (total <= 0) return alive[Math.floor(R()*alive.length)];
   const t = R()*total;
   for (let i=0;i<cum.length;i++){ if (t < cum[i]) return alive[i]; }
   return alive[alive.length-1];
 }
 
-// --- picker personaje ---
 function pickPersonaje(R){
   const cat = pickCategoryByWeight(R);
   const arr = BUCKETS[cat];
@@ -946,6 +964,8 @@ function pickPersonaje(R){
   }
   return arr[Math.floor(R()*arr.length)];
 }
+
+// export helpers
 window.pickPersonaje = pickPersonaje;
 window.setWeight = setWeight;
 window.getWeight = getWeight;
@@ -957,9 +977,10 @@ function setSliderVal(idSlider, idBadge, v){
   if(s) s.value = v;
   if(b) b.textContent = String(v);
 }
-// === Control de visibilidad/habilitación de sliders según rol ===
+
+// Habilitar/deshabilitar sliders (según rol)
 window.setWeightsEnabled = function onOff(on){
-  const ids = ['wAnime','wVideojuegos','wPeliculas','wSeries','wComics','wProfesiones','wMitologia','wCriaturas','wAnimales','wOtros'];
+  const ids = ['wAnime','wCaricaturas','wCine','wLiteratura','wVideojuegos','wMito','wAnimales','wArquetipos','wFamosos','wOtros'];
   ids.forEach(id=>{
     const el = document.getElementById(id);
     if(!el) return;
@@ -970,19 +991,19 @@ window.setWeightsEnabled = function onOff(on){
 };
 
 function initWeightSliders(){
-  // Carga valores actuales
+  // Cargar valores
   setSliderVal('wAnime','wAnimeVal',              getWeight('anime'));
+  setSliderVal('wCaricaturas','wCaricaturasVal',  getWeight('caricaturas'));
+  setSliderVal('wCine','wCineVal',                getWeight('cine'));
+  setSliderVal('wLiteratura','wLiteraturaVal',    getWeight('literatura'));
   setSliderVal('wVideojuegos','wVideojuegosVal',  getWeight('videojuegos'));
-  setSliderVal('wPeliculas','wPeliculasVal',      getWeight('peliculas'));
-  setSliderVal('wSeries','wSeriesVal',            getWeight('series'));
-  setSliderVal('wComics','wComicsVal',            getWeight('comics'));
-  setSliderVal('wProfesiones','wProfesionesVal',  getWeight('profesiones'));
-  setSliderVal('wMitologia','wMitologiaVal',      getWeight('mitologia'));
-  setSliderVal('wCriaturas','wCriaturasVal',      getWeight('criaturas'));
+  setSliderVal('wMito','wMitoVal',                getWeight('mito'));
   setSliderVal('wAnimales','wAnimalesVal',        getWeight('animales'));
+  setSliderVal('wArquetipos','wArquetiposVal',    getWeight('arquetipos'));
+  setSliderVal('wFamosos','wFamososVal',          getWeight('famosos'));
   setSliderVal('wOtros','wOtrosVal',              getWeight('otros'));
 
-  // Listeners helper
+  // Hook helper
   const hook = (idSlider, idBadge, cat)=>{
     const s = document.getElementById(idSlider);
     if(!s) return;
@@ -1003,23 +1024,23 @@ function initWeightSliders(){
     });
   };
 
-  // Hooks por categoría
+  // Hooks
   hook('wAnime','wAnimeVal','anime');
+  hook('wCaricaturas','wCaricaturasVal','caricaturas');
+  hook('wCine','wCineVal','cine');
+  hook('wLiteratura','wLiteraturaVal','literatura');
   hook('wVideojuegos','wVideojuegosVal','videojuegos');
-  hook('wPeliculas','wPeliculasVal','peliculas');
-  hook('wSeries','wSeriesVal','series');
-  hook('wComics','wComicsVal','comics');
-  hook('wProfesiones','wProfesionesVal','profesiones');
-  hook('wMitologia','wMitologiaVal','mitologia');
-  hook('wCriaturas','wCriaturasVal','criaturas');
+  hook('wMito','wMitoVal','mito');
   hook('wAnimales','wAnimalesVal','animales');
+  hook('wArquetipos','wArquetiposVal','arquetipos');
+  hook('wFamosos','wFamososVal','famosos');
   hook('wOtros','wOtrosVal','otros');
 
   // Reset
   const btnReset = document.getElementById('btnResetWeights');
   if(btnReset){
     btnReset.addEventListener('click', async ()=>{
-      ['anime','videojuegos','peliculas','series','comics','profesiones','mitologia','criaturas','animales','otros'].forEach(cat=> setWeight(cat,1));
+      ['anime','caricaturas','cine','literatura','videojuegos','mito','animales','arquetipos','famosos','otros'].forEach(cat=> setWeight(cat,1));
       initWeightSliders();
 
       if (window.lobbyCode && window.isHost && window.db && window.fbRef && window.fbUpdate) {
@@ -1035,12 +1056,13 @@ function initWeightSliders(){
   }
 }
 
-// Inicializa al cargar el DOM (el bloque está en el mismo script)
 document.addEventListener('DOMContentLoaded', initWeightSliders);
-initWeightSliders(); // por si el script se inyecta al final del body
+initWeightSliders();
+
+// Simulador de distribución
 function simularDistribucion(n=2000){
   const R = rng('sim-'+Date.now());
-  const tally = { anime:0, videojuegos:0, peliculas:0, series:0, comics:0, profesiones:0, mitologia:0, criaturas:0, animales:0, otros:0 };
+  const tally = { anime:0, caricaturas:0, cine:0, literatura:0, videojuegos:0, mito:0, animales:0, arquetipos:0, famosos:0, otros:0 };
   for(let i=0;i<n;i++){
     const p = pickPersonaje(R);
     tally[categoriaDe(p)]++;
@@ -1048,7 +1070,6 @@ function simularDistribucion(n=2000){
   const pct = Object.fromEntries(Object.entries(tally).map(([k,v])=> [k, Math.round(v*100/n)]));
   return { tally, pct, n };
 }
-
 function attachSimBtn(){
   const btn = document.getElementById('btnSimDist');
   const out = document.getElementById('simDistResult');
@@ -1056,13 +1077,12 @@ function attachSimBtn(){
   btn.addEventListener('click', ()=>{
     const { pct, n } = simularDistribucion(2000);
     out.textContent =
-      `Anime ${pct.anime}% • Videojuegos ${pct.videojuegos}% • Películas ${pct.peliculas}% • Series ${pct.series}% • Cómics ${pct.comics}% • ` +
-      `Profesiones ${pct.profesiones}% • Mitología ${pct.mitologia}% • Criaturas ${pct.criaturas}% • Animales ${pct.animales}% • Otros ${pct.otros}% (n=${n})`;
+      `Anime ${pct.anime}% • Caricaturas ${pct.caricaturas}% • Cine ${pct.cine}% • Literatura ${pct.literatura}% • `+
+      `Videojuegos ${pct.videojuegos}% • Mitología & Folclore ${pct.mito}% • Animales ${pct.animales}% • `+
+      `Arquetipos ${pct.arquetipos}% • Famosos ${pct.famosos}% • Otros ${pct.otros}% (n=${n})`;
     if(window.showToast) window.showToast('Simulación lista');
   });
 }
-
-// engancha el botón (DOM ya cargado porque el script está al final)
 attachSimBtn();
 
     const VERBOS=['leyendo','patinando','esquiando','surfeando','navegando','cabalgando','pedaleando','nadando','bailando','pescando','regando','componiendo','escribiendo','cocinando','conduciendo','cenando','trabajando','jugando','barriendo','corriendo','caminando','saltando','trepando','luchando','descansando','durmiendo','marchando','volando','bebiendo','fumando','vomitando','masturbando','orinando','cagando','copulando','muriendo','naciendo','pariendo','gritando','llorando','cantando','pensando','rezando','vendiendo','saludando','boxeando'];
