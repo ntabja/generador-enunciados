@@ -1227,7 +1227,7 @@ window.db = db;
 window.fbRef = ref;
 window.fbUpdate = update;
     const rng = window.rng;
-    // === SFX del temporizador ===
+   // === SFX del temporizador ===
 const sndBeep  = new Audio('sfx/timer_beep.mp3');   // beep por segundo (últimos 10s)
 const sndAlarm = new Audio('sfx/timer_alarm.mp3');  // alarma al llegar a 0
 sndBeep.preload  = 'auto';
@@ -1235,21 +1235,27 @@ sndAlarm.preload = 'auto';
 sndBeep.volume   = 0.7; // ajusta si quieres
 sndAlarm.volume  = 1.0; // ajusta si quieres
 
-// Nota: algunos navegadores piden interacción del usuario para permitir audio.
-// Tu app ya tiene clicks (botones), así que quedará habilitado naturalmente.
+// 🧩 función para detener el beep
+function stopBeep(){
+  try{
+    sndBeep.pause();
+    sndBeep.currentTime = 0;
+  }catch(e){}
+}
 
-    const genPVAL = window.genPVAL;
+const genPVAL = window.genPVAL;
 
-    function getClientId(){
-      const k="am_client_id";
-      let id=localStorage.getItem(k);
-      if(!id){ id = Math.random().toString(36).slice(2); localStorage.setItem(k,id); }
-      return id;
-    }
-    const clientId = getClientId();
+function getClientId(){
+  const k="am_client_id";
+  let id=localStorage.getItem(k);
+  if(!id){ id = Math.random().toString(36).slice(2); localStorage.setItem(k,id); }
+  return id;
+}
+const clientId = getClientId();
 
-    let lobbyCode = null;
-    let isHost = false;
+let lobbyCode = null;
+let isHost = false;
+
     // Espejos iniciales para el otro script
 window.lobbyCode = lobbyCode;
 window.isHost = isHost;
@@ -1636,23 +1642,32 @@ function handleTimerState(timer){
     timerActive = remain > 0 && !timer.canceled;
 
     // sonidos
-    try{
-      if(remain > 0 && remain <= 10){
-        if(lastBeepSecond !== remain){
-          sndBeep.currentTime = 0;
-          sndBeep.play().catch(()=>{});
-          lastBeepSecond = remain;
-        }
-      }else{
-        lastBeepSecond = null;
-      }
+try{
+  // Si saliste del rango 1..10s, o cancelado, corta cualquier beep activo
+  if (timer?.canceled || remain === 0 || remain > 10) {
+    stopBeep();
+  }
 
-      if(remain === 0 && alarmPlayedForTimerId === startedAt){
-        sndAlarm.currentTime = 0;
-        sndAlarm.play().catch(()=>{});
-        alarmPlayedForTimerId = null;
-      }
-    }catch(e){}
+  // Beeps 10..1 (una vez por segundo)
+  if (remain > 0 && remain <= 10) {
+    if (lastBeepSecond !== remain) {
+      stopBeep();                 // asegúrate de no solapar
+      sndBeep.currentTime = 0;
+      sndBeep.play().catch(()=>{});
+      lastBeepSecond = remain;
+    }
+  } else {
+    lastBeepSecond = null;
+  }
+
+  // Alarma en 0 (una sola vez por sesión)
+  if (remain === 0 && alarmPlayedForTimerId === startedAt) {
+    stopBeep();                   // 🔇 corta el beep antes de la alarma
+    sndAlarm.currentTime = 0;
+    sndAlarm.play().catch(()=>{});
+    alarmPlayedForTimerId = null;
+  }
+}catch(e){}
 
     if(remain<=0){
       clearTimerInterval();
