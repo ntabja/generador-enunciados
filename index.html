@@ -2192,6 +2192,18 @@ async function handleGenerate(mode){
     if(lobbyCode) sendMasterpieceToAll(); else sendLocalMasterpiece();
     return;
   }
+  
+  // *** NUEVO: Modo P con ronda y reroll por grupo ***
+  if (mode === 'P'){
+    await clearChallengeForAll(); // limpia desafíos previos como en los otros modos
+    const hostOrSolo = isHost || playersConnected <= 1;
+    if (lobbyCode && !hostOrSolo){
+      if(window.showToast) window.showToast('Solo el ADMIN puede generar enunciados en sala');
+      return;
+    }
+    startGroupRoundP();
+    return;
+  }
 
   // Flujo estándar
   if(lobbyCode){
@@ -2222,6 +2234,148 @@ Object.entries(MAP).forEach(([id,mode])=>{
 // Botón de grupos y limpiar
 btnGrupos?.addEventListener('click', generarGrupos);
 document.getElementById('btnClearOutput')?.addEventListener('click', clearOutput);
+
+  /* ===========================
+   19.5) Ronda con reroll por grupo (modo P)
+===========================*/
+const MAX_REROLLS_PER_GROUP = 1;
+
+// Crea una ronda nueva (solo modo P) y publica salida + estado de la ronda
+async function startGroupRoundP(){
+  // Seguridad: solo ADMIN en sala o modo local
+  const hostOrSolo = isHost || playersConnected <= 1;
+
+  // Determinar grupos activos
+  const state  = lastLobbyState;
+  const groups = getActiveGroupsFromState(state);
+  if (!groups || groups.length === 0){
+    // Si no hay grupos, cae a un P simple
+    const { html, text } = window.genP(window.rng ? window.rng() : Math.random);
+    if (lobbyCode && hostOrSolo){
+      await publishOutput(html, text || '');
+      await window.fbUpdate(window.fbRef(window.db, `lobbies/${lobbyCode}`), { round: null });
+    } else {
+      renderLocal(html, text || '');
+    }
+    return;
+  }
+
+  // Nueva ronda
+  const round = {
+    id: Date.now(),
+    mode: 'P',
+    rerolls: {},                  // { 'A': 0, 'B': 1, ... }
+    maxRerollsPerGroup: MAX_REROLLS_PER_GROUP
+  };
+
+  const { html, text } = renderRoundHTML(round, groups);
+
+  if (lobbyCode && hostOrSolo){
+    // Publica salida + estado de ronda
+    await window.fbUpdate(window.fbRef(window.db, `lobbies/${lobbyCode}`), {
+      currentOutputHtml: html,
+      currentOutputText: text,
+      round
+    });
+  } else {
+    // Local
+    window.__localRound = round;
+    renderLocal(html, text);
+  }
+}
+
+// Dibuja el HTML/texto de la ronda completa, calculando el personaje por grupo
+function renderRoundHTML(round, groups){
+  const linesHtml = [];
+  const linesText = [];
+
+  for (const g of groups){
+    const used = (round.rerolls && round.rerolls[g]) || 0;
+    const limit = round.maxRerollsPerGroup || 1;
+
+    // Semilla determinista por grupo + número de reroll usado
+    const R = rng(`${(lobbyCode||'local')}-${g}-${round.id}-r${Math.min(used, limit)}`);
+    const { html, text } = window.genP(R);
+
+    // Colores de tu UI
+    const col = groupColor(g);
+    const bg  = rgba(col, 0.22);
+    const bd  = rgba(col, 0.55);
+
+    // Botón ↻ (se desactiva si ya usó su cambio)
+    const disabled = used >= limit ? ' disabled aria-disabled="true" style="opacity:.5;pointer-events:none"' : '';
+    const btn = `<button class="btn rerollBtn" data-group="${g}" title="Cambiar una vez"${disabled}>↻ Cambiar</button>`;
+
+    linesHtml.push(`
+      <div class="lineGroup" data-line-group="${g}">
+        <span class="gBadge" style="background:${bg};border-color:${bd}">Grupo ${g}</span>
+        <span>${html}</span>
+        ${btn}
+      </div>
+    `.trim());
+
+    linesText.push(`Grupo ${g}: ${text}`);
+  }
+
+  return { html: linesHtml.join(""), text: linesText.join("\n") };
+}
+
+// Reroll (↻) para un grupo específico (solo ADMIN en sala; en local cualquiera)
+async function rerollGroupOnce(groupLetter){
+  // Leer ronda
+  const round = lobbyCode ? (lastLobbyState && lastLobbyState.round) : window.__localRound;
+  if (!round || round.mode !== 'P') return;
+
+  const limit = round.maxRerollsPerGroup || 1;
+  const used  = (round.rerolls && round.rerolls[groupLetter]) || 0;
+  if (used >= limit){
+    if (window.showToast) window.showToast(`Grupo ${groupLetter} ya usó su cambio`);
+    return;
+  }
+
+  // Seguridad: solo ADMIN (o solo) en sala
+  const hostOrSolo = isHost || playersConnected <= 1;
+  if (lobbyCode && !hostOrSolo){
+    if (window.showToast) window.showToast('Solo el ADMIN puede cambiar personajes');
+    return;
+  }
+
+  // Incrementar contador y re-render completo (para mantener consistencia)
+  const next = { ...round, rerolls: { ...(round.rerolls || {}), [groupLetter]: used + 1 } };
+
+  const groups = lobbyCode ? getActiveGroupsFromState(lastLobbyState) : (()=>{
+    // En local, obtén grupos desde la salida actual (si quieres) o simula A,B,C
+    // Para simplicidad, si no tienes grupos locales, no hacemos nada:
+    return getActiveGroupsFromState(lastLobbyState) || [];
+  })();
+
+  const { html, text } = renderRoundHTML(next, groups);
+
+  if (lobbyCode){
+    await window.fbUpdate(window.fbRef(window.db, `lobbies/${lobbyCode}`), {
+      currentOutputHtml: html,
+      currentOutputText: text,
+      round: next
+    });
+  } else {
+    window.__localRound = next;
+    renderLocal(html, text);
+  }
+}
+
+// Delegación de clics en los botones ↻ (en el contenedor #salida)
+document.getElementById('salida')?.addEventListener('click', (e)=>{
+  const btn = e.target.closest('.rerollBtn');
+  if (!btn) return;
+
+  // En sala: solo ADMIN o modo local
+  const hostOrSolo = isHost || playersConnected <= 1;
+  if (lobbyCode && !hostOrSolo) return;
+
+  const g = btn.getAttribute('data-group');
+  if (!g) return;
+  rerollGroupOnce(g);
+});
 
 /* ===========================
    20) Atajos y timer sin sala
