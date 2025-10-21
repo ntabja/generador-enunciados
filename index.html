@@ -1137,377 +1137,314 @@ generarN('PVAL',1);
 
   </script>
 
-  <!-- 🔥 Firebase Realtime (grupos, colores, score y generación por grupo) -->
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import { getDatabase, ref, onValue, set, update, onDisconnect, push, get, off, remove } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+<!-- 🔥 Firebase Realtime (grupos, colores, score y generación por grupo) -->
+<script type="module">
+  /* ===========================
+     0) Firebase SDK & Setup
+  ============================*/
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  import {
+    getDatabase, ref, onValue, set, update, onDisconnect, push, get, off, remove
+  } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
-    const firebaseConfig = {
-      apiKey: "AIzaSyAHEBnKMHJt9npV6NeHzSjWdJtBE9EUmwQ",
-      authDomain: "arte-moderno-5ff8a.firebaseapp.com",
-      projectId: "arte-moderno-5ff8a",
-      storageBucket: "arte-moderno-5ff8a.firebasestorage.app",
-      messagingSenderId: "478321511301",
-      appId: "1:478321511301:web:6b46294944397c0ce952ec",
-      measurementId: "G-BP2SKW1881"
-    };
+  const firebaseConfig = {
+    apiKey: "AIzaSyAHEBnKMHJt9npV6NeHzSjWdJtBE9EUmwQ",
+    authDomain: "arte-moderno-5ff8a.firebaseapp.com",
+    projectId: "arte-moderno-5ff8a",
+    storageBucket: "arte-moderno-5ff8a.firebasestorage.app",
+    messagingSenderId: "478321511301",
+    appId: "1:478321511301:web:6b46294944397c0ce952ec",
+    measurementId: "G-BP2SKW1881"
+  };
 
-    const appFB = initializeApp(firebaseConfig);
-    const db = getDatabase(appFB);
-    // Exponer Firebase helpers para el script no-module
-window.db = db;
-window.fbRef = ref;
-window.fbUpdate = update;
-    const rng = window.rng;
-   // === SFX del temporizador ===
-const sndBeep  = new Audio('sfx/timer_beep.mp3');   // beep por segundo (últimos 10s)
-const sndAlarm = new Audio('sfx/timer_alarm.mp3');  // alarma al llegar a 0
-    // Sonido de botón
-const sndButton = new Audio('sfx/button_press.mp3');
-sndButton.preload = 'auto';
-sndButton.volume = 0.8; // ajusta si quieres
-window.sndButton = sndButton;
-sndBeep.preload  = 'auto';
-sndAlarm.preload = 'auto';
-sndBeep.volume   = 0.7; // ajusta si quieres
-sndAlarm.volume  = 1.0; // ajusta si quieres
+  const appFB = initializeApp(firebaseConfig);
+  const db = getDatabase(appFB);
 
-// 🧩 función para detener el beep
-function stopBeep(){
-  try{
-    sndBeep.pause();
-    sndBeep.currentTime = 0;
-  }catch(e){}
-}
+  // Exponer Firebase helpers para el script no-module
+  window.db = db;
+  window.fbRef = ref;
+  window.fbUpdate = update;
 
-const genPVAL = window.genPVAL;
-
-function getClientId(){
-  const k="am_client_id";
-  let id=localStorage.getItem(k);
-  if(!id){ id = Math.random().toString(36).slice(2); localStorage.setItem(k,id); }
-  return id;
-}
-const clientId = getClientId();
-
-let lobbyCode = null;
-let isHost = false;
-
-    // Espejos iniciales para el otro script
-window.lobbyCode = lobbyCode;
-window.isHost = isHost;
-    let prevIsHost = false;
-    let playersConnected = 0;
-    let currentConnRef = null;
-    let lobbyRef = null;
-    let lobbyCallback = null;
-    let lastLobbyState = null;
-
-    const $ = (id)=> document.getElementById(id);
-    const statusEl = "lobbyStatus" in window ? window.lobbyStatus : document.getElementById('lobbyStatus');
-    const badgeEl  = $("roomBadge");
-    const overlayEl = $("lobbyOverlay");
-    const leaveRow = $("leaveRow");
-    const playersCard = $("playersCard");
-    const playersList = $("playersList");
-    const btnGrupos = $("btnGrupos");
-    const clearBtn = $("btnClearOutput");
-    const adminControls = $("adminControls");
-
-    // ====== Overlay de Filtros ======
-const filtersOverlay = $("filtersOverlay");
-const btnFilters     = $("btnFilters");
-const btnCloseFilters= $("btnCloseFilters");
-
-// Guard para abrir solo si es admin en sala o cualquiera en modo local
-function canControlWeights(){
-  const inLobby = !!lobbyCode;
-  return (!inLobby || isHost);
-}
-
-function openFilters(){
-  if(!canControlWeights()){
-    if(window.showToast) window.showToast('Solo el ADMIN puede abrir Filtros en sala');
-    return;
-  }
-  if(filtersOverlay) filtersOverlay.classList.add('open');
-  if(typeof window.initWeightSliders === 'function') window.initWeightSliders();
-}
-
-function closeFilters(){
-  if(filtersOverlay) filtersOverlay.classList.remove('open');
-}
-
-// Botones abrir/cerrar
-btnFilters?.addEventListener('click', openFilters);
-btnCloseFilters?.addEventListener('click', closeFilters);
-
-// Cerrar con ESC
-document.addEventListener('keydown', (e)=>{
-  if(e.key === 'Escape' && filtersOverlay?.classList.contains('open')){
-    closeFilters();
-  }
-});
-
-// Cerrar al hacer click fuera de la tarjeta
-let mouseDownInside = false;
-
-filtersOverlay?.addEventListener('mousedown', (e)=>{
-  // detecta si el clic inicial fue dentro de la tarjeta
-  mouseDownInside = !e.target.classList.contains('card') && e.target === filtersOverlay;
-});
-
-filtersOverlay?.addEventListener('mouseup', (e)=>{
-  // cierra solo si presionaste y soltaste en el fondo (sin arrastrar fuera)
-  if(mouseDownInside && e.target === filtersOverlay){
-    closeFilters();
-  }
-  mouseDownInside = false;
-});
-
-    const choiceRow     = $("choiceRow");
-    const joinRow       = $("joinRow");
-    const btnChooseJoin = $("btnChooseJoin");
-    const btnBackJoin   = $("btnBackJoin");
-
-    const timerSelect   = $("timerSelect");
-    const timerDisplay  = $("timerDisplay");
-    let timerActive = false; // control local del estado del timer
-
-    let timerInterval = null;
-// Control interno de sonidos por sesión del timer
-let lastBeepSecond = null;        // para no repetir el beep en el mismo segundo
-let alarmPlayedForTimerId = null; // para no repetir alarma en esta sesión
-
-    // ====== Enunciado Secreto ======
-let lastSecretTs = null;
-
-function showSecretOverlay(html, title='🕵️ Enunciado secreto'){
-  const wrap = document.getElementById('secretOverlay');
-  const cont = document.getElementById('secretContent');
-  const titleEl = document.getElementById('secretTitle');
-  if(!wrap || !cont) return;
-  cont.innerHTML = html;
-  if(titleEl) titleEl.textContent = title;
-  wrap.style.display = 'flex';
-}
-
-function hideSecretOverlay(){
-  const wrap = document.getElementById('secretOverlay');
-  if(!wrap) return;
-  wrap.style.display = 'none';
-}
-
-document.getElementById('btnSecretOK')?.addEventListener('click', async ()=>{
-  hideSecretOverlay();
-  // Marca ack en Firebase si estamos en lobby y hay secreto para este cliente
-  try{
-    if(lobbyCode){
-      await update(ref(db, `lobbies/${lobbyCode}/secrets/${clientId}`), { ack: true });
-    }
-  }catch(e){}
-});
-
-    const LS_CODE_KEY = "am_lobby_code";
-
-    function makeCode(){
-      const chars="ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-      return Array.from({length:5},()=> chars[Math.floor(Math.random()*chars.length)]).join("");
-    }
-
-    // ====== Colores por grupo ======
-    const GROUP_PALETTE = ['#60a5fa','#f472b6','#34d399','#fbbf24','#a78bfa','#fb7185','#22d3ee','#f59e0b','#4ade80','#e879f9'];
-    const hexToRgb = (hex)=>{ const m=/^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex); return m?{r:parseInt(m[1],16),g:parseInt(m[2],16),b:parseInt(m[3],16)}:{r:100,g:100,b:100}; };
-    const rgba = (hex, a)=>{ const {r,g,b}=hexToRgb(hex); return `rgba(${r}, ${g}, ${b}, ${a})`; };
-    const groupColor = (letter)=>{
-      if(!letter) return '#64748b';
-      const idx = Math.max(0, letter.charCodeAt(0) - 65);
-      return GROUP_PALETTE[idx % GROUP_PALETTE.length];
-    };
-
-    function setLobbyCode(code){
-      lobbyCode = code;
-      localStorage.setItem(LS_CODE_KEY, code);
-      badgeEl.style.display='inline-block'; badgeEl.textContent = `Sala: ${code}`;
-      leaveRow.style.display='flex';
-      overlayEl.style.display='none';
-      playersCard.style.display='block';
-      window.lobbyCode = lobbyCode;
-    }
-    function clearLobbyCode(){
-      lobbyCode = null;
-      localStorage.removeItem(LS_CODE_KEY);
-      badgeEl.style.display='none'; badgeEl.textContent = 'Sala: -----';
-      leaveRow.style.display='none';
-      overlayEl.style.display='flex';
-      playersCard.style.display='none';
-      lastLobbyState = null;
-      window.lobbyCode = lobbyCode;
-    }
-
-    let joinMode = false;
-function setJoinMode(on){
-  joinMode = !!on;
-  if (choiceRow) choiceRow.style.display = on ? "none" : "flex";
-  if (joinRow)   joinRow.style.display   = on ? "flex" : "none";
-  // reset de mensajes y código
-  if (!on) {
-    const input = $("lobbyCodeInput");
-    if (input) input.value = "";
-    if (statusEl) statusEl.textContent = "";
-  }
-}
-
-    /* Presencia por pestaña */
-    function setupPresence(code){
-      if (!code) return;
-
-      if (currentConnRef) { try { onDisconnect(currentConnRef).cancel(); } catch(e){} currentConnRef = null; }
-
-      const infoRef = ref(db, ".info/connected");
-      onValue(infoRef, (snap)=>{
-        if (snap.val() === true) {
-          const connRef = push(ref(db, `lobbies/${code}/players/${clientId}/connections`));
-          currentConnRef = connRef;
-          set(connRef, true);
-          onDisconnect(connRef).remove();
-          update(ref(db, `lobbies/${code}/players/${clientId}`), { connected: true });
-        }
-      });
-    }
-
-   function updateHostUI(){
-  const inLobby = !!lobbyCode;
-
-  // Mostrar controles solo si NO hay lobby o si eres ADMIN
-  if (adminControls) adminControls.style.display = (!inLobby || isHost) ? "" : "none";
-  if (clearBtn)      clearBtn.style.display      = (!inLobby || isHost) ? "" : "none";
-  if (btnGrupos)     btnGrupos.style.display     = (!inLobby || isHost) ? "" : "none";
+  /* ===========================
+     1) Audio / SFX
+  ============================*/
+  // RNG del módulo anterior
+  const rng = window.rng;
 
   // Temporizador
-  if (timerSelect) timerSelect.style.display = (!inLobby || isHost) ? "" : "none";
+  const sndBeep  = new Audio('sfx/timer_beep.mp3');   // beep (10s restantes)
+  const sndAlarm = new Audio('sfx/timer_alarm.mp3');  // alarma al llegar a 0
+  sndBeep.preload  = 'auto';  sndBeep.volume  = 0.7;
+  sndAlarm.preload = 'auto';  sndAlarm.volume = 1.0;
 
-  if (timerDisplay) {
-    // el reloj siempre visible
-    timerDisplay.style.display = "";
+  // Botón
+  const sndButton = new Audio('sfx/button_press.mp3');
+  sndButton.preload = 'auto';
+  sndButton.volume  = 0.8;
+  window.sndButton  = sndButton;
 
-    // quién puede controlarlo: admin en lobby o si estás solo
-    const canControlTimer = (!inLobby) ? false : (isHost || playersConnected <= 1);
-    timerDisplay.tabIndex = canControlTimer ? 0 : -1;
-    timerDisplay.style.opacity = canControlTimer ? '' : '0.6';
-    timerDisplay.style.pointerEvents = canControlTimer ? '' : 'none';
+  function stopBeep(){
+    try { sndBeep.pause(); sndBeep.currentTime = 0; } catch {}
   }
 
-  // Habilitar/deshabilitar el <select> del tiempo (solo admin en lobby)
-  if (timerSelect) {
-    const disableSel = !(isHost && inLobby);
-    timerSelect.disabled = disableSel;
-    timerSelect.style.opacity = disableSel ? 0.5 : '';
+  /* ===========================
+     2) Estado global de Lobby
+  ============================*/
+  const $ = (id)=> document.getElementById(id);
+  const statusEl     = "lobbyStatus" in window ? window.lobbyStatus : $('lobbyStatus');
+  const badgeEl      = $('roomBadge');
+  const overlayEl    = $('lobbyOverlay');
+  const leaveRow     = $('leaveRow');
+  const playersCard  = $('playersCard');
+  const playersList  = $('playersList');
+  const btnGrupos    = $('btnGrupos');
+  const clearBtn     = $('btnClearOutput');
+  const adminControls= $('adminControls');
+
+  const choiceRow     = $('choiceRow');
+  const joinRow       = $('joinRow');
+  const btnChooseJoin = $('btnChooseJoin');
+  const btnBackJoin   = $('btnBackJoin');
+
+  const timerSelect  = $('timerSelect');
+  const timerDisplay = $('timerDisplay');
+
+  let lobbyCode = null;
+  let isHost = false;
+  window.lobbyCode = lobbyCode;
+  window.isHost    = isHost;
+
+  let prevIsHost = false;
+  let playersConnected = 0;
+  let currentConnRef = null;
+  let lobbyRef = null;
+  let lobbyCallback = null;
+  let lastLobbyState = null;
+
+  const LS_CODE_KEY = "am_lobby_code";
+
+  // ID de cliente
+  function getClientId(){
+    const k="am_client_id";
+    let id=localStorage.getItem(k);
+    if(!id){ id = Math.random().toString(36).slice(2); localStorage.setItem(k,id); }
+    return id;
+  }
+  const clientId = getClientId();
+
+  /* ===========================
+     3) Filtros (overlay)
+  ============================*/
+  const filtersOverlay  = $('filtersOverlay');
+  const btnFilters      = $('btnFilters');
+  const btnCloseFilters = $('btnCloseFilters');
+
+  // Guard: abrir solo si eres host en sala o si estás en modo local
+  function canControlWeights(){ return (!lobbyCode || isHost); }
+
+  function openFilters(){
+    if(!canControlWeights()){
+      if(window.showToast) window.showToast('Solo el ADMIN puede abrir Filtros en sala');
+      return;
+    }
+    filtersOverlay?.classList.add('open');
+    if (typeof window.initWeightSliders === 'function') window.initWeightSliders();
+  }
+  function closeFilters(){ filtersOverlay?.classList.remove('open'); }
+
+  btnFilters?.addEventListener('click', openFilters);
+  btnCloseFilters?.addEventListener('click', closeFilters);
+
+  // Esc para cerrar
+  document.addEventListener('keydown', (e)=>{
+    if(e.key === 'Escape' && filtersOverlay?.classList.contains('open')) closeFilters();
+  });
+
+  // Cerrar clic “fuera”
+  let mouseDownInside = false;
+  filtersOverlay?.addEventListener('mousedown', (e)=>{
+    mouseDownInside = !e.target.classList.contains('card') && e.target === filtersOverlay;
+  });
+  filtersOverlay?.addEventListener('mouseup', (e)=>{
+    if(mouseDownInside && e.target === filtersOverlay) closeFilters();
+    mouseDownInside = false;
+  });
+
+  /* ===========================
+     4) UI: Join/Leave / Badge
+  ============================*/
+  function setLobbyCode(code){
+    lobbyCode = code;
+    localStorage.setItem(LS_CODE_KEY, code);
+    badgeEl.style.display='inline-block'; badgeEl.textContent = `Sala: ${code}`;
+    leaveRow.style.display='flex';
+    overlayEl.style.display='none';
+    playersCard.style.display='block';
+    window.lobbyCode = lobbyCode;
+  }
+  function clearLobbyCode(){
+    lobbyCode = null;
+    localStorage.removeItem(LS_CODE_KEY);
+    badgeEl.style.display='none'; badgeEl.textContent = 'Sala: -----';
+    leaveRow.style.display='none';
+    overlayEl.style.display='flex';
+    playersCard.style.display='none';
+    lastLobbyState = null;
+    window.lobbyCode = lobbyCode;
   }
 
-  // Botones de puntaje (+/-) solo si eres admin o estás solo
-  const hostOrSolo = isHost || playersConnected <= 1;
-  if (playersList) {
-    playersList.querySelectorAll('.scoreBtn').forEach(b => b.disabled = !hostOrSolo);
-  }
-}
-
-// === Plegado de opciones avanzadas (toggle) ===
-const btnToggleAdv = $("btnToggleAdv");
-const advRow = $("advRow");
-
-// Estado persistente (solo para modo local o cuando seas admin)
-function setAdvOpen(open){
-  if(!advRow || !btnToggleAdv) return;
-  advRow.style.display = open ? "" : "none";
-  btnToggleAdv.setAttribute("aria-expanded", open ? "true" : "false");
-  try{ localStorage.setItem("am_adv_open", open ? "1" : "0"); }catch(e){}
-}
-
-btnToggleAdv?.addEventListener("click", ()=>{
-  const open = btnToggleAdv.getAttribute("aria-expanded") !== "true";
-  setAdvOpen(open);
-});
-
-// Inicializa preferencia
-(function initAdvPref(){
-  const pref = (localStorage.getItem("am_adv_open") === "1");
-  setAdvOpen(pref);
-})();
-
-// ➕ Integra con tu control de host para sala
-const __origUpdateHostUI = updateHostUI;
-updateHostUI = function(){
-  __origUpdateHostUI();
-
-  const inLobby = !!lobbyCode;
-
-  // En sala: solo ADMIN ve el botón y la fila (plegable)
-  if(btnToggleAdv){
-    btnToggleAdv.style.display = (!inLobby || isHost) ? "" : "none";
-  }
-  if(advRow){
-    if(inLobby && !isHost){
-      advRow.style.display = "none";
-    }else{
-      const pref = (localStorage.getItem("am_adv_open") === "1");
-      advRow.style.display = pref ? "" : "none";
+  let joinMode = false;
+  function setJoinMode(on){
+    joinMode = !!on;
+    if (choiceRow) choiceRow.style.display = on ? "none" : "flex";
+    if (joinRow)   joinRow.style.display   = on ? "flex" : "none";
+    if (!on) {
+      const input = $('lobbyCodeInput');
+      if (input) input.value = "";
+      if (statusEl) statusEl.textContent = "";
     }
   }
 
-  // (opcional) esto controlaba la antigua tarjeta catWeightsCard:
-  const catCard = document.getElementById('catWeightsCard');
-  const canControlWeights = (!inLobby || isHost);
-  if (catCard) catCard.style.display = canControlWeights ? '' : 'none';
+  /* ===========================
+     5) Presencia por pestaña
+  ============================*/
+  function setupPresence(code){
+    if (!code) return;
+    if (currentConnRef) { try { onDisconnect(currentConnRef).cancel(); } catch {} currentConnRef = null; }
 
-  // ⬇️ NUEVO: visibilidad del botón Filtros
-  const btnFiltersEl = document.getElementById('btnFilters');
-  if (btnFiltersEl) btnFiltersEl.style.display = (!inLobby || isHost) ? '' : 'none';
+    const infoRef = ref(db, ".info/connected");
+    onValue(infoRef, (snap)=>{
+      if (snap.val() === true) {
+        const connRef = push(ref(db, `lobbies/${code}/players/${clientId}/connections`));
+        currentConnRef = connRef;
+        set(connRef, true);
+        onDisconnect(connRef).remove();
+        update(ref(db, `lobbies/${code}/players/${clientId}`), { connected: true });
+      }
+    });
+  }
 
-   // 🔒 Si el overlay de Filtros estaba abierto y perdiste permisos, ciérralo
-const wasOpen = filtersOverlay?.classList.contains('open');
-const stillCan = (!inLobby || isHost);
-if (wasOpen && !stillCan) closeFilters();
-};
-updateHostUI(); // para aplicar el estado inicial fuera/antes del lobby
-    
-    const clampScore = (n)=> Math.max(0, Math.min(999, n|0));
+  /* ===========================
+     6) Host UI / Controles
+  ============================*/
+  function updateHostUI(){
+    const inLobby = !!lobbyCode;
 
-    function getActiveGroupsFromState(state){
-      const playersObj = state?.players || {};
-      return [...new Set(
-        Object.values(playersObj)
-          .filter(p=>p && p.connections && Object.keys(p.connections).length>0)
-          .map(p=> p.group ? String(p.group).toUpperCase() : null)
-          .filter(Boolean)
-      )].sort();
+    // Mostrar controles admin: solo si NO hay lobby o si eres ADMIN
+    if (adminControls) adminControls.style.display = (!inLobby || isHost) ? "" : "none";
+    if (clearBtn)      clearBtn.style.display      = (!inLobby || isHost) ? "" : "none";
+    if (btnGrupos)     btnGrupos.style.display     = (!inLobby || isHost) ? "" : "none";
+
+    // Select del timer solo admin en sala
+    if (timerSelect) {
+      timerSelect.style.display = (!inLobby || isHost) ? "" : "none";
+      const disableSel = !(isHost && inLobby);
+      timerSelect.disabled = disableSel;
+      timerSelect.style.opacity = disableSel ? 0.5 : '';
     }
 
-    function renderPlayers(state){
-      if(!playersCard || !playersList) return;
+    // Display del timer siempre visible; controlable si admin o solo
+    if (timerDisplay) {
+      const canControlTimer = (!inLobby) ? false : (isHost || playersConnected <= 1);
+      timerDisplay.style.display = "";
+      timerDisplay.tabIndex = canControlTimer ? 0 : -1;
+      timerDisplay.style.opacity = canControlTimer ? '' : '0.6';
+      timerDisplay.style.pointerEvents = canControlTimer ? '' : 'none';
+    }
 
-      const playersObj = state.players || {};
-      const items = Object.entries(playersObj).map(([pid,p])=>{
-        const connected = !!(p && p.connections && Object.keys(p.connections).length > 0);
-        return {
-          id: pid,
-          name: (p && p.name) || "Jugador",
-          score: clampScore((p && p.score)!=null ? p.score : 0),
-          group: p && p.group ? String(p.group).toUpperCase() : null,
-          connected,
-          isAdmin: state.hostId === pid
-        };
-      });
+    // Botones de puntaje (+/-) solo admin o solo
+    const hostOrSolo = isHost || playersConnected <= 1;
+    if (playersList) playersList.querySelectorAll('.scoreBtn').forEach(b => b.disabled = !hostOrSolo);
 
-      if(items.length === 0){
-        playersList.innerHTML = `<span class="muted">Nadie conectado aún…</span>`;
+    // Plegado de “Más opciones” y botón Filtros
+    const btnToggleAdv = $('btnToggleAdv');
+    const advRow       = $('advRow');
+    if(btnToggleAdv)  btnToggleAdv.style.display = (!inLobby || isHost) ? "" : "none";
+    if(advRow){
+      if(inLobby && !isHost){
+        advRow.style.display = "none";
       }else{
-        const escSafe = (s)=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-        playersList.innerHTML = items.map(x=>{
-          const col = groupColor(x.group);
-          const bg = rgba(col, 0.22);
-          const bd = rgba(col, 0.55);
-          return `
+        const pref = (localStorage.getItem("am_adv_open") === "1");
+        advRow.style.display = pref ? "" : "none";
+      }
+    }
+    const btnFiltersEl = $('btnFilters');
+    if (btnFiltersEl) btnFiltersEl.style.display = (!inLobby || isHost) ? '' : 'none';
+
+    // Si pierdes permisos y estaba abierto, ciérralo
+    const wasOpen = filtersOverlay?.classList.contains('open');
+    const stillCan = (!inLobby || isHost);
+    if (wasOpen && !stillCan) closeFilters();
+  }
+
+  // Toggle de opciones avanzadas (persistencia local)
+  (function initAdvPref(){
+    const btnToggleAdv = $('btnToggleAdv');
+    const advRow       = $('advRow');
+    function setAdvOpen(open){
+      if(!advRow || !btnToggleAdv) return;
+      advRow.style.display = open ? "" : "none";
+      btnToggleAdv.setAttribute("aria-expanded", open ? "true" : "false");
+      try{ localStorage.setItem("am_adv_open", open ? "1" : "0"); }catch{}
+    }
+    btnToggleAdv?.addEventListener("click", ()=>{
+      const open = btnToggleAdv.getAttribute("aria-expanded") !== "true";
+      setAdvOpen(open);
+    });
+    setAdvOpen(localStorage.getItem("am_adv_open") === "1");
+  })();
+
+  updateHostUI(); // estado inicial
+
+  /* ===========================
+     7) Players UI / Score
+  ============================*/
+  const clampScore = (n)=> Math.max(0, Math.min(999, n|0));
+  const escSafe = (s)=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+
+  const GROUP_PALETTE = ['#60a5fa','#f472b6','#34d399','#fbbf24','#a78bfa','#fb7185','#22d3ee','#f59e0b','#4ade80','#e879f9'];
+  const hexToRgb = (hex)=>{ const m=/^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex); return m?{r:parseInt(m[1],16),g:parseInt(m[2],16),b:parseInt(m[3],16)}:{r:100,g:100,b:100}; };
+  const rgba = (hex, a)=>{ const {r,g,b}=hexToRgb(hex); return `rgba(${r}, ${g}, ${b}, ${a})`; };
+  const groupColor = (letter)=>{
+    if(!letter) return '#64748b';
+    const idx = Math.max(0, letter.charCodeAt(0) - 65);
+    return GROUP_PALETTE[idx % GROUP_PALETTE.length];
+  };
+
+  function getActiveGroupsFromState(state){
+    const playersObj = state?.players || {};
+    return [...new Set(
+      Object.values(playersObj)
+        .filter(p=>p && p.connections && Object.keys(p.connections).length>0)
+        .map(p=> p.group ? String(p.group).toUpperCase() : null)
+        .filter(Boolean)
+    )].sort();
+  }
+
+  function renderPlayers(state){
+    if(!playersCard || !playersList) return;
+
+    const playersObj = state.players || {};
+    const items = Object.entries(playersObj).map(([pid,p])=>{
+      const connected = !!(p && p.connections && Object.keys(p.connections).length > 0);
+      return {
+        id: pid,
+        name: (p && p.name) || "Jugador",
+        score: clampScore((p && p.score)!=null ? p.score : 0),
+        group: p && p.group ? String(p.group).toUpperCase() : null,
+        connected,
+        isAdmin: state.hostId === pid
+      };
+    });
+
+    if(items.length === 0){
+      playersList.innerHTML = `<span class="muted">Nadie conectado aún…</span>`;
+    }else{
+      playersList.innerHTML = items.map(x=>{
+        const col = groupColor(x.group);
+        const bg = rgba(col, 0.22);
+        const bd = rgba(col, 0.55);
+        return `
           <div class="playerChip" data-id="${x.id}" title="${escSafe(x.name)}${x.isAdmin?' • ADMIN':''}" style="--gc:${col}">
             <span class="dot" aria-label="${x.connected ? 'online' : 'offline'}" style="${x.connected ? '' : 'background:#94a3b8'}"></span>
             <span class="groupBadge" style="background:${bg};border-color:${bd}">${x.group ? `Grupo ${escSafe(x.group)}` : '—'}</span>
@@ -1522,373 +1459,408 @@ updateHostUI(); // para aplicar el estado inicial fuera/antes del lobby
               <button class="scoreBtn" data-action="inc" data-id="${x.id}">+</button>
             </div>
           </div>
-        `}).join("");
-      }
-
-      const hostOrSolo = isHost || playersConnected <= 1;
-      playersList.querySelectorAll('.scoreBtn').forEach(b=> b.disabled = !hostOrSolo);
-
-      playersCard.style.display = lobbyCode ? 'block' : 'none';
+        `;
+      }).join("");
     }
 
-   // ======== Temporizador por lobby (compartido) ========
-function fmt(t){
-  const m = Math.floor(t/60), s = t%60;
-  return `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
-}
-function clearTimerInterval(){ if(timerInterval){ clearInterval(timerInterval); timerInterval=null; } }
+    const hostOrSolo = isHost || playersConnected <= 1;
+    playersList.querySelectorAll('.scoreBtn').forEach(b=> b.disabled = !hostOrSolo);
+    playersCard.style.display = lobbyCode ? 'block' : 'none';
+  }
 
-async function startTimer(durationSec){
-  if(!lobbyCode || !(isHost || playersConnected<=1)) return;
-  const startTime = Date.now();
-  await update(ref(db, `lobbies/${lobbyCode}`), {
-    timer: { startedAt: startTime, durationSec, canceled:false }
+  // +/- puntaje
+  playersList?.addEventListener('click', async (e)=>{
+    const btn = e.target.closest('.scoreBtn');
+    if(!btn) return;
+
+    const hostOrSolo = isHost || playersConnected <= 1;
+    if(!hostOrSolo) return;
+
+    const pid = btn.getAttribute('data-id');
+    const action = btn.getAttribute('data-action');
+    if(!pid || !action || !lobbyCode) return;
+
+    try{
+      const scoreEl = playersList.querySelector(`.score[data-id="${pid}"]`);
+      let current = 0;
+      if(scoreEl){
+        current = parseInt(scoreEl.textContent,10);
+        if(Number.isNaN(current)) current = 0;
+      }else{
+        const snap = await get(ref(db, `lobbies/${lobbyCode}/players/${pid}/score`));
+        current = clampScore(snap.val() ?? 0);
+      }
+
+      const delta = action === 'inc' ? 1 : -1;
+      const next = clampScore(current + delta);
+      if(next === current) return;
+
+      await update(ref(db, `lobbies/${lobbyCode}/players/${pid}`), { score: next });
+    }catch(err){
+      console.warn('No se pudo actualizar el score:', err);
+      if(window.showToast) window.showToast('No se pudo actualizar el puntaje');
+    }
   });
-}
-async function cancelTimer(){
-  if(!lobbyCode || !(isHost || playersConnected<=1)) return;
-  await update(ref(db, `lobbies/${lobbyCode}/timer`), { canceled:true });
-}
 
-function handleTimerState(timer){
-  clearTimerInterval();
+  /* ===========================
+     8) Temporizador compartido
+  ============================*/
+  let timerActive   = false;
+  let timerInterval = null;
+  let lastBeepSecond = null;
+  let alarmPlayedForTimerId = null;
 
-  // reset sonido por sesión
-  lastBeepSecond = null;
-  timerActive = false;
+  const fmt = (t)=> `${String(Math.floor(t/60)).padStart(2,'0')}:${String(t%60).padStart(2,'0')}`;
+  function clearTimerInterval(){ if(timerInterval){ clearInterval(timerInterval); timerInterval=null; } }
 
-  // si no hay timer o está cancelado
-  if(!timer || timer.canceled){
-    if(timerDisplay){
-      timerDisplay.textContent='Iniciar';
-      timerDisplay.classList.remove('running','warning');
-      timerDisplay.style.color='';
+  async function startTimer(durationSec){
+    if(!lobbyCode || !(isHost || playersConnected<=1)) return;
+    const startTime = Date.now();
+    await update(ref(db, `lobbies/${lobbyCode}`), {
+      timer: { startedAt: startTime, durationSec, canceled:false }
+    });
+  }
+  async function cancelTimer(){
+    if(!lobbyCode || !(isHost || playersConnected<=1)) return;
+    await update(ref(db, `lobbies/${lobbyCode}/timer`), { canceled:true });
+  }
+
+  function handleTimerState(timer){
+    clearTimerInterval();
+
+    // Reset sonido por sesión
+    lastBeepSecond = null;
+    timerActive = false;
+
+    if(!timer || timer.canceled){
+      if(timerDisplay){
+        timerDisplay.textContent='Iniciar';
+        timerDisplay.classList.remove('running','warning');
+        timerDisplay.style.color='';
+      }
+      try{ sndBeep.pause();  sndBeep.currentTime  = 0; }catch{}
+      try{ sndAlarm.pause(); sndAlarm.currentTime = 0; }catch{}
+      return;
     }
-    try{ sndBeep.pause();  sndBeep.currentTime  = 0; }catch(e){}
-    try{ sndAlarm.pause(); sndAlarm.currentTime = 0; }catch(e){}
-    return;
-  }
 
-  // ← única vez
-  const { startedAt, durationSec } = timer;
-  if(!startedAt || !durationSec) return;
+    const { startedAt, durationSec } = timer;
+    if(!startedAt || !durationSec) return;
+    alarmPlayedForTimerId = startedAt;
 
-  // id de esta sesión para tocar la alarma una sola vez
-  alarmPlayedForTimerId = startedAt;
+    function tick(){
+      const elapsed = Math.floor((Date.now()-startedAt)/1000);
+      const remain  = Math.max(0, durationSec - elapsed);
 
-  function tick(){
-    const elapsed = Math.floor((Date.now()-startedAt)/1000);
-    const remain  = Math.max(0, durationSec - elapsed);
-
-    if(timerDisplay){
-      timerDisplay.textContent = fmt(remain); // usa la fmt global
-      timerDisplay.classList.add('running');
-      if(remain <= 10){ timerDisplay.classList.add('warning'); }
-      else{ timerDisplay.classList.remove('warning'); }
-    }
-
-    timerActive = remain > 0 && !timer.canceled;
-
-    // 🎵 Sonidos
-try {
-  // Reproducir el audio de 10 s una sola vez cuando queden exactamente 10 s
-  if (remain === 10 && lastBeepSecond !== 10) {
-    stopBeep();
-    sndBeep.currentTime = 0;
-    sndBeep.play().catch(()=>{});
-    lastBeepSecond = 10;
-  }
-
-  // Cortar el beep si se cancela o termina el tiempo
-  if (remain === 0 || timer?.canceled) {
-    stopBeep(); // Detiene el audio de los beeps si seguía sonando
-  }
-
-  // Alarma al llegar a 0 (solo una vez)
-  if (remain === 0 && alarmPlayedForTimerId === startedAt) {
-    sndAlarm.currentTime = 0;
-    sndAlarm.play().catch(()=>{});
-    alarmPlayedForTimerId = null;
-  }
-} catch (e) {}
-
-    if(remain<=0){
-      clearTimerInterval();
-      if(timerDisplay) timerDisplay.classList.remove('running','warning');
-      if(window.showToast) window.showToast('⏰ ¡Tiempo!');
-    }
-  }
-
-  tick();
-  timerInterval = setInterval(tick, 1000);
-}
-
-timerDisplay?.addEventListener('click', ()=>{
-  const hostOrSolo = isHost || playersConnected <= 1;
-  if(!(hostOrSolo) || !lobbyCode) return;
-  if (timerActive) {
-    cancelTimer();
-  } else {
-    const sec = parseInt(timerSelect?.value||'60',10);
-    startTimer(sec);
-  }
-});
-
-timerSelect?.addEventListener('change', ()=>{
-  if(!(isHost||playersConnected<=1)||!lobbyCode) return;
-  const val = parseInt(timerSelect.value,10);
-  update(ref(db, `lobbies/${lobbyCode}/timer`), { durationSec: val, startedAt: Date.now(), canceled:false });
-});
-
-    // ======== Generación por grupo (usa el último estado del lobby) ========
-    function buildGroupedOutput(mode){
-      const state = lastLobbyState;
-      const groups = getActiveGroupsFromState(state);
-      if(!groups || groups.length===0) return null;
-
-      const gens = {
-        PVAL: window.genPVAL, PV: window.genPV, PA: window.genPA, PL: window.genPL,
-        PAL: window.genPAL, PVA: window.genPVA, PVL: window.genPVL,
-        FUSION: window.genFusion, P: window.genP, EVENTO: window.genEvento, ESCENA: window.genEscena
-      };
-      const fn = gens[mode] || gens["PVAL"];
-
-      const now = Date.now();
-      const linesHtml = [];
-      const linesText = [];
-
-      for(const g of groups){
-        const R = rng(`${lobbyCode}-${g}-${now}`);
-        const { html, text } = fn(R);
-
-        const col = groupColor(g);
-        const bg = rgba(col, 0.22);
-        const bd = rgba(col, 0.55);
-
-        linesHtml.push(`<div class="lineGroup">
-          <span class="gBadge" style="background:${bg};border-color:${bd}">Grupo ${g}</span>
-          <span>${html}</span>
-        </div>`);
-        linesText.push(`Grupo ${g}: ${text}`);
+      if(timerDisplay){
+        timerDisplay.textContent = fmt(remain);
+        timerDisplay.classList.add('running');
+        if(remain <= 10){ timerDisplay.classList.add('warning'); }
+        else            { timerDisplay.classList.remove('warning'); }
       }
 
-      return { html: linesHtml.join(""), text: linesText.join("\n") };
+      timerActive = remain > 0 && !timer.canceled;
+
+      // 🎵 Sonidos
+      try {
+        if (remain === 10 && lastBeepSecond !== 10) {
+          stopBeep();
+          sndBeep.currentTime = 0;
+          sndBeep.play().catch(()=>{});
+          lastBeepSecond = 10;
+        }
+        if (remain === 0 || timer?.canceled) {
+          stopBeep();
+        }
+        if (remain === 0 && alarmPlayedForTimerId === startedAt) {
+          sndAlarm.currentTime = 0;
+          sndAlarm.play().catch(()=>{});
+          alarmPlayedForTimerId = null;
+        }
+      } catch {}
+
+      if(remain<=0){
+        clearTimerInterval();
+        if(timerDisplay) timerDisplay.classList.remove('running','warning');
+        if(window.showToast) window.showToast('⏰ ¡Tiempo!');
+      }
     }
-// Genera aleatoriamente uno de: PV / PA / PL (para un solo enunciado) — VIVE EN EL MÓDULO
-function genRandPVPAorPL(R){
-  const modes = ['PV','PA','PL'];
-  const mode  = modes[Math.floor(R()*modes.length)];
-  const fns   = { PV: window.genPV, PA: window.genPA, PL: window.genPL };
-  return fns[mode](R);
-}
 
-// Versión por grupo: a cada grupo le toca aleatoriamente PV/PA/PL — VIVE EN EL MÓDULO
-function buildGroupedOutputDouble(){
-  const state  = lastLobbyState;
-  const groups = getActiveGroupsFromState(state);
-  if(!groups || groups.length===0) return null;
+    tick();
+    timerInterval = setInterval(tick, 1000);
+  }
 
-  const now = Date.now();
-  const linesHtml = [];
-  const linesText = [];
+  timerDisplay?.addEventListener('click', ()=>{
+    const hostOrSolo = isHost || playersConnected <= 1;
+    if(!(hostOrSolo) || !lobbyCode) return;
+    if (timerActive) {
+      cancelTimer();
+    } else {
+      const sec = parseInt(timerSelect?.value||'60',10);
+      startTimer(sec);
+    }
+  });
 
-  for(const g of groups){
-    const R = rng(`${lobbyCode}-${g}-${now}`); // semilla por grupo
+  timerSelect?.addEventListener('change', ()=>{
+    if(!(isHost||playersConnected<=1)||!lobbyCode) return;
+    const val = parseInt(timerSelect.value,10);
+    update(ref(db, `lobbies/${lobbyCode}/timer`), { durationSec: val, startedAt: Date.now(), canceled:false });
+  });
+
+  /* ===========================
+     9) “Enunciado secreto”
+  ============================*/
+  let lastSecretTs = null;
+  function showSecretOverlay(html, title='🕵️ Enunciado secreto'){
+    const wrap = $('secretOverlay');
+    const cont = $('secretContent');
+    const titleEl = $('secretTitle');
+    if(!wrap || !cont) return;
+    cont.innerHTML = html;
+    if(titleEl) titleEl.textContent = title;
+    wrap.style.display = 'flex';
+  }
+  function hideSecretOverlay(){ const wrap = $('secretOverlay'); if(!wrap) return; wrap.style.display = 'none'; }
+  $('btnSecretOK')?.addEventListener('click', async ()=>{
+    hideSecretOverlay();
+    try{
+      if(lobbyCode){
+        await update(ref(db, `lobbies/${lobbyCode}/secrets/${clientId}`), { ack: true });
+      }
+    }catch{}
+  });
+
+  /* ===========================
+     10) Generación por grupo
+  ============================*/
+  function buildGroupedOutput(mode){
+    const state  = lastLobbyState;
+    const groups = getActiveGroupsFromState(state);
+    if(!groups || groups.length===0) return null;
+
+    const gens = {
+      PVAL: window.genPVAL, PV: window.genPV, PA: window.genPA, PL: window.genPL,
+      PAL: window.genPAL, PVA: window.genPVA, PVL: window.genPVL,
+      FUSION: window.genFusion, P: window.genP, EVENTO: window.genEvento, ESCENA: window.genEscena
+    };
+    const fn = gens[mode] || gens["PVAL"];
+
+    const now = Date.now();
+    const linesHtml = [];
+    const linesText = [];
+
+    for(const g of groups){
+      const R = rng(`${lobbyCode}-${g}-${now}`);
+      const { html, text } = fn(R);
+
+      const col = groupColor(g);
+      const bg = rgba(col, 0.22);
+      const bd = rgba(col, 0.55);
+
+      linesHtml.push(`<div class="lineGroup">
+        <span class="gBadge" style="background:${bg};border-color:${bd}">Grupo ${g}</span>
+        <span>${html}</span>
+      </div>`);
+      linesText.push(`Grupo ${g}: ${text}`);
+    }
+
+    return { html: linesHtml.join(""), text: linesText.join("\n") };
+  }
+
+  // 1×: aleatorio entre PV / PA / PL (para un enunciado)
+  function genRandPVPAorPL(R){
     const modes = ['PV','PA','PL'];
     const mode  = modes[Math.floor(R()*modes.length)];
     const fns   = { PV: window.genPV, PA: window.genPA, PL: window.genPL };
-    const { html, text } = fns[mode](R);
-
-    const col = groupColor(g);
-    const bg  = rgba(col, 0.22);
-    const bd  = rgba(col, 0.55);
-
-    linesHtml.push(`
-      <div class="lineGroup">
-        <span class="gBadge" style="background:${bg};border-color:${bd}">Grupo ${g}</span>
-        <span>${html}</span>
-      </div>
-    `.trim());
-    linesText.push(`Grupo ${g}: ${text}`);
+    return fns[mode](R);
   }
 
-  return { html: linesHtml.join(""), text: linesText.join("\n") };
-}
-// Genera aleatoriamente uno de: PVA / PAL / PVL (para un solo enunciado, en ese orden)
-function genRandTriple(R){
-  const modes = ['PVA','PAL','PVL'];
-  const mode  = modes[Math.floor(R()*modes.length)];
-  const fns   = { PVA: window.genPVA, PAL: window.genPAL, PVL: window.genPVL };
-  return fns[mode](R);
-}
+  // Versión por grupo: PV / PA / PL aleatorio para cada grupo
+  function buildGroupedOutputDouble(){
+    const state  = lastLobbyState;
+    const groups = getActiveGroupsFromState(state);
+    if(!groups || groups.length===0) return null;
 
-// Versión por grupo: a cada grupo le toca aleatoriamente PVA / PAL / PVL
-function buildGroupedOutputTriple(){
-  const state  = lastLobbyState;
-  const groups = getActiveGroupsFromState(state);
-  if(!groups || groups.length===0) return null;
+    const now = Date.now();
+    const linesHtml = [];
+    const linesText = [];
 
-  const now = Date.now();
-  const linesHtml = [];
-  const linesText = [];
+    for(const g of groups){
+      const R = rng(`${lobbyCode}-${g}-${now}`);
+      const modes = ['PV','PA','PL'];
+      const mode  = modes[Math.floor(R()*modes.length)];
+      const fns   = { PV: window.genPV, PA: window.genPA, PL: window.genPL };
+      const { html, text } = fns[mode](R);
 
-  for(const g of groups){
-    const R = rng(`${lobbyCode}-${g}-${now}`); // semilla por grupo
+      const col = groupColor(g);
+      const bg  = rgba(col, 0.22);
+      const bd  = rgba(col, 0.55);
+
+      linesHtml.push(`
+        <div class="lineGroup">
+          <span class="gBadge" style="background:${bg};border-color:${bd}">Grupo ${g}</span>
+          <span>${html}</span>
+        </div>
+      `.trim());
+      linesText.push(`Grupo ${g}: ${text}`);
+    }
+
+    return { html: linesHtml.join(""), text: linesText.join("\n") };
+  }
+
+  // 1×: aleatorio entre PVA / PAL / PVL
+  function genRandTriple(R){
     const modes = ['PVA','PAL','PVL'];
     const mode  = modes[Math.floor(R()*modes.length)];
     const fns   = { PVA: window.genPVA, PAL: window.genPAL, PVL: window.genPVL };
-    const { html, text } = fns[mode](R);
-
-    const col = groupColor(g);
-    const bg  = rgba(col, 0.22);
-    const bd  = rgba(col, 0.55);
-
-    linesHtml.push(`
-      <div class="lineGroup">
-        <span class="gBadge" style="background:${bg};border-color:${bd}">Grupo ${g}</span>
-        <span>${html}</span>
-      </div>
-    `.trim());
-    linesText.push(`Grupo ${g}: ${text}`);
+    return fns[mode](R);
   }
 
-  return { html: linesHtml.join(""), text: linesText.join("\n") };
-}
-/* ====== Desafíos del "Reto" ====== */
-const CHALLENGES = [
-  "Arte Abstracto: Todos deben dibujar sin levantar el plumón de la pizarra.",
-  "Arte Manco: Todos deben dibujar con su mano opuesta.",
-  "Arte Ciego: Todos deben dibujar con los ojos cerrados.",
-  "Arte Geométrico: Todos deben dibujar usando solo líneas rectas.",
-  "Arte Veloz: Todos tienen 20 segundos para dibujar."
-];
+  // Versión por grupo: PVA / PAL / PVL aleatorio para cada grupo
+  function buildGroupedOutputTriple(){
+    const state  = lastLobbyState;
+    const groups = getActiveGroupsFromState(state);
+    if(!groups || groups.length===0) return null;
 
-function pickChallenge(){
-  const i = Math.floor(Math.random() * CHALLENGES.length);
-  return CHALLENGES[i];
-}
+    const now = Date.now();
+    const linesHtml = [];
+    const linesText = [];
 
-function setChallengeNote(html){
-  const el = document.getElementById("challengeNote");
-  if(el) el.innerHTML = html || "";
-}
-    // Limpia el reto (nota/desafío) local y en Firebase (si eres admin o estás solo)
-async function clearChallengeForAll(){
-  // Limpia la nota local
-  setChallengeNote("");
+    for(const g of groups){
+      const R = rng(`${lobbyCode}-${g}-${now}`);
+      const modes = ['PVA','PAL','PVL'];
+      const mode  = modes[Math.floor(R()*modes.length)];
+      const fns   = { PVA: window.genPVA, PAL: window.genPAL, PVL: window.genPVL };
+      const { html, text } = fns[mode](R);
 
-  // Limpia la nota compartida en la sala
-  if(lobbyCode){
-    const hostOrSolo = isHost || playersConnected <= 1;
-    if(hostOrSolo){
-      try{
-        await update(ref(db, `lobbies/${lobbyCode}`), { currentChallengeHtml: "" });
-      }catch(e){
-        console.warn('No se pudo limpiar el reto:', e);
-      }
+      const col = groupColor(g);
+      const bg  = rgba(col, 0.22);
+      const bd  = rgba(col, 0.55);
+
+      linesHtml.push(`
+        <div class="lineGroup">
+          <span class="gBadge" style="background:${bg};border-color:${bd}">Grupo ${g}</span>
+          <span>${html}</span>
+        </div>
+      `.trim());
+      linesText.push(`Grupo ${g}: ${text}`);
     }
+    return { html: linesHtml.join(""), text: linesText.join("\n") };
   }
-}
-    /* + / − puntaje */
-    playersList?.addEventListener('click', async (e)=>{
-      const btn = e.target.closest('.scoreBtn');
-      if(!btn) return;
 
+  /* ===========================
+     11) Reto / Challenge
+  ============================*/
+  const CHALLENGES = [
+    "Arte Abstracto: Todos deben dibujar sin levantar el plumón de la pizarra.",
+    "Arte Manco: Todos deben dibujar con su mano opuesta.",
+    "Arte Ciego: Todos deben dibujar con los ojos cerrados.",
+    "Arte Geométrico: Todos deben dibujar usando solo líneas rectas.",
+    "Arte Veloz: Todos tienen 20 segundos para dibujar."
+  ];
+  function pickChallenge(){ return CHALLENGES[Math.floor(Math.random() * CHALLENGES.length)]; }
+
+  function setChallengeNote(html){
+    const el = $('challengeNote');
+    if(el) el.innerHTML = html || "";
+  }
+
+  // Limpia el reto local y en Firebase (si eres admin o estás solo)
+  async function clearChallengeForAll(){
+    setChallengeNote("");
+    if(lobbyCode){
       const hostOrSolo = isHost || playersConnected <= 1;
-      if(!hostOrSolo) return;
-
-      const pid = btn.getAttribute('data-id');
-      const action = btn.getAttribute('data-action');
-      if(!pid || !action || !lobbyCode) return;
-
-      try{
-        const scoreEl = playersList.querySelector(`.score[data-id="${pid}"]`);
-        let current = 0;
-        if(scoreEl){
-          current = parseInt(scoreEl.textContent,10);
-          if(Number.isNaN(current)) current = 0;
-        }else{
-          const snap = await get(ref(db, `lobbies/${lobbyCode}/players/${pid}/score`));
-          current = clampScore(snap.val() ?? 0);
-        }
-
-        const delta = action === 'inc' ? 1 : -1;
-        const next = clampScore(current + delta);
-        if(next === current) return;
-
-        await update(ref(db, `lobbies/${lobbyCode}/players/${pid}`), { score: next });
-      }catch(err){
-        console.warn('No se pudo actualizar el score:', err);
-        if(window.showToast) window.showToast('No se pudo actualizar el puntaje');
+      if(hostOrSolo){
+        try{ await update(ref(db, `lobbies/${lobbyCode}`), { currentChallengeHtml: "" }); }
+        catch(e){ console.warn('No se pudo limpiar el reto:', e); }
       }
-    });
-
-    function watchLobby(code){
-      if (lobbyRef && lobbyCallback){
-        off(lobbyRef, 'value', lobbyCallback);
-        lobbyRef = null; lobbyCallback = null;
-      }
-      lobbyRef = ref(db, `lobbies/${code}`);
-      lobbyCallback = (snap)=>{
-        const state = snap.val();
-        if(!state) return;
-
-        lastLobbyState = state;
-
-        prevIsHost = isHost;
-        isHost = state.hostId === clientId;
-        window.isHost = isHost;
-
-        playersConnected = 0;
-        if (state.players) {
-          playersConnected = Object.values(state.players)
-            .filter(p => p && p.connections && Object.keys(p.connections).length > 0).length;
-        }
-
-        if (!prevIsHost && isHost && window.showToast) window.showToast("Ahora eres ADMIN");
-
-        badgeEl.style.display='inline-block'; badgeEl.textContent = `Sala: ${code}`;
-        leaveRow.style.display='flex';
-
-        if (statusEl) statusEl.textContent = `Sala: ${code} • ${isHost ? "Eres ADMIN" : "Jugador"} • Conectados: ${playersConnected}`;
-        // === Hidratar pesos desde Firebase (si existen)
-if (state.weights && typeof state.weights === 'object') {
-  WEIGHTS = { ...DEFAULT_WEIGHTS, ...state.weights };
-  try { localStorage.setItem('am_weights', JSON.stringify(WEIGHTS)); } catch(e){}
-  // Refresca sliders si están presentes (el admin los verá; jugadores no)
-  if (typeof initWeightSliders === 'function') initWeightSliders();
-}
-
-        const salidaEl = document.getElementById("salida");
-if (salidaEl && ('currentOutputHtml' in state)) {
-  salidaEl.innerHTML = state.currentOutputHtml || "";
-  window.lastCopyText = state.currentOutputText || "";
-}
-// Nota/desafío compartido
-if ('currentChallengeHtml' in state) {
-  setChallengeNote(state.currentChallengeHtml || "");
-}
-        // Timer shared state
-        handleTimerState(state.timer);
-// ==== Secretos personales por jugador
-const mySecret = state.secrets && state.secrets[clientId];
-if(mySecret && typeof mySecret.ts === 'number'){
-  if(lastSecretTs !== mySecret.ts){
-    lastSecretTs = mySecret.ts;
-    if(!mySecret.ack){
-      showSecretOverlay(
-        mySecret.html || '',
-        mySecret.title || '🕵️ Enunciado secreto'
-      );
     }
   }
-}
-        
-        renderPlayers(state);
-        updateHostUI();
-      };
-      onValue(lobbyRef, lobbyCallback);
+
+  /* ===========================
+     12) Watcher del Lobby
+  ============================*/
+  function watchLobby(code){
+    if (lobbyRef && lobbyCallback){
+      off(lobbyRef, 'value', lobbyCallback);
+      lobbyRef = null; lobbyCallback = null;
     }
+    lobbyRef = ref(db, `lobbies/${code}`);
+    lobbyCallback = (snap)=>{
+      const state = snap.val();
+      if(!state) return;
+
+      lastLobbyState = state;
+
+      prevIsHost = isHost;
+      isHost = state.hostId === clientId;
+      window.isHost = isHost;
+
+      playersConnected = 0;
+      if (state.players) {
+        playersConnected = Object.values(state.players)
+          .filter(p => p && p.connections && Object.keys(p.connections).length > 0).length;
+      }
+
+      if (!prevIsHost && isHost && window.showToast) window.showToast("Ahora eres ADMIN");
+
+      badgeEl.style.display='inline-block'; badgeEl.textContent = `Sala: ${code}`;
+      leaveRow.style.display='flex';
+
+      if (statusEl) statusEl.textContent = `Sala: ${code} • ${isHost ? "Eres ADMIN" : "Jugador"} • Conectados: ${playersConnected}`;
+
+      // Pesos desde Firebase (hidratar sliders/localStorage)
+      if (state.weights && typeof state.weights === 'object') {
+        window.WEIGHTS = { ...window.DEFAULT_WEIGHTS, ...state.weights };
+        try { localStorage.setItem('am_weights', JSON.stringify(window.WEIGHTS)); } catch{}
+        if (typeof window.initWeightSliders === 'function') window.initWeightSliders();
+      }
+
+      // Salida actual compartida
+      const salidaEl = $('salida');
+      if (salidaEl && ('currentOutputHtml' in state)) {
+        salidaEl.innerHTML = state.currentOutputHtml || "";
+        window.lastCopyText = state.currentOutputText || "";
+      }
+
+      // Nota/desafío compartido
+      if ('currentChallengeHtml' in state) {
+        setChallengeNote(state.currentChallengeHtml || "");
+      }
+
+      // Timer compartido
+      handleTimerState(state.timer);
+
+      // Secretos personales por jugador
+      const mySecret = state.secrets && state.secrets[clientId];
+      if(mySecret && typeof mySecret.ts === 'number'){
+        if(lastSecretTs !== mySecret.ts){
+          lastSecretTs = mySecret.ts;
+          if(!mySecret.ack){
+            showSecretOverlay(
+              mySecret.html || '',
+              mySecret.title || '🕵️ Enunciado secreto'
+            );
+          }
+        }
+      }
+
+      // Render de jugadores + controles
+      renderPlayers(state);
+      updateHostUI();
+    };
+    onValue(lobbyRef, lobbyCallback);
+  }
+
+  /* ===========================
+     13) Exports útiles (si otros módulos los necesitan)
+  ============================*/
+  window.openFilters              = openFilters;
+  window.closeFilters             = closeFilters;
+  window.setChallengeNote         = setChallengeNote;
+  window.clearChallengeForAll     = clearChallengeForAll;
+  window.buildGroupedOutput       = buildGroupedOutput;
+  window.buildGroupedOutputDouble = buildGroupedOutputDouble;
+  window.buildGroupedOutputTriple = buildGroupedOutputTriple;
 
     async function createLobby(name){
       const code = makeCode();
