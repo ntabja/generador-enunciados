@@ -1227,6 +1227,17 @@ window.db = db;
 window.fbRef = ref;
 window.fbUpdate = update;
     const rng = window.rng;
+    // === SFX del temporizador ===
+const sndBeep  = new Audio('sfx/timer_beep.mp3');   // beep por segundo (últimos 10s)
+const sndAlarm = new Audio('sfx/timer_alarm.mp3');  // alarma al llegar a 0
+sndBeep.preload  = 'auto';
+sndAlarm.preload = 'auto';
+sndBeep.volume   = 0.7; // ajusta si quieres
+sndAlarm.volume  = 1.0; // ajusta si quieres
+
+// Nota: algunos navegadores piden interacción del usuario para permitir audio.
+// Tu app ya tiene clicks (botones), así que quedará habilitado naturalmente.
+
     const genPVAL = window.genPVAL;
 
     function getClientId(){
@@ -1310,6 +1321,9 @@ filtersOverlay?.addEventListener('click', (e)=>{
     let timerActive = false; // control local del estado del timer
 
     let timerInterval = null;
+// Control interno de sonidos por sesión del timer
+let lastBeepSecond = null;        // para no repetir el beep en el mismo segundo
+let alarmPlayedForTimerId = null; // para no repetir alarma en esta sesión
 
     // ====== Enunciado Secreto ======
 let lastSecretTs = null;
@@ -1584,7 +1598,30 @@ async function cancelTimer(){
 
 function handleTimerState(timer){
   clearTimerInterval();
+// reset de estado local del sonido en cada actualización de estado
+  lastBeepSecond = null;
+  // No tocamos alarmPlayedForTimerId aquí aún: se setea al ver 'startedAt' válido
 
+  // estado base
+  timerActive = false;
+
+  if(!timer || timer.canceled){
+    if(timerDisplay){
+      timerDisplay.textContent='Iniciar';
+      timerDisplay.classList.remove('running','warning');
+      timerDisplay.style.color='';
+    }
+        // 🛑 detener sonidos si se cancela
+    try{ sndBeep.pause(); sndBeep.currentTime = 0; }catch(e){}
+    try{ sndAlarm.pause(); sndAlarm.currentTime = 0; }catch(e){}
+    return;
+  }
+
+  const { startedAt, durationSec } = timer;
+  if(!startedAt||!durationSec) return;
+
+  // Asociamos esta sesión de timer a su alarm-id (usamos startedAt como id único)
+  alarmPlayedForTimerId = startedAt;
   // estado base
   timerActive = false;
 
@@ -1602,7 +1639,7 @@ function handleTimerState(timer){
 
   function tick(){
   const elapsed = Math.floor((Date.now()-startedAt)/1000);
-  const remain = Math.max(0, durationSec - elapsed);
+  const remain  = Math.max(0, durationSec - elapsed);
 
   if(timerDisplay){
     timerDisplay.textContent = fmt(remain);
@@ -1617,6 +1654,29 @@ function handleTimerState(timer){
 
   // Estado lógico
   timerActive = remain > 0 && !timer.canceled;
+
+  // 🎵 --- BLOQUE NUEVO DE SONIDOS ---
+  try{
+    // Beep cada segundo en los últimos 10 segundos
+    if(remain > 0 && remain <= 10){
+      if(lastBeepSecond !== remain){
+        sndBeep.currentTime = 0;
+        sndBeep.play().catch(()=>{});
+        lastBeepSecond = remain;
+      }
+    }else{
+      // fuera de la ventana: resetea para una futura cuenta regresiva
+      lastBeepSecond = null;
+    }
+
+    // Alarma al llegar a 0 (solo 1 vez por sesión de timer)
+    if(remain === 0 && alarmPlayedForTimerId === startedAt){
+      sndAlarm.currentTime = 0;
+      sndAlarm.play().catch(()=>{});
+      alarmPlayedForTimerId = null; // marca como usada
+    }
+  }catch(e){}
+  // 🎵 --- FIN BLOQUE NUEVO DE SONIDOS ---
 
   if(remain<=0){
     clearTimerInterval();
