@@ -2055,8 +2055,8 @@ async function generarGrupos(){
   const snap = await get(ref(db, `lobbies/${lobbyCode}/players`));
   const playersObj = snap.val() || {};
 
-  const activos = Object.entries(playersObj)
-    .filter(([,p]) => p && p.name && p.connections && Object.keys(p.connections).length > 0)
+    const activos = Object.entries(playersObj)
+    .filter(([,p]) => p && p.name)
     .map(([pid,p]) => ({ pid, name: p.name }));
 
   if (activos.length < 2 || activos.length % 2 !== 0) {
