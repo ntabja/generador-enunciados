@@ -1177,11 +1177,16 @@ generarN('PVAL',1);
   sndBeep.preload  = 'auto';  sndBeep.volume  = 0.7;
   sndAlarm.preload = 'auto';  sndAlarm.volume = 1.0;
 
-  // Botón
+    // Botones
   const sndButton = new Audio('sfx/button_press.mp3');
   sndButton.preload = 'auto';
   sndButton.volume  = 0.8;
   window.sndButton  = sndButton;
+
+  const sndPoint = new Audio('sfx/button_point.mp3');
+  sndPoint.preload = 'auto';
+  sndPoint.volume  = 0.9;
+  window.sndPoint  = sndPoint;
 
   function stopBeep(){
     try { sndBeep.pause(); sndBeep.currentTime = 0; } catch {}
@@ -1492,11 +1497,20 @@ generarN('PVAL',1);
         current = clampScore(snap.val() ?? 0);
       }
 
-      const delta = action === 'inc' ? 1 : -1;
+            const delta = action === 'inc' ? 1 : -1;
       const next = clampScore(current + delta);
       if(next === current) return;
 
+      // Sonido SOLO al subir (+)
+      if (action === 'inc' && window.sndPoint) {
+        try {
+          window.sndPoint.currentTime = 0;
+          window.sndPoint.play().catch(()=>{});
+        } catch {}
+      }
+
       await update(ref(db, `lobbies/${lobbyCode}/players/${pid}`), { score: next });
+
     }catch(err){
       console.warn('No se pudo actualizar el score:', err);
       if(window.showToast) window.showToast('No se pudo actualizar el puntaje');
