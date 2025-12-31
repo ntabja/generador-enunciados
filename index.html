@@ -1183,23 +1183,10 @@ generarN('PVAL',1);
   sndButton.volume  = 0.8;
   window.sndButton  = sndButton;
 
-    // Pool para poder sonar muchas veces seguidas sin pisarse
-  const sndPointPool = Array.from({ length: 6 }, () => {
-    const a = new Audio('sfx/button_point.mp3');
-    a.preload = 'auto';
-    a.volume  = 0.9;
-    return a;
-  });
-  let sndPointIdx = 0;
-
-  window.playPointSfx = () => {
-    const a = sndPointPool[sndPointIdx];
-    sndPointIdx = (sndPointIdx + 1) % sndPointPool.length;
-    try {
-      a.currentTime = 0;
-      a.play().catch(()=>{});
-    } catch {}
-  };
+    const sndPoint = new Audio('sfx/button_point.mp3');
+  sndPoint.preload = 'auto';
+  sndPoint.volume  = 0.9;
+  window.sndPoint  = sndPoint;
 
   function stopBeep(){
     try { sndBeep.pause(); sndBeep.currentTime = 0; } catch {}
@@ -1515,8 +1502,11 @@ generarN('PVAL',1);
       if(next === current) return;
 
       // Sonido SOLO al subir (+)
-            if (action === 'inc' && window.playPointSfx) {
-        window.playPointSfx();
+                  if (action === 'inc' && window.sndPoint) {
+        try {
+          window.sndPoint.currentTime = 0;
+          window.sndPoint.play().catch(()=>{});
+        } catch {}
       }
 
       await update(ref(db, `lobbies/${lobbyCode}/players/${pid}`), { score: next });
