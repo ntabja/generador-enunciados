@@ -1559,8 +1559,9 @@ generarN('PVAL',1);
     }
 
     const { startedAt, durationSec } = timer;
-    if(!startedAt || !durationSec) return;
-    alarmPlayedForTimerId = startedAt;
+if(!startedAt || !durationSec) return;
+// No marcar la alarma como "ya reproducida" aquí.
+// Se marca recién cuando realmente suena en remain === 0.
 
     function tick(){
       const elapsed = Math.floor((Date.now()-startedAt)/1000);
@@ -1586,11 +1587,12 @@ generarN('PVAL',1);
         if (remain === 0 || timer?.canceled) {
           stopBeep();
         }
-        if (remain === 0 && alarmPlayedForTimerId === startedAt) {
-          sndAlarm.currentTime = 0;
-          sndAlarm.play().catch(()=>{});
-          alarmPlayedForTimerId = null;
-        }
+        // ✅ Alarma: solo 1 vez por "startedAt" (evita repeticiones)
+if (remain === 0 && alarmPlayedForTimerId !== startedAt) {
+  sndAlarm.currentTime = 0;
+  sndAlarm.play().catch(()=>{});
+  alarmPlayedForTimerId = startedAt;
+}
       } catch {}
 
       if(remain<=0){
